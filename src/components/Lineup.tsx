@@ -3,9 +3,8 @@ import { lineup } from "@/data/event";
 
 /**
  * Zasedba 2026 kot legenda zemljevida: tri velike tipografske vrstice.
- * Uradnih fotografij skupin še ni (glej TODO v data/event.ts) — do takrat
- * je na mestu fotografije jasno označen nadomestni okvir, imena pa nosijo
- * sekcijo sama.
+ * Fotografije skupin so pripravljene iz uradnih kampanjskih materialov 2026;
+ * če posamezna slika manjka, komponenta še vedno prikaže jasen nadomestni okvir.
  */
 export default function Lineup() {
   return (

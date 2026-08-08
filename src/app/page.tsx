@@ -1,4 +1,5 @@
 import Aftermovie from "@/components/Aftermovie";
+import CampaignSlider from "@/components/CampaignSlider";
 import Experience from "@/components/Experience";
 import FinalCta from "@/components/FinalCta";
 import GameTeaser from "@/components/GameTeaser";
@@ -23,6 +24,7 @@ export default function Home() {
         <Aftermovie />
         <Timeline />
         <Lineup />
+        <CampaignSlider />
         <Story />
         <PracticalInfo />
         <FinalCta />

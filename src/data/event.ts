@@ -12,15 +12,16 @@
  *  2. Cena "od 16 €" je bila prevzeta z Eventima 8. 8. 2026 — preverite ob objavi.
  *  3. Statistika (obiskovalci, prostovoljci …) na klub-gros.com ni bila berljiva
  *     (animirani števci kažejo 0) — sekcija je zato izklopljena, glej `stats`.
- *  4. Uradne fotografije skupin Kokosy, MRFY in Tabu še manjkajo — glej
- *     `lineup[n].image` (trenutno null → prikaže se označen nadomestni okvir).
- *  5. `siteUrl` nastavite na končno domeno pred objavo.
+ *  4. `siteUrl` nastavite na končno domeno pred objavo.
+ *
+ * Uradne fotografije skupin (lineup) in kampanjski plakati (campaign) so
+ * izrezani/pretvorjeni iz organizatorjevih Instagram-grafik "GLATLAS 2026".
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 export const site = {
-  /** TODO: zamenjajte s končno domeno strani (potrebno za OG slike in schema.org). */
-  url: "https://glasbeniatlas.si",
+  /** Na Vercelu nastavite NEXT_PUBLIC_SITE_URL na končno domeno brez končne poševnice. */
+  url: (process.env.NEXT_PUBLIC_SITE_URL ?? "https://glasbeniatlas.si").replace(/\/$/, ""),
   title: "Glasbeni Atlas 2026 — 10. 10. 2026, Ivančna Gorica",
   description:
     "Kokosy, MRFY in Tabu na enem odru. Glasbeni Atlas — koncertni projekt Študentskega kluba GROŠ, ki ga v celoti organizirajo študentje in dijaki. 10. oktober 2026, Parkirišče Ivančna Gorica. Vstopnice na Eventimu.",
@@ -77,20 +78,20 @@ export const lineup: Performer[] = [
     name: "Kokosy",
     description:
       "Ena najbolj prepoznavnih zasedb nove slovenske scene — koncerti, ki jih publika poje na pamet.",
-    image: null, // TODO: uradna fotografija skupine (press kit)
+    image: "/media/lineup/kokosy.jpg",
   },
   {
     index: "02",
     name: "MRFY",
     description: "Indie rock iz Novega mesta. Kitare, ki napolnijo šotor.",
-    image: null, // TODO: uradna fotografija skupine (press kit)
+    image: "/media/lineup/mrfy.jpg",
   },
   {
     index: "03",
     name: "Tabu",
     description:
       "Ena najbolj priljubljenih slovenskih pop-rock zasedb z več kot 25 leti uspešnic.",
-    image: null, // TODO: uradna fotografija skupine (press kit)
+    image: "/media/lineup/tabu.jpg",
   },
 ];
 
@@ -218,4 +219,35 @@ export const navLinks = [
   { href: "#izvajalci", label: "Izvajalci" },
   { href: "#zgodba", label: "Zgodba" },
   { href: "#informacije", label: "Informacije" },
+] as const;
+
+/**
+ * Kampanjski plakati (Instagram objave 2026) — uradne grafike organizatorja,
+ * v izvirnem pokončnem formatu 4:5. Uporabljeni v sliderju na domači strani.
+ */
+export const campaign = [
+  {
+    src: "/media/campaign/glasbeni-atlas.jpg",
+    alt: "Osrednji plakat Glasbenega Atlasa 2026 s črno-belim fotografskim kolažem.",
+  },
+  {
+    src: "/media/campaign/datum.jpg",
+    alt: "Objava z datumom dogodka: 10. 10. 2026.",
+  },
+  {
+    src: "/media/campaign/lokacija.jpg",
+    alt: "Objava z lokacijo dogodka: Ivančna Gorica.",
+  },
+  {
+    src: "/media/campaign/kokosy-post.jpg",
+    alt: "Napoved nastopa skupine Kokosy na Glasbenem Atlasu 2026.",
+  },
+  {
+    src: "/media/campaign/mrfy-post.jpg",
+    alt: "Napoved nastopa skupine MRFY na Glasbenem Atlasu 2026.",
+  },
+  {
+    src: "/media/campaign/tabu-post.jpg",
+    alt: "Napoved nastopa skupine Tabu na Glasbenem Atlasu 2026.",
+  },
 ] as const;

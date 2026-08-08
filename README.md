@@ -47,7 +47,8 @@ oceno, zavihek izvajalca pa prikazuje surove točke za izbrano skladbo.
    `supabase/migrations/20260808190000_leaderboard.sql`.
 3. Lokalno ustvarite `.env.local` po vzoru `.env.example`.
 4. V Vercelu pod **Project Settings → Environment Variables** dodajte:
-   `NEXT_PUBLIC_SUPABASE_URL` in `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+   `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in
+   `NEXT_PUBLIC_SITE_URL`.
 5. Po dodajanju spremenljivk sprožite nov deployment.
 
 SQL migracija vključi RLS. Javni ključ lahko samo bere javno lestvico in kliče
@@ -83,9 +84,11 @@ Vsaka sekcija strani je svoja komponenta v `src/components/`:
 | `Nav` | Lepljiva navigacija + mobilni CTA |
 | `Hero` | Junaški del s posterjem/videom |
 | `Experience` | Doživetje — fotografski kolaž |
+| `GameTeaser` | Napoved igre in povezava na `/igra` |
 | `Aftermovie` | Uradni aftermovie 2024 |
 | `Timeline` | Postaje skozi leta (2022 → 2024 → 2026) |
 | `Lineup` | Zasedba 2026 |
+| `CampaignSlider` | Uradne kampanjske objave 2026 |
 | `Story` | Zgodba projekta |
 | `PracticalInfo` | Praktične informacije |
 | `FinalCta` | Zaključni konverzijski del |
@@ -93,5 +96,29 @@ Vsaka sekcija strani je svoja komponenta v `src/components/`:
 
 ## Pred objavo preverite
 
-Glejte TODO-sekcijo v `src/data/event.ts` — vključuje potrditev ure vrat,
-cene vstopnic in manjkajočih uradnih fotografij skupin Kokosy, MRFY in Tabu.
+Glejte TODO-sekcijo v `src/data/event.ts` — vključuje potrditev ure vrat in
+cene vstopnic.
+
+## Objava na Vercelu
+
+Landing page in igra sta namenoma v istem repozitoriju in istem Next.js
+projektu. Po povezavi GitHub repozitorija `CarryingSon/piano_tiles_gros`
+Vercel sam zazna framework; Root Directory naj ostane koren repozitorija,
+Build Command pa privzeti `npm run build`.
+
+Produkcijske poti:
+
+- `/` — landing page;
+- `/igra` — mobilna ritmična igra;
+- `/api/leaderboard` — strežniški Supabase API;
+- `/sitemap.xml` in `/robots.txt` — iskalniki.
+
+Pred produkcijskim deploymentom:
+
+1. zaženite Supabase migracijo iz prejšnjega poglavja;
+2. v Vercelu dodajte vse tri spremenljivke iz `.env.example` za Production,
+   Preview in Development;
+3. `NEXT_PUBLIC_SITE_URL` nastavite na končno domeno brez končne poševnice;
+4. sprožite nov deployment, ker se nove okoljske spremenljivke ne dodajo že
+   obstoječim deploymentom;
+5. preverite `/`, `/igra`, oddajo rezultata in Eventim povezavo.
