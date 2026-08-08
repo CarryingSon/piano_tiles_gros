@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gameConfig, getPerformance, type GameSong, type Lane } from "@/data/game";
+import Leaderboard from "./Leaderboard";
 import styles from "./RhythmGame.module.css";
 
 type Phase = "intro" | "loading" | "countdown" | "playing" | "paused" | "result";
@@ -32,6 +33,8 @@ export default function RhythmGame() {
   const [audioError, setAudioError] = useState("");
   const [pauseReason, setPauseReason] = useState("Igra je ustavljena.");
   const [shareStatus, setShareStatus] = useState("");
+  const [sessionId, setSessionId] = useState<string | null>(null);
+  const [breakdown, setBreakdown] = useState({ perfect: 0, good: 0, misses: 0 });
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const phaseRef = useRef<Phase>(phase);
@@ -43,6 +46,7 @@ export default function RhythmGame() {
   const comboRef = useRef(0);
   const feedbackIdRef = useRef(0);
   const lastUiUpdateRef = useRef(0);
+  const statsRef = useRef({ perfect: 0, good: 0, misses: 0 });
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -92,6 +96,9 @@ export default function RhythmGame() {
     setProgress(0);
     setFeedback(null);
     setShareStatus("");
+    setSessionId(null);
+    statsRef.current = { perfect: 0, good: 0, misses: 0 };
+    setBreakdown({ perfect: 0, good: 0, misses: 0 });
   }, []);
 
   const stopAudio = useCallback(() => {
@@ -109,6 +116,7 @@ export default function RhythmGame() {
     const nextHighScore = Math.max(highScore, finalScore);
     setHighScore(nextHighScore);
     window.localStorage.setItem(highScoreKey(selectedSong), String(nextHighScore));
+    setBreakdown({ ...statsRef.current });
     stopAudio();
     setProgress(1);
     setPhase("result");
@@ -207,15 +215,16 @@ export default function RhythmGame() {
       if (!audio || phaseRef.current !== "playing") return;
       const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
 
-      let missed = false;
+      let missed = 0;
       selectedSong.notes.forEach((note, index) => {
         if (!judgedRef.current.has(index) && songTime - note.time > gameConfig.timing.good) {
           judgedRef.current.add(index);
-          missed = true;
+          missed += 1;
         }
       });
 
-      if (missed) {
+      if (missed > 0) {
+        statsRef.current.misses += missed;
         comboRef.current = 0;
         setCombo(0);
         showFeedback("Miss");
@@ -244,6 +253,18 @@ export default function RhythmGame() {
     resetRound();
     setAudioError("");
     setPhase("loading");
+
+    void fetch("/api/leaderboard/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ songId: selectedSong.id }),
+    })
+      .then(async (response) => {
+        if (!response.ok) return null;
+        return response.json() as Promise<{ sessionId: string }>;
+      })
+      .then((data) => setSessionId(data?.sessionId ?? null))
+      .catch(() => setSessionId(null));
 
     const AudioContextClass = window.AudioContext;
     if (!AudioContextClass) {
@@ -287,6 +308,7 @@ export default function RhythmGame() {
   }, [muted, resetRound, selectedSong, stopAudio]);
 
   const registerMiss = useCallback(() => {
+    statsRef.current.misses += 1;
     comboRef.current = 0;
     setCombo(0);
     showFeedback("Miss");
@@ -326,6 +348,8 @@ export default function RhythmGame() {
     scoreRef.current += points;
     setCombo(nextCombo);
     setScore(scoreRef.current);
+    if (isPerfect) statsRef.current.perfect += 1;
+    else statsRef.current.good += 1;
     showFeedback(isPerfect ? "Perfect" : "Good");
     if (isPerfect && "vibrate" in navigator) navigator.vibrate(12);
   }, [registerMiss, selectedSong, showFeedback]);
@@ -569,6 +593,7 @@ export default function RhythmGame() {
             </div>
             <p className={styles.shareStatus} role="status">{shareStatus}</p>
             <div className={styles.eventStrip}><span>Datum</span><strong>{gameConfig.event.date}</strong><span>Lokacija</span><strong>{gameConfig.event.location}</strong></div>
+            <Leaderboard song={selectedSong} score={score} sessionId={sessionId} breakdown={breakdown} />
           </div>
         </section>
       )}

@@ -33,6 +33,28 @@ Za zamenjavo glasbe:
 
 Uporaba glasbenih izsekov mora biti pred javno objavo urejena z imetniki pravic.
 
+## Supabase leaderboard
+
+Igra uporablja pravi skupni leaderboard brez prijave. Po koncu igralec vpiše
+ime, rezultat pa se lahko odda samo enkrat za veljavno 30–45-sekundno igralno
+sejo. Skupna lestvica rezultate različnih skladb primerja z normalizirano
+oceno, zavihek izvajalca pa prikazuje surove točke za izbrano skladbo.
+
+### Prvi zagon baze
+
+1. V projektu Supabase odprite **SQL Editor → New query**.
+2. Kopirajte in zaženite celotno datoteko
+   `supabase/migrations/20260808190000_leaderboard.sql`.
+3. Lokalno ustvarite `.env.local` po vzoru `.env.example`.
+4. V Vercelu pod **Project Settings → Environment Variables** dodajte:
+   `NEXT_PUBLIC_SUPABASE_URL` in `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`.
+5. Po dodajanju spremenljivk sprožite nov deployment.
+
+SQL migracija vključi RLS. Javni ključ lahko samo bere javno lestvico in kliče
+omejene funkcije za začetek ter zaključek igralne seje; neposreden zapis v
+tabele in dostop do sej nista dovoljena. `service_role` ključ ni potreben in
+ne sme biti izpostavljen v brskalniku.
+
 ## Urejanje vsebine
 
 Vse dejstvo, povezave, ceno vstopnic, zasedbo in podatke o organizatorju
@@ -46,6 +68,11 @@ uradne fotografije skupin).
 `public/media/` vsebuje lokalne, optimizirane kopije uradnih fotografij in
 video izsekov Glasbenega Atlasa (arhiv ŠK GROŠ, izdaji 2022 in 2024). Next.js
 `<Image>` samodejno generira AVIF/WebP različice ob strežbi.
+
+`public/media/lineup/` in `public/media/campaign/` sta izrezana oziroma
+pretvorjena iz organizatorjevih Instagram-grafik "GLATLAS 2026" (plakat,
+datum, lokacija in napovedi nastopajočih) — vir za fotografije skupin v
+sekciji Izvajalci in za drsnik s kampanjo.
 
 ## Struktura komponent
 

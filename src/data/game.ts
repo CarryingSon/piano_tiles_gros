@@ -22,6 +22,7 @@ export type GameSong = {
   duration: number;
   accent: string;
   notes: Note[];
+  maxScore: number;
 };
 
 /**
@@ -49,8 +50,21 @@ function createBeatMap(bpm: number, patternShift: number): Note[] {
   return notes.sort((a, b) => a.time - b.time);
 }
 
+function maxPossibleScore(notes: Note[]) {
+  return notes.reduce((total, _note, index) => {
+    const combo = index + 1;
+    const multiplier = Math.min(4, 1 + Math.floor(combo / 10));
+    return total + 100 * multiplier;
+  }, 0);
+}
+
+function createSong(song: Omit<GameSong, "notes" | "maxScore">, patternShift: number): GameSong {
+  const notes = createBeatMap(song.bpm, patternShift);
+  return { ...song, notes, maxScore: maxPossibleScore(notes) };
+}
+
 export const gameSongs: GameSong[] = [
-  {
+  createSong({
     id: "mrfy",
     artist: "MRFY",
     title: "Prjatučki",
@@ -59,9 +73,8 @@ export const gameSongs: GameSong[] = [
     offset: 0,
     duration: 36.5,
     accent: "#FFD800",
-    notes: createBeatMap(117.95, 0),
-  },
-  {
+  }, 0),
+  createSong({
     id: "kokosy",
     artist: "Kokosy",
     title: "Planeti se vrtijo",
@@ -70,9 +83,8 @@ export const gameSongs: GameSong[] = [
     offset: 0,
     duration: 36.5,
     accent: "#E99FD6",
-    notes: createBeatMap(95.5, 3),
-  },
-  {
+  }, 3),
+  createSong({
     id: "tabu",
     artist: "Tabu",
     title: "Poljubljena",
@@ -81,8 +93,7 @@ export const gameSongs: GameSong[] = [
     offset: 0,
     duration: 36.5,
     accent: "#E05110",
-    notes: createBeatMap(133.65, 7),
-  },
+  }, 7),
 ];
 
 export const gameConfig = {
