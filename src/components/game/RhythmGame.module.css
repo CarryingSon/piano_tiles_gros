@@ -6,7 +6,7 @@
   min-height: 100dvh;
   overflow: hidden;
   overscroll-behavior: none;
-  touch-action: none;
+  touch-action: pan-y;
   user-select: none;
   background: #050708;
   color: #f6f6f6;
@@ -45,10 +45,13 @@
 }
 
 .intro {
+  height: 100dvh;
+  min-height: 0;
   justify-content: space-between;
   overflow-y: auto;
   overscroll-behavior: contain;
   touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   background:
     linear-gradient(to bottom, rgb(5 7 8 / .2), #050708 88%),
     url("/media/video/hero-poster.jpg") center 22% / cover no-repeat;
@@ -420,8 +423,13 @@
 .dialog .primary { width: 100%; margin-top: 1.25rem; }
 
 .result {
+  height: 100dvh;
+  min-height: 0;
   align-items: center;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  -webkit-overflow-scrolling: touch;
   text-align: center;
   background:
     linear-gradient(rgb(5 7 8 / .45), #050708 72%),
