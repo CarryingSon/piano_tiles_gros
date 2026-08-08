@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import Image from "next/image";
 import { campaign } from "@/data/event";
+import PhotoWall from "@/components/PhotoWall";
 
 /**
  * Drsnik z resničnimi kampanjskimi objavami 2026 (Instagram-grafike
@@ -21,9 +22,10 @@ export default function CampaignSlider() {
   return (
     <section
       aria-labelledby="kampanja-naslov"
-      className="relative overflow-hidden bg-night py-24 sm:py-32"
+      className="relative overflow-hidden py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <PhotoWall variant="a5" />
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
             <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
@@ -59,7 +61,7 @@ export default function CampaignSlider() {
 
       <div
         ref={trackRef}
-        className="reveal mt-14 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:px-6 [&::-webkit-scrollbar]:hidden"
+        className="reveal relative z-10 mt-14 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 [scrollbar-width:none] sm:px-6 [&::-webkit-scrollbar]:hidden"
       >
         {campaign.map((item) => (
           <figure

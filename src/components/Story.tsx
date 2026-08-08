@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { stats, story } from "@/data/event";
+import PhotoWall from "@/components/PhotoWall";
 
 /**
  * Zgodba projekta — skrajšano uradno besedilo z izvlečenim citatom.
@@ -13,7 +14,8 @@ export default function Story() {
       aria-labelledby="projekt-naslov"
       className="relative overflow-hidden py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <PhotoWall variant="atlas" />
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <div className="grid gap-12 md:grid-cols-2 md:gap-16">
           <div>
             <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">

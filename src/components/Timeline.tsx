@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { editions, tickets } from "@/data/event";
+import PhotoWall from "@/components/PhotoWall";
 
 /**
  * Zgodba skozi leta kot pot na zemljevidu: prekinjena rumena črta povezuje
@@ -11,9 +12,10 @@ export default function Timeline() {
     <section
       id="zgodba"
       aria-labelledby="zgodba-naslov"
-      className="contours relative overflow-hidden py-24 sm:py-32"
+      className="relative overflow-hidden py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <PhotoWall variant="atlas" />
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
           Zgodba · Postaje
         </p>

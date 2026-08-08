@@ -1,4 +1,5 @@
 import Image from "next/image";
+import PhotoWall from "@/components/PhotoWall";
 
 /**
  * Doživetje: prodaja vzdušje, ne logistike. Kolaž pravih fotografij
@@ -9,9 +10,10 @@ export default function Experience() {
     <section
       id="dozivetje"
       aria-labelledby="dozivetje-naslov"
-      className="contours relative overflow-hidden py-24 sm:py-32"
+      className="relative overflow-hidden py-24 sm:py-32"
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      <PhotoWall variant="a5" />
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
           Doživetje
         </p>
