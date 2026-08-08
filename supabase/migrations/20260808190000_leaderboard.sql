@@ -144,11 +144,18 @@ STABLE
 SECURITY DEFINER
 SET search_path = public, pg_temp
 AS $$
-  WITH personal_bests AS (
-    SELECT DISTINCT ON (LOWER(e.name), e.song_id) e.*
+  WITH ranked_personal_bests AS (
+    SELECT e.*,
+      ROW_NUMBER() OVER (
+        PARTITION BY LOWER(e.name), CASE WHEN p_song_id IS NULL THEN NULL ELSE e.song_id END
+        ORDER BY e.rating DESC, e.score DESC, e.created_at ASC
+      ) AS personal_rank
     FROM public.leaderboard_entries e
     WHERE p_song_id IS NULL OR e.song_id = p_song_id
-    ORDER BY LOWER(e.name), e.song_id, e.rating DESC, e.score DESC, e.created_at ASC
+  ), personal_bests AS (
+    SELECT *
+    FROM ranked_personal_bests
+    WHERE personal_rank = 1
   )
   SELECT pb.id, pb.name, pb.song_id, pb.score, pb.rating,
     pb.perfect, pb.good, pb.misses, pb.created_at

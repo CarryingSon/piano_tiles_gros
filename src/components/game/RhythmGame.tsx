@@ -5,10 +5,12 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gameConfig, getPerformance, type GameSong, type Lane } from "@/data/game";
 import Leaderboard from "./Leaderboard";
+import DesktopGameGate from "./DesktopGameGate";
 import styles from "./RhythmGame.module.css";
 
 type Phase = "intro" | "loading" | "countdown" | "playing" | "paused" | "result";
-type Feedback = { id: number; label: "Perfect" | "Good" | "Miss" } | null;
+type Feedback = { id: number; label: "Perfect" | "Good" | "Miss" | "Drži" } | null;
+type ActiveHold = { noteIndex: number; isPerfect: boolean };
 
 type AudioSession = {
   context: AudioContext;
@@ -47,6 +49,7 @@ export default function RhythmGame() {
   const feedbackIdRef = useRef(0);
   const lastUiUpdateRef = useRef(0);
   const statsRef = useRef({ perfect: 0, good: 0, misses: 0 });
+  const activeHoldsRef = useRef(new Map<string, ActiveHold>());
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -82,7 +85,7 @@ export default function RhythmGame() {
     }
   }, [muted]);
 
-  const showFeedback = useCallback((label: "Perfect" | "Good" | "Miss") => {
+  const showFeedback = useCallback((label: "Perfect" | "Good" | "Miss" | "Drži") => {
     feedbackIdRef.current += 1;
     setFeedback({ id: feedbackIdRef.current, label });
   }, []);
@@ -98,8 +101,33 @@ export default function RhythmGame() {
     setShareStatus("");
     setSessionId(null);
     statsRef.current = { perfect: 0, good: 0, misses: 0 };
+    activeHoldsRef.current.clear();
     setBreakdown({ perfect: 0, good: 0, misses: 0 });
   }, []);
+
+  const registerMiss = useCallback(() => {
+    statsRef.current.misses += 1;
+    comboRef.current = 0;
+    setCombo(0);
+    showFeedback("Miss");
+  }, [showFeedback]);
+
+  const awardHit = useCallback((isPerfect: boolean) => {
+    const nextCombo = comboRef.current + 1;
+    const multiplier = Math.min(
+      gameConfig.scoring.maxMultiplier,
+      1 + Math.floor(nextCombo / gameConfig.scoring.multiplierEvery),
+    );
+    const points = (isPerfect ? gameConfig.scoring.perfect : gameConfig.scoring.good) * multiplier;
+    comboRef.current = nextCombo;
+    scoreRef.current += points;
+    setCombo(nextCombo);
+    setScore(scoreRef.current);
+    if (isPerfect) statsRef.current.perfect += 1;
+    else statsRef.current.good += 1;
+    showFeedback(isPerfect ? "Perfect" : "Good");
+    if (isPerfect && "vibrate" in navigator) navigator.vibrate(12);
+  }, [showFeedback]);
 
   const stopAudio = useCallback(() => {
     const audio = audioRef.current;
@@ -183,17 +211,38 @@ export default function RhythmGame() {
 
     selectedSong.notes.forEach((note, index) => {
       if (judgedRef.current.has(index)) return;
+      const isActiveHold = [...activeHoldsRef.current.values()].some((hold) => hold.noteIndex === index);
       const relative = note.time - time;
-      if (relative > gameConfig.timing.approach || relative < -gameConfig.timing.good) return;
+      if (!isActiveHold && (relative > gameConfig.timing.approach || relative < -gameConfig.timing.good)) return;
       const p = 1 - relative / gameConfig.timing.approach;
-      const y = top + p * (hitY - top);
+      const y = isActiveHold ? hitY : top + p * (hitY - top);
       const x = note.lane * laneWidth + 6;
       const tileWidth = laneWidth - 12;
       const tileHeight = Math.max(42, Math.min(64, height * .075));
       const accent = note.lane === 1 || note.lane === 3 ? "#e99fd6" : "#ffd800";
 
+      if (note.type === "hold" && note.duration) {
+        const remaining = isActiveHold
+          ? Math.max(0, note.time + note.duration - time)
+          : note.duration;
+        const holdHeight = Math.max(tileHeight * .8, (remaining / gameConfig.timing.approach) * (hitY - top));
+        context.shadowColor = accent;
+        context.shadowBlur = isActiveHold ? 22 : 10;
+        context.fillStyle = isActiveHold ? accent : `${accent}aa`;
+        context.beginPath();
+        context.roundRect(x + tileWidth * .31, y - holdHeight, tileWidth * .38, holdHeight, 9);
+        context.fill();
+        context.shadowBlur = 0;
+        context.strokeStyle = "rgba(5,7,8,.72)";
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(x + tileWidth / 2, y - holdHeight + 9);
+        context.lineTo(x + tileWidth / 2, y - 8);
+        context.stroke();
+      }
+
       context.shadowColor = accent;
-      context.shadowBlur = 10 + energy * 16;
+      context.shadowBlur = 10 + energy * 16 + (isActiveHold ? 12 : 0);
       context.fillStyle = accent;
       context.beginPath();
       context.roundRect(x, y - tileHeight / 2, tileWidth, tileHeight, 7);
@@ -205,8 +254,62 @@ export default function RhythmGame() {
       context.beginPath();
       context.arc(x + tileWidth - 12, y - tileHeight / 2 + 12, 3, 0, Math.PI * 2);
       context.fill();
+      if (note.type === "hold") {
+        context.fillStyle = "#050708";
+        context.font = "800 8px system-ui";
+        context.textAlign = "center";
+        context.fillText(isActiveHold ? "DRŽI" : "HOLD", x + tileWidth / 2, y + 3);
+      }
     });
   }, [selectedSong]);
+
+  const resolveHold = useCallback((inputId: string, songTime: number, automatic = false) => {
+    const active = activeHoldsRef.current.get(inputId);
+    if (!active) return;
+    const note = selectedSong.notes[active.noteIndex];
+    const holdEnd = note.time + (note.duration ?? 0);
+    const completed = automatic || songTime >= holdEnd - gameConfig.timing.good;
+    activeHoldsRef.current.delete(inputId);
+    judgedRef.current.add(active.noteIndex);
+    if (completed) awardHit(active.isPerfect);
+    else registerMiss();
+  }, [awardHit, registerMiss, selectedSong]);
+
+  const beginLane = useCallback((lane: Lane, inputId: string) => {
+    if (phaseRef.current !== "playing" || activeHoldsRef.current.has(inputId)) return;
+    const audio = audioRef.current;
+    if (!audio) return;
+    const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
+    const heldIndexes = new Set([...activeHoldsRef.current.values()].map((hold) => hold.noteIndex));
+    let nearestIndex = -1;
+    let nearestDelta = Number.POSITIVE_INFINITY;
+
+    selectedSong.notes.forEach((note, index) => {
+      if (note.lane !== lane || judgedRef.current.has(index) || heldIndexes.has(index)) return;
+      const delta = Math.abs(songTime - note.time);
+      if (delta < nearestDelta) {
+        nearestDelta = delta;
+        nearestIndex = index;
+      }
+    });
+
+    if (nearestIndex < 0 || nearestDelta > gameConfig.timing.good) {
+      registerMiss();
+      return;
+    }
+
+    const note = selectedSong.notes[nearestIndex];
+    const isPerfect = nearestDelta <= gameConfig.timing.perfect;
+    if (note.type === "hold" && note.duration) {
+      activeHoldsRef.current.set(inputId, { noteIndex: nearestIndex, isPerfect });
+      showFeedback("Drži");
+      if ("vibrate" in navigator) navigator.vibrate(8);
+      return;
+    }
+
+    judgedRef.current.add(nearestIndex);
+    awardHit(isPerfect);
+  }, [awardHit, registerMiss, selectedSong, showFeedback]);
 
   useEffect(() => {
     if (phase !== "playing") return;
@@ -215,9 +318,17 @@ export default function RhythmGame() {
       if (!audio || phaseRef.current !== "playing") return;
       const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
 
+      activeHoldsRef.current.forEach((active, inputId) => {
+        const note = selectedSong.notes[active.noteIndex];
+        if (songTime >= note.time + (note.duration ?? 0)) {
+          resolveHold(inputId, songTime, true);
+        }
+      });
+
       let missed = 0;
+      const heldIndexes = new Set([...activeHoldsRef.current.values()].map((hold) => hold.noteIndex));
       selectedSong.notes.forEach((note, index) => {
-        if (!judgedRef.current.has(index) && songTime - note.time > gameConfig.timing.good) {
+        if (!judgedRef.current.has(index) && !heldIndexes.has(index) && songTime - note.time > gameConfig.timing.good) {
           judgedRef.current.add(index);
           missed += 1;
         }
@@ -244,7 +355,7 @@ export default function RhythmGame() {
     };
     frameRef.current = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frameRef.current);
-  }, [drawGame, finishGame, phase, selectedSong, showFeedback]);
+  }, [drawGame, finishGame, phase, resolveHold, selectedSong, showFeedback]);
 
   const startGame = useCallback(async () => {
     timersRef.current.forEach(window.clearTimeout);
@@ -307,59 +418,25 @@ export default function RhythmGame() {
     );
   }, [muted, resetRound, selectedSong, stopAudio]);
 
-  const registerMiss = useCallback(() => {
-    statsRef.current.misses += 1;
-    comboRef.current = 0;
-    setCombo(0);
-    showFeedback("Miss");
-  }, [showFeedback]);
-
-  const hitLane = useCallback((lane: Lane) => {
-    if (phaseRef.current !== "playing") return;
-    const audio = audioRef.current;
-    if (!audio) return;
-    const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
-    let nearestIndex = -1;
-    let nearestDelta = Number.POSITIVE_INFINITY;
-
-    selectedSong.notes.forEach((note, index) => {
-      if (note.lane !== lane || judgedRef.current.has(index)) return;
-      const delta = Math.abs(songTime - note.time);
-      if (delta < nearestDelta) {
-        nearestDelta = delta;
-        nearestIndex = index;
-      }
-    });
-
-    if (nearestIndex < 0 || nearestDelta > gameConfig.timing.good) {
-      registerMiss();
-      return;
-    }
-
-    judgedRef.current.add(nearestIndex);
-    const nextCombo = comboRef.current + 1;
-    const multiplier = Math.min(
-      gameConfig.scoring.maxMultiplier,
-      1 + Math.floor(nextCombo / gameConfig.scoring.multiplierEvery),
-    );
-    const isPerfect = nearestDelta <= gameConfig.timing.perfect;
-    const points = (isPerfect ? gameConfig.scoring.perfect : gameConfig.scoring.good) * multiplier;
-    comboRef.current = nextCombo;
-    scoreRef.current += points;
-    setCombo(nextCombo);
-    setScore(scoreRef.current);
-    if (isPerfect) statsRef.current.perfect += 1;
-    else statsRef.current.good += 1;
-    showFeedback(isPerfect ? "Perfect" : "Good");
-    if (isPerfect && "vibrate" in navigator) navigator.vibrate(12);
-  }, [registerMiss, selectedSong, showFeedback]);
-
   const onPointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
     event.preventDefault();
+    event.currentTarget.setPointerCapture(event.pointerId);
     const rect = event.currentTarget.getBoundingClientRect();
     const lane = Math.max(0, Math.min(3, Math.floor(((event.clientX - rect.left) / rect.width) * 4))) as Lane;
-    hitLane(lane);
-  }, [hitLane]);
+    beginLane(lane, `pointer-${event.pointerId}`);
+  }, [beginLane]);
+
+  const onPointerEnd = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+    event.preventDefault();
+    const audio = audioRef.current;
+    if (audio) {
+      const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
+      resolveHold(`pointer-${event.pointerId}`, songTime);
+    }
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, [resolveHold, selectedSong]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -368,7 +445,7 @@ export default function RhythmGame() {
       const lane = lanes[event.key.toLowerCase()];
       if (lane !== undefined) {
         event.preventDefault();
-        hitLane(lane);
+        beginLane(lane, `key-${event.key.toLowerCase()}`);
       }
       if (event.key === "Escape" && phaseRef.current === "playing") {
         setPauseReason("Igra je ustavljena.");
@@ -376,9 +453,21 @@ export default function RhythmGame() {
         setPhase("paused");
       }
     };
+    const onKeyUp = (event: KeyboardEvent) => {
+      const key = event.key.toLowerCase();
+      if (!(key in { d: 1, f: 1, j: 1, k: 1 })) return;
+      const audio = audioRef.current;
+      if (!audio) return;
+      const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
+      resolveHold(`key-${key}`, songTime);
+    };
     window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [hitLane]);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [beginLane, resolveHold, selectedSong]);
 
   useEffect(() => {
     const pauseForInterruption = () => {
@@ -512,7 +601,12 @@ export default function RhythmGame() {
             <p className={styles.eyebrow}>Ritmična igra · 36 sekund</p>
             <h1 className={styles.title}>Ujemi <span>ritem</span></h1>
             <p className={styles.lead}>{gameConfig.supportingText}</p>
-            <div className={styles.instruction}><span className={styles.tapIcon}>↓</span><span>Tapkaj ploščice, ko dosežejo ciljno črto.</span></div>
+            <div className={styles.instruction}><span className={styles.tapIcon}>↓</span><span>Tapni kratke note. Dolge drži do konca svetleče poti.</span></div>
+            <div className={styles.competitionCallout}>
+              <span>TOP 3</span>
+              <strong>{gameConfig.competition.discountPercent} % cenejša vstopnica</strong>
+              <small>{gameConfig.competition.note}</small>
+            </div>
             <fieldset className={styles.songPicker}>
               <legend>Izberi komad</legend>
               <div className={styles.songGrid}>
@@ -564,8 +658,8 @@ export default function RhythmGame() {
               <button className={styles.iconButton} type="button" onClick={pause} aria-label="Ustavi igro">Ⅱ</button>
             </div>
           </div>
-          <canvas ref={canvasRef} className={styles.canvas} onPointerDown={onPointerDown} aria-label="Štiri igralne steze. Na tipkovnici uporabi D, F, J in K." />
-          {feedback && <p key={feedback.id} className={`${styles.feedback} ${styles[feedback.label.toLowerCase() as "perfect" | "good" | "miss"]}`} aria-live="polite">{feedback.label}</p>}
+          <canvas ref={canvasRef} className={styles.canvas} onPointerDown={onPointerDown} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd} aria-label="Štiri igralne steze. Kratke note tapni, dolge note drži. Na tipkovnici uporabi D, F, J in K." />
+          {feedback && <p key={feedback.id} className={`${styles.feedback} ${feedback.label === "Drži" ? styles.hold : styles[feedback.label.toLowerCase() as "perfect" | "good" | "miss"]}`} aria-live="polite">{feedback.label}</p>}
           <div className={styles.progress} aria-label={`Napredek ${Math.round(progress * 100)} %`}><span style={{ "--progress": progress } as React.CSSProperties} /></div>
           {phase === "paused" && (
             <div className={styles.overlay} role="dialog" aria-modal="true" aria-labelledby="pause-title">
@@ -599,6 +693,7 @@ export default function RhythmGame() {
       )}
 
       <div className={styles.landscape}><div><strong>Obrni telefon</strong><p>Igra najbolje teče v pokončnem položaju.</p></div></div>
+      <DesktopGameGate />
     </main>
   );
 }

@@ -16,7 +16,10 @@ npm run lint     # ESLint
 ## Igra »Ujemi ritem«
 
 Samostojna mobilna igra je na poti [`/igra`](http://localhost:3000/igra),
-na domači strani pa jo napoveduje sekcija »Misliš, da imaš ritem?«.
+na domači strani pa jo napoveduje sekcija »Misliš, da imaš ritem?«. Na
+namiznem računalniku se namesto igralne površine pokaže QR-koda za odprtje
+igre na telefonu. Kratke note igralec tapne, dolge note pa drži do njihovega
+konca.
 
 Vse nastavitve igre so v `src/data/game.ts`: podatki dogodka, Eventim URL,
 BPM, zvočni zamik, timing okna, točkovanje, pragovi naslovov, barve, besedilo
@@ -39,6 +42,10 @@ Igra uporablja pravi skupni leaderboard brez prijave. Po koncu igralec vpiše
 ime, rezultat pa se lahko odda samo enkrat za veljavno 30–45-sekundno igralno
 sejo. Skupna lestvica rezultate različnih skladb primerja z normalizirano
 oceno, zavihek izvajalca pa prikazuje surove točke za izbrano skladbo.
+Na skupni lestvici se posamezno ime pojavi samo enkrat z najboljšim rezultatom.
+Prva tri mesta so označena kot prejemniki 50-% popusta na vstopnico; pred javno
+objavo mora organizator dopolniti uradna pravila, rok tekmovanja, reševanje
+izenačenih rezultatov in način prevzema popusta.
 
 ### Prvi zagon baze
 

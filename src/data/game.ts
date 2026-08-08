@@ -5,7 +5,9 @@ export type Lane = 0 | 1 | 2 | 3;
 export type Note = {
   time: number;
   lane: Lane;
-  type?: "tap";
+  type?: "tap" | "hold";
+  /** Dolžina držanja v sekundah; obvezna pri hold noti. */
+  duration?: number;
 };
 
 const lanePattern: Lane[] = [0, 1, 2, 3, 1, 3, 0, 2, 0, 3, 2, 1, 3, 0, 1, 2];
@@ -37,7 +39,13 @@ function createBeatMap(bpm: number, patternShift: number): Note[] {
 
   for (let i = 0; firstNote + i * beat < 35.2; i += 1) {
     const time = firstNote + i * beat;
-    notes.push({ time, lane: lanePattern[(i + patternShift) % lanePattern.length] });
+    const isHold = i >= 10 && i % 14 === 8;
+    notes.push({
+      time,
+      lane: lanePattern[(i + patternShift) % lanePattern.length],
+      type: isHold ? "hold" : "tap",
+      duration: isHold ? beat * 1.25 : undefined,
+    });
 
     if (i >= 24 && i % 4 === 1) {
       notes.push({
@@ -107,6 +115,13 @@ export const gameConfig = {
   },
   ticketUrl: tickets.url,
   ticketLabel: "Preveri vstopnice na Eventimu",
+  competition: {
+    enabled: true,
+    winnerCount: 3,
+    discountPercent: 50,
+    headline: "Prvi trije dobijo vstopnico 50 % ceneje",
+    note: "Pri izenačenju odloča prej oddan rezultat. Velja po potrditvi rezultata in skladno s pravili organizatorja.",
+  },
   siteUrl: `${site.url}/igra`,
   audio: {
     duration: 36.5,

@@ -84,6 +84,10 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
     <section className={styles.leaderboard} aria-labelledby="leaderboard-title">
       <p className={styles.eyebrow}>Skupni rezultati</p>
       <h2 id="leaderboard-title">Lestvica ritma</h2>
+      <div className={styles.boardPrize}>
+        <strong>{gameConfig.competition.headline}</strong>
+        <span>{gameConfig.competition.note}</span>
+      </div>
 
       {!submitted && (
         <form className={styles.nameForm} onSubmit={submit}>
@@ -126,10 +130,10 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
           {entries.map((entry, index) => {
             const entrySong = gameConfig.songs.find((item) => item.id === entry.songId);
             return (
-              <li key={entry.id}>
+              <li key={entry.id} className={scope === "overall" && index < gameConfig.competition.winnerCount ? styles.podium : undefined}>
                 <span className={styles.rank}>{String(index + 1).padStart(2, "0")}</span>
                 <span className={styles.player}><strong>{entry.name}</strong><small>{entrySong?.artist ?? entry.songId}</small></span>
-                <span className={styles.boardScore}><strong>{entry.score}</strong>{scope === "overall" && <small>{Math.round(entry.rating / 100)} %</small>}</span>
+                <span className={styles.boardScore}><strong>{entry.score}</strong>{scope === "overall" && <small>{index < 3 ? "50 % popust" : `${Math.round(entry.rating / 100)} %`}</small>}</span>
               </li>
             );
           })}
