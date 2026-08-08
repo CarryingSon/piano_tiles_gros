@@ -1,0 +1,131 @@
+@import "tailwindcss";
+
+/* ── Barvni sistem Glasbenega Atlasa ─────────────────────────────────────────
+   Rumena in skoraj-črna sta vzorčeni iz uradnega vizuala 2026 (logotip na
+   rumenem polju, črno-bela koncertna fotografija). */
+@theme {
+  --color-atlas: #fcdb27; /* uradna rumena logotipa */
+  --color-night: #050708; /* skoraj-črna podlaga */
+  --color-coal: #0d0f10; /* dvignjene ploskve */
+  --color-fog: #a8adb3; /* sekundarno besedilo — AA na night */
+  --color-line: #23262a; /* tanke ločnice */
+
+  --font-display: var(--font-anton), "Arial Narrow", sans-serif;
+  --font-body: var(--font-grotesk), system-ui, sans-serif;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  background: var(--color-night);
+  color: #f4f4f2;
+  font-family: var(--font-body);
+  overflow-x: clip;
+}
+
+/* Naslovna pisava — plakatna, stisnjena */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.01em;
+}
+
+/* ── Fokus, dostopnost ── */
+:focus-visible {
+  outline: 3px solid var(--color-atlas);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+::selection {
+  background: var(--color-atlas);
+  color: var(--color-night);
+}
+
+/* ── Zrno (grain) — statična SVG tekstura, brez animacije ── */
+.grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.07;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* ── Plastnice (topografske črte) — subtilen atlas-motiv ── */
+.contours {
+  position: relative;
+}
+.contours::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420' fill='none' stroke='%23fcdb27' stroke-width='1'%3E%3Cpath d='M-20 80 Q 90 20 200 90 T 440 70'/%3E%3Cpath d='M-20 140 Q 100 70 210 150 T 440 130'/%3E%3Cpath d='M-20 210 Q 110 130 220 215 T 440 195'/%3E%3Cpath d='M-20 280 Q 120 200 230 285 T 440 265'/%3E%3Cpath d='M-20 350 Q 130 270 240 355 T 440 335'/%3E%3C/svg%3E");
+  background-size: 420px 420px;
+}
+
+/* ── Pomožni sloji ── */
+.text-outline {
+  -webkit-text-stroke: 1.5px rgb(252 219 39 / 0.55);
+  color: transparent;
+}
+
+/* Prekinjena "pot" med postajami časovnice */
+.route-dash {
+  stroke-dasharray: 4 8;
+}
+
+/* ── Razkrivanje ob pomiku — samo kot dodatek ─────────────────────────────
+   Elementi so privzeto vidni; razred .reveal jih skrije šele, ko JS doda
+   .reveal-armed na <html> (progressive enhancement, brez CLS za bralnike
+   brez JS), ob prikazu pa .reveal-shown vrne vidnost. */
+html.reveal-armed .reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+html.reveal-armed .reveal.reveal-shown {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  html.reveal-armed .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .motion-pulse {
+    animation: none !important;
+  }
+}
+
+/* Utrip lokacijske pike */
+@keyframes ping-soft {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+}
+.motion-pulse {
+  animation: ping-soft 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
+}

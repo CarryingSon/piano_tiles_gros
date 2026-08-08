@@ -1,0 +1,94 @@
+import Image from "next/image";
+import { lineup } from "@/data/event";
+
+/**
+ * Zasedba 2026 kot legenda zemljevida: tri velike tipografske vrstice.
+ * Uradnih fotografij skupin še ni (glej TODO v data/event.ts) — do takrat
+ * je na mestu fotografije jasno označen nadomestni okvir, imena pa nosijo
+ * sekcijo sama.
+ */
+export default function Lineup() {
+  return (
+    <section
+      id="izvajalci"
+      aria-labelledby="izvajalci-naslov"
+      className="relative bg-coal py-24 sm:py-32"
+    >
+      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+        <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
+          Izvajalci · 2026
+        </p>
+        <h2
+          id="izvajalci-naslov"
+          className="reveal font-display text-4xl uppercase leading-tight text-white sm:text-6xl"
+        >
+          Trije razlogi, da si tam.
+        </h2>
+
+        <ol className="mt-14 divide-y divide-line border-y border-line">
+          {lineup.map((performer) => (
+            <li key={performer.name} className="reveal group py-10 sm:py-12">
+              <div className="grid items-center gap-8 md:grid-cols-12">
+                <span
+                  aria-hidden
+                  className="hidden font-display text-xl text-atlas md:col-span-1 md:block"
+                >
+                  {performer.index}
+                </span>
+
+                <div className="md:col-span-7">
+                  <h3 className="font-display uppercase leading-none">
+                    <span
+                      aria-hidden
+                      className="mr-3 align-super font-display text-base text-atlas md:hidden"
+                    >
+                      {performer.index}
+                    </span>
+                    <span className="text-6xl text-white transition-colors group-hover:text-atlas sm:text-7xl lg:text-8xl">
+                      {performer.name}
+                    </span>
+                  </h3>
+                  <p className="mt-4 max-w-md text-sm leading-relaxed text-fog">
+                    {performer.description}
+                  </p>
+                </div>
+
+                <div className="md:col-span-4">
+                  {performer.image ? (
+                    <div className="relative aspect-[4/3] overflow-hidden">
+                      <Image
+                        src={performer.image}
+                        alt={`Uradna fotografija skupine ${performer.name}.`}
+                        fill
+                        sizes="(min-width: 768px) 32vw, 100vw"
+                        className="object-cover"
+                      />
+                    </div>
+                  ) : (
+                    /* Nadomestni okvir — zamenjajte z uradno fotografijo (data/event.ts) */
+                    <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden border border-dashed border-atlas/30 bg-night">
+                      <span
+                        aria-hidden
+                        className="font-display text-[8rem] leading-none text-white/5 sm:text-[10rem]"
+                      >
+                        {performer.name.charAt(0)}
+                      </span>
+                      <span className="absolute bottom-3 left-3 right-3 text-center text-[11px] uppercase tracking-widest text-fog">
+                        Uradna fotografija — kmalu
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </li>
+          ))}
+        </ol>
+
+        <p className="reveal mt-8 text-sm text-fog">
+          En oder, en večer — vse tri zasedbe.{" "}
+          <span className="text-white">10. oktobra v Ivančni Gorici.</span>
+        </p>
+      </div>
+    </section>
+  );
+}
