@@ -28,6 +28,7 @@ export default function PhotoWall({
         sizes="100vw"
         className={`object-cover opacity-70 ${frameClasses[variant]}`}
       />
+      <div className="absolute inset-0 bg-night/20" />
       <div className="absolute inset-0 bg-gradient-to-b from-night/80 via-night/68 to-night/86" />
       <div className="grain absolute inset-0" />
     </div>
