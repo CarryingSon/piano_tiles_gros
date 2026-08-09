@@ -7,6 +7,7 @@ import {
   chorusPulseSeconds,
   comboMultiplier,
   countdownLead,
+  finaleFactor,
   gameConfig,
   getPerformance,
   holdPointsPerSecond,
@@ -35,7 +36,9 @@ const TAU = Math.PI * 2;
 /** How long the pastel afterimage of a tapped tile stays on the board. */
 const TAP_FLASH_MS = 150;
 /** Even at the speed cap, a new tile stays visible for at least this long. */
-const MIN_TILE_LEAD_SECONDS = 0.55;
+const MIN_TILE_LEAD_SECONDS = 0.45;
+/** How long a milestone banner stays on the board. */
+const MILESTONE_MS = 1500;
 const SPEED_SAMPLE_SECONDS = 0.025;
 const SECTION_BLEND_SECONDS = 4;
 /** Ignore sub-micro-point drift after a hold's per-frame accrual settles. */
@@ -169,8 +172,34 @@ export function positionAt(time: number, song: GameSong) {
     + (speedSlope * elapsed * elapsed) / 2;
 }
 
+/**
+ * How far along the acceleration the song is: 0 while the tiles still fall at
+ * their opening speed, 1 once they are at the cap. The hit windows ride this
+ * same curve, so precision tightens exactly where the board speeds up and there
+ * is no second difficulty curve to keep in step with the first.
+ */
+function speedProgress(time: number, song: GameSong) {
+  const map = speedMapFor(song);
+  const top = map.speed[map.speed.length - 1];
+  if (top <= 1) return 0;
+  return Math.max(0, Math.min(1, (speedAt(time, song) - 1) / (top - 1)));
+}
+
+/** Perfect window in milliseconds at an absolute song time. */
+function perfectWindowAt(time: number, song: GameSong) {
+  const { perfectWindowMs, perfectWindowEndMs } = gameConfig.play;
+  return perfectWindowMs
+    + (perfectWindowEndMs - perfectWindowMs) * speedProgress(time, song);
+}
+
+/** How long past the line a tile stays playable at an absolute song time. */
+function lateWindowAt(time: number, song: GameSong) {
+  const { lateWindowMs, lateWindowEndMs } = gameConfig.play;
+  return lateWindowMs + (lateWindowEndMs - lateWindowMs) * speedProgress(time, song);
+}
+
 /** The colour tokens the board paints with, read back off the stylesheet. */
-const TOKENS = ["color", "pastel", "deep", "glow"] as const;
+const TOKENS = ["color", "pastel", "deep", "glow", "tile"] as const;
 type Palette = Record<(typeof TOKENS)[number], string>;
 
 function isTypingTarget(target: EventTarget | null) {
@@ -248,6 +277,13 @@ type Run = {
   state: Uint8Array;
   /** Index of the next note in the same lane, so tiles never overlap. */
   nextInLane: Int32Array;
+  /**
+   * 1 where the note belongs to a chorus. A tile is coloured by the part of the
+   * song it was written for, not by the part playing when it is drawn, so the
+   * new colour sweeps down the board with the music instead of every tile on
+   * screen flipping at once on the boundary.
+   */
+  chorusNote: Uint8Array;
   cursor: number;
   /** Kept as a float: holds pay out in fragments of a point every frame. */
   score: number;
@@ -259,6 +295,8 @@ type Run = {
   misses: number;
   /** A lane was pressed with no note in the window. */
   misclicks: number;
+  /** Index of the next milestone in gameConfig.milestones; also how many fired. */
+  milestone: number;
   over: boolean;
   section: SectionType | "";
   frameAt: number;
@@ -286,10 +324,16 @@ function createRun(song: GameSong): Run {
     seen[notes[i].lane] = i;
   }
 
+  const chorusNote = new Uint8Array(notes.length);
+  for (let i = 0; i < notes.length; i += 1) {
+    chorusNote[i] = sectionAt(song, notes[i].time) === "chorus" ? 1 : 0;
+  }
+
   return {
     song,
     state: new Uint8Array(notes.length),
     nextInLane,
+    chorusNote,
     cursor: 0,
     score: 0,
     combo: 0,
@@ -298,6 +342,7 @@ function createRun(song: GameSong): Run {
     good: 0,
     misses: 0,
     misclicks: 0,
+    milestone: 0,
     over: false,
     section: "",
     frameAt: 0,
@@ -323,7 +368,8 @@ export default function RhythmGame() {
   const [shareStatus, setShareStatus] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [result, setResult] = useState({
-    score: 0, perfect: 0, good: 0, misses: 0, misclicks: 0, bestCombo: 0, best: 0, over: false,
+    score: 0, perfect: 0, good: 0, misses: 0, misclicks: 0, bestCombo: 0, best: 0,
+    milestones: 0, over: false,
   });
 
   const phaseRef = useRef<Phase>(phase);
@@ -344,7 +390,10 @@ export default function RhythmGame() {
   const paintersRef = useRef<Painters>({
     sprites: {},
     flash: null,
-    palette: { color: "#ffd800", pastel: "#ffd800", deep: "#0a0a0a", glow: "rgba(255,216,0,.4)" },
+    palette: {
+      color: "#ffd800", pastel: "#ffd800", deep: "#0a0a0a",
+      glow: "rgba(255,216,0,.4)", tile: "#ffd800",
+    },
   });
   const pointerLanesRef = useRef(new Map<number, Lane>());
 
@@ -364,7 +413,12 @@ export default function RhythmGame() {
   const feedbackElRef = useRef<HTMLParagraphElement>(null);
   const feedbackAnimRef = useRef<Animation | null>(null);
   const countElRef = useRef<HTMLDivElement>(null);
-  const hudCacheRef = useRef({ score: -1, combo: -1, misses: -1, progress: -1, count: -1 });
+  const milestoneElRef = useRef<HTMLDivElement>(null);
+  const milestoneRingRef = useRef<HTMLSpanElement>(null);
+  const milestoneLabelRef = useRef<HTMLElement>(null);
+  const milestoneNoteRef = useRef<HTMLSpanElement>(null);
+  const milestoneAnimsRef = useRef<Animation[]>([]);
+  const hudCacheRef = useRef({ score: -1, combo: -1, lives: -1, progress: -1, count: -1 });
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -437,6 +491,57 @@ export default function RhythmGame() {
       ],
       { duration: 420, easing: "ease-out", fill: "forwards" },
     );
+  }, []);
+
+  /**
+   * A score milestone: the banner swells over the board while a ring opens out
+   * of it. Both are compositor-only transforms on two nodes that already exist,
+   * so nothing here competes with the frame loop for the main thread.
+   */
+  const celebrate = useCallback((milestone: (typeof gameConfig.milestones)[number]) => {
+    const el = milestoneElRef.current;
+    if (!el) return;
+    if (milestoneLabelRef.current) milestoneLabelRef.current.textContent = milestone.label;
+    if (milestoneNoteRef.current) milestoneNoteRef.current.textContent = milestone.note;
+    el.hidden = false;
+    navigator.vibrate?.([0, 30, 60, 30, 60, 70]);
+
+    for (const animation of milestoneAnimsRef.current) animation.cancel();
+    const lessMotion = reducedMotion();
+    const banner = el.animate(
+      lessMotion
+        ? [{ opacity: 0 }, { opacity: 1, offset: 0.2 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }]
+        : [
+            { opacity: 0, transform: "translate(-50%, -50%) scale(.4)" },
+            { opacity: 1, transform: "translate(-50%, -50%) scale(1.08)", offset: 0.22 },
+            { opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.34 },
+            { opacity: 1, transform: "translate(-50%, -50%) scale(1)", offset: 0.72 },
+            { opacity: 0, transform: "translate(-50%, -50%) scale(1.3)" },
+          ],
+      // fill-forwards holds the faded-out last frame until `hidden` lands a
+      // microtask later, so the banner never flashes back at full opacity.
+      { duration: MILESTONE_MS, easing: "cubic-bezier(.2,.8,.3,1)", fill: "forwards" },
+    );
+    milestoneAnimsRef.current = [banner];
+
+    const ring = milestoneRingRef.current;
+    if (ring && !lessMotion) {
+      milestoneAnimsRef.current.push(ring.animate(
+        [
+          { transform: "translate(-50%, -50%) scale(.2)", opacity: 0.55 },
+          { transform: "translate(-50%, -50%) scale(3.4)", opacity: 0 },
+        ],
+        { duration: 900, easing: "ease-out" },
+      ));
+    }
+
+    const done = () => {
+      // Another milestone may already own the banner by the time this settles.
+      if (milestoneAnimsRef.current[0] === banner && milestoneElRef.current) {
+        milestoneElRef.current.hidden = true;
+      }
+    };
+    banner.finished.then(done).catch(() => {});
   }, []);
 
   /** Short red shake for a missed tile, short grey blink for a stray press. */
@@ -520,10 +625,22 @@ export default function RhythmGame() {
     animation.finished.then(remove).catch(remove);
   }, []);
 
-  const awardHit = useCallback((run: Run, perfect: boolean, lane: Lane, y: number, now: number) => {
+  const awardHit = useCallback((
+    run: Run,
+    perfect: boolean,
+    index: number,
+    lane: Lane,
+    y: number,
+    now: number,
+  ) => {
     run.combo += 1;
     if (run.combo > run.bestCombo) run.bestCombo = run.combo;
-    run.score += (perfect ? gameConfig.scoring.perfect : gameConfig.scoring.good) * comboMultiplier(run.combo);
+    // Tiles can be struck out of chart order, so cap the combo at the ceiling
+    // maxPossibleScore() assigned this note; the finale factor comes off the
+    // note's own time, which both sides read the same way.
+    const multiplier = Math.min(comboMultiplier(run.combo), comboMultiplier(index + 1))
+      * finaleFactor(run.song, run.song.notes[index].time);
+    run.score += (perfect ? gameConfig.scoring.perfect : gameConfig.scoring.good) * multiplier;
     if (perfect) run.perfect += 1;
     else run.good += 1;
     run.laneHitAt[lane] = now + TAP_FLASH_MS;
@@ -532,28 +649,39 @@ export default function RhythmGame() {
     navigator.vibrate?.(12);
   }, [flashFeedback]);
 
-  /** A tile crossed the line untouched — the only thing that costs a life. */
+  /** Misses and stray presses cost the same: one life each, and three is all. */
+  const outOfLives = useCallback(
+    (run: Run) => run.misses + run.misclicks >= gameConfig.lives,
+    [],
+  );
+
+  /** A tile crossed the line untouched. */
   const registerMiss = useCallback((run: Run, lane: Lane) => {
     if (run.over) return;
     run.combo = 0;
     run.misses += 1;
     pulseLane(lane, "miss");
-    if (run.misses >= gameConfig.lives) {
+    if (outOfLives(run)) {
       run.over = true;
       flashFeedback("Konec", "miss");
       return;
     }
     flashFeedback("Miss", "miss");
-  }, [flashFeedback, pulseLane]);
+  }, [flashFeedback, pulseLane, outOfLives]);
 
-  /** A press with no note in the window: breaks the combo, costs no life. */
+  /** A press with no note in the window: costs a life, same as a missed tile. */
   const registerMisclick = useCallback((run: Run, lane: Lane) => {
     if (run.over) return;
     run.combo = 0;
     run.misclicks += 1;
     pulseLane(lane, "misclick");
+    if (outOfLives(run)) {
+      run.over = true;
+      flashFeedback("Konec", "misclick");
+      return;
+    }
     flashFeedback("Mimo", "misclick");
-  }, [flashFeedback, pulseLane]);
+  }, [flashFeedback, pulseLane, outOfLives]);
 
   /* ---------------------------------------------------------------- colours */
 
@@ -585,6 +713,7 @@ export default function RhythmGame() {
       pastel: lighten(baseColor, 0.55),
       deep: darken(baseColor, 0.22),
       glow: fade(baseColor, 0.4),
+      tile: darken(baseColor, 0.74),
     };
   }, []);
 
@@ -628,9 +757,16 @@ export default function RhythmGame() {
     // Glow is baked into the tap sprite once per size — drawing it per tap per
     // frame is what made the old board stutter on phones. Variable-length hold
     // shapes are painted directly below, since their geometry changes live.
-    const pad = 18;
+    //
+    // One sprite per part of the song: the chorus tile carries the band's full
+    // colour and a wider halo, the verse tile the same colour pushed towards the
+    // night. The pad has to clear the blur, so the two differ in size as well.
     const sprites: Record<string, Sprite> = {};
-    for (const color of [palette.color]) {
+    for (const { color, blur } of [
+      { color: palette.color, blur: 26 },
+      { color: palette.tile, blur: 16 },
+    ]) {
+      const pad = blur + 4;
       const sprite = document.createElement("canvas");
       const w = tileWidth + pad * 2;
       const h = tileHeight + pad * 2;
@@ -640,7 +776,7 @@ export default function RhythmGame() {
       if (!g) continue;
       g.scale(dpr, dpr);
       g.shadowColor = color;
-      g.shadowBlur = 16;
+      g.shadowBlur = blur;
       g.fillStyle = color;
       g.beginPath();
       g.roundRect(pad, pad, tileWidth, tileHeight, radius);
@@ -702,13 +838,13 @@ export default function RhythmGame() {
       if (
         state[i] !== PENDING
         || notes[i].lane !== lane
-        || deltaMs < -gameConfig.play.lateWindowMs
+        || deltaMs < -lateWindowAt(notes[i].time, song)
       ) continue;
       target = i;
       break;
     }
 
-    // Nothing in the window: a stray press. Breaks the combo, costs no life.
+    // Nothing in the window: a stray press, and one of the three lives.
     if (target < 0) {
       registerMisclick(run, lane);
       return;
@@ -716,7 +852,7 @@ export default function RhythmGame() {
 
     const lead = positionAt(notes[target].time, song) - here;
     const deltaMs = Math.abs((notes[target].time - songTime) * 1000);
-    const perfect = deltaMs <= gameConfig.play.perfectWindowMs;
+    const perfect = deltaMs <= perfectWindowAt(notes[target].time, song);
     const hitY = layout ? layout.top + (1 - lead / travel) * layout.playHeight : 0;
     if (notes[target].hold > 0) {
       // The head counts as a hit right away; the points come in over the hold.
@@ -734,7 +870,7 @@ export default function RhythmGame() {
       run.holdMultiplier[lane] = Math.min(
         comboMultiplier(run.combo),
         comboMultiplier(target + 1),
-      );
+      ) * finaleFactor(song, notes[target].time);
       if (perfect) run.perfect += 1;
       else run.good += 1;
       beginHoldCounter(lane);
@@ -743,7 +879,7 @@ export default function RhythmGame() {
       return;
     }
     state[target] = DONE;
-    awardHit(run, perfect, lane, hitY, now);
+    awardHit(run, perfect, target, lane, hitY, now);
   }, [awardHit, beginHoldCounter, flashFeedback, registerMisclick, songTimeAt]);
 
   /**
@@ -859,7 +995,7 @@ export default function RhythmGame() {
     const travel = gameConfig.play.travel;
     const here = positionAt(songTime, song);
     const sprites = painters.sprites;
-    const { color, pastel } = painters.palette;
+    const { color: chorusColor, pastel, tile: verseColor } = painters.palette;
     const radius = tileHeight * gameConfig.play.tileRadius;
 
     context.save();
@@ -897,6 +1033,7 @@ export default function RhythmGame() {
 
       const held = state[i] === HOLDING;
       const dropped = state[i] === RELEASED;
+      const color = run.chorusNote[i] ? chorusColor : verseColor;
       const x = note.lane * laneWidth + 6;
       const y = top + (1 - lead / travel) * playHeight;
 
@@ -1002,6 +1139,14 @@ export default function RhythmGame() {
     if (cache.score !== score && scoreElRef.current) {
       cache.score = score;
       scoreElRef.current.textContent = score.toLocaleString("sl-SI");
+      // A hold can carry the score past more than one mark in a single frame.
+      while (
+        run.milestone < gameConfig.milestones.length
+        && score >= gameConfig.milestones[run.milestone].score
+      ) {
+        celebrate(gameConfig.milestones[run.milestone]);
+        run.milestone += 1;
+      }
     }
     for (let lane = 0; lane < 4; lane += 1) {
       if (run.activeHold[lane] < 0) continue;
@@ -1015,12 +1160,18 @@ export default function RhythmGame() {
       if (comboElRef.current) comboElRef.current.textContent = String(run.combo);
       if (multElRef.current) multElRef.current.textContent = `×${comboMultiplier(run.combo)}`;
     }
-    if (cache.misses !== run.misses) {
-      cache.misses = run.misses;
-      const pips = livesElRef.current?.children;
+    const spent = run.misses + run.misclicks;
+    if (cache.lives !== spent) {
+      cache.lives = spent;
+      const lives = livesElRef.current;
+      lives?.setAttribute(
+        "aria-label",
+        `Preostala življenja: ${Math.max(0, gameConfig.lives - spent)} od ${gameConfig.lives}`,
+      );
+      const pips = lives?.children;
       if (pips) {
         for (let i = 0; i < pips.length; i += 1) {
-          (pips[i] as HTMLElement).dataset.spent = i < run.misses ? "1" : "0";
+          (pips[i] as HTMLElement).dataset.spent = i < spent ? "1" : "0";
         }
       }
     }
@@ -1040,7 +1191,7 @@ export default function RhythmGame() {
       countElRef.current.hidden = count === 0;
     }
 
-  }, []);
+  }, [celebrate]);
 
   /**
    * The lane overlay carries everything CSS can do better than the canvas: the
@@ -1097,6 +1248,7 @@ export default function RhythmGame() {
       misclicks: run.misclicks,
       bestCombo: run.bestCombo,
       best,
+      milestones: run.milestone,
       over: run.over,
     });
     setPhase("result");
@@ -1143,7 +1295,7 @@ export default function RhythmGame() {
         const note = notes[i];
         // A tile nobody touched is the one and only miss.
         if (state[i] === PENDING) {
-          if ((songTime - note.time) * 1000 < gameConfig.play.lateWindowMs) break;
+          if ((songTime - note.time) * 1000 < lateWindowAt(note.time, song)) break;
           state[i] = DONE;
           registerMiss(run, note.lane);
         } else if (state[i] === RELEASED
@@ -1174,7 +1326,10 @@ export default function RhythmGame() {
   const startGame = useCallback(() => {
     const el = audioElRef.current;
     runRef.current = createRun(selectedSong);
-    hudCacheRef.current = { score: -1, combo: -1, misses: -1, progress: -1, count: -1 };
+    hudCacheRef.current = { score: -1, combo: -1, lives: -1, progress: -1, count: -1 };
+    for (const animation of milestoneAnimsRef.current) animation.cancel();
+    milestoneAnimsRef.current = [];
+    if (milestoneElRef.current) milestoneElRef.current.hidden = true;
     for (let lane = 0; lane < 4; lane += 1) {
       holdCounterAnimationsRef.current[lane]?.cancel();
       holdCounterAnimationsRef.current[lane] = null;
@@ -1448,7 +1603,10 @@ export default function RhythmGame() {
               <span>Tapni ploščico v njeni stezi, takoj ko se prikaže. Nižja ko je, več točk. Dolgo ploščico drži do konca.</span>
             </div>
             <p className={styles.rules}>
-              {gameConfig.lives} zgrešenih ploščic in igre je konec. Proti koncu komada ploščice padajo hitreje.
+              Imaš {gameConfig.lives} življenja. Zgrešena ploščica in tap v prazno stezo stanejo
+              eno. Proti koncu komada ploščice padajo hitreje, okno za Perfect se zoži, od zadnjega
+              refrena naprej pa vse točke veljajo
+              ×{(1 + gameConfig.scoring.finaleBonus).toLocaleString("sl-SI")}.
             </p>
             <div className={styles.competitionCallout}>
               <span>TOP 3</span>
@@ -1503,8 +1661,14 @@ export default function RhythmGame() {
           <div className={styles.backdrop} aria-hidden="true" />
           <div className={styles.gameHud} ref={hudRef}>
             <div className={styles.hudLeft}>
-              <div className={styles.lives} ref={livesElRef} aria-label={`Na voljo ${gameConfig.lives} zgrešenih`}>
-                {Array.from({ length: gameConfig.lives }, (_, index) => <i key={index} data-spent="0" />)}
+              <div
+                className={styles.lives}
+                ref={livesElRef}
+                aria-label={`Preostala življenja: ${gameConfig.lives} od ${gameConfig.lives}`}
+              >
+                {Array.from({ length: gameConfig.lives }, (_, index) => (
+                  <i key={index} data-spent="0" aria-hidden="true" />
+                ))}
               </div>
               <div className={styles.hudValue}><span>Točke</span><strong ref={scoreElRef}>0</strong></div>
             </div>
@@ -1540,6 +1704,11 @@ export default function RhythmGame() {
             {TOKENS.map((token) => <i key={token} data-token={token} />)}
           </div>
           <p ref={feedbackElRef} className={styles.feedback} data-grade="perfect" aria-hidden="true" />
+          <div ref={milestoneElRef} className={styles.milestone} hidden aria-hidden="true">
+            <span className={styles.milestoneRing} ref={milestoneRingRef} />
+            <strong className={styles.milestoneLabel} ref={milestoneLabelRef} />
+            <span className={styles.milestoneNote} ref={milestoneNoteRef} />
+          </div>
           <div ref={countElRef} className={styles.countdown} aria-hidden="true" />
           <div className={styles.progress}><span ref={progressElRef} /></div>
 
@@ -1569,9 +1738,19 @@ export default function RhythmGame() {
             <p className={styles.playedSong}>{selectedSong.artist} · {selectedSong.title}</p>
             <p className={styles.resultMessage}>
               {result.over
-                ? `Zgrešil/-a si ${gameConfig.lives} ploščic. Naslednji poskus je lahko cel komad.`
+                ? `Porabil/-a si vsa ${gameConfig.lives} življenja. Naslednji poskus je lahko cel komad.`
                 : "Ritem imaš. Zdaj potrebuješ samo še vstopnico."}
             </p>
+            {result.milestones > 0 && (
+              <ul className={styles.milestoneBadges}>
+                {gameConfig.milestones.slice(0, result.milestones).map((milestone) => (
+                  <li key={milestone.score}>
+                    <strong>{milestone.label}</strong>
+                    <span>{milestone.note}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
             <dl className={styles.breakdown}>
               <div><dt>Zadetki</dt><dd>{hits}</dd></div>
               <div><dt>Zgrešeno</dt><dd>{result.misses}</dd></div>

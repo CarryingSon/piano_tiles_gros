@@ -30,6 +30,8 @@ export type GameSong = {
   baseColor: string;
   notes: Note[];
   sections: SongSection[];
+  /** Absolute second the closing stretch starts at; see finaleStartSeconds(). */
+  finaleStart: number;
   maxScore: number;
 };
 
@@ -77,19 +79,44 @@ function decodeChart(code: string): Note[] {
 }
 
 /**
+ * Where the closing stretch begins: the start of the last chorus, and with it
+ * everything the song has left. That boundary is already what the speed ramp
+ * leans on, so the tiles at their fastest and the tiles worth the finale bonus
+ * are one and the same stretch. A song with no chorus never pays the bonus.
+ */
+function finaleStartSeconds(sections: SongSection[]) {
+  for (let i = sections.length - 1; i >= 0; i -= 1) {
+    if (sections[i].type === "chorus") return sections[i].startMs / 1000;
+  }
+  return Infinity;
+}
+
+/**
+ * What a note struck in the closing stretch is worth, as a factor on top of the
+ * combo multiplier. Taken from the note's own time, never the clock, so a hold
+ * that straddles the boundary pays one rate end to end — the same rate
+ * maxPossibleScore() and the server ceiling assume for it.
+ */
+export function finaleFactor(song: GameSong, noteTime: number) {
+  return noteTime >= song.finaleStart ? 1 + scoring.finaleBonus : 1;
+}
+
+/**
  * Every note played at its best: taps as Perfect, holds carried the whole way
  * and released inside the grace window, with the combo multiplier climbing from
- * the start.
+ * the start and the finale bonus on everything from the last chorus on.
  *
  * `submit_leaderboard_score` in supabase/migrations mirrors this ceiling and the
  * note count per song, and rejects anything above it. A new beat map — or a
  * change to the numbers in `scoring` — means both sides have to move together;
- * scripts/build-charts.py prints the SQL values.
+ * `node scripts/verify-game-data.mjs` recomputes the ceiling and fails when the
+ * SQL still carries the old one.
  */
-function maxPossibleScore(notes: Note[]) {
+function maxPossibleScore(notes: Note[], finaleStart: number) {
   let total = 0;
   for (let i = 0; i < notes.length; i += 1) {
-    const multiplier = comboMultiplier(i + 1);
+    const multiplier = comboMultiplier(i + 1)
+      * (notes[i].time >= finaleStart ? 1 + scoring.finaleBonus : 1);
     total += notes[i].hold > 0
       ? scoring.hold * (1 + scoring.holdGraceBonus) * multiplier
       : scoring.perfect * multiplier;
@@ -119,6 +146,12 @@ const scoring = {
   holdGraceMs: 120,
   /** … and pays this much on top, for hitting the release on the beat. */
   holdGraceBonus: 0.1,
+  /**
+   * What every note from the last chorus on pays on top. The closing stretch is
+   * where the tiles run fastest and the windows are tightest, so it is also the
+   * only place the big scores are made.
+   */
+  finaleBonus: 0.25,
   multiplierEvery: 10,
   maxMultiplier: 4,
 } as const;
@@ -128,13 +161,16 @@ type SongMeta = Pick<GameSong, "id" | "artist" | "title" | "band" | "file" | "ba
 function createSong(meta: SongMeta): GameSong {
   const chart = songCharts[meta.id];
   const notes = decodeChart(chart.chart);
+  const sections = songSections[meta.id];
+  const finaleStart = finaleStartSeconds(sections);
   return {
     ...meta,
     bpm: chart.bpm,
     duration: chart.duration,
     notes,
-    sections: songSections[meta.id],
-    maxScore: maxPossibleScore(notes),
+    sections,
+    finaleStart,
+    maxScore: maxPossibleScore(notes, finaleStart),
   };
 }
 
@@ -198,17 +234,33 @@ export const gameConfig = {
     note: "Pri izenačenju odloča prej oddan rezultat. Velja po potrditvi rezultata in skladno s pravili organizatorja.",
   },
   siteUrl: `${site.url}/igra`,
-  /** Zgrešene ploščice, ki jih igra dovoli, preden je konec. */
-  lives: 7,
+  /**
+   * Napake, ki jih igra dovoli, preden je konec. Zgrešena ploščica in tap v
+   * prazno stezo štejeta enako — vsaka napaka je eno življenje.
+   */
+  lives: 3,
   play: {
     /** Sekunde, ki jih ploščica potrebuje čez igrišče na začetku komada. */
     travel: 1.55,
     /** Ob koncu komada ploščice padajo toliko hitreje. */
-    endSpeed: 2.3,
-    /** Čas pred/po noto, v katerem zadetek šteje za Perfect. */
+    endSpeed: 2.9,
+    /**
+     * Čas pred/po noto, v katerem zadetek šteje za Perfect, na začetku komada.
+     *
+     * Ploščico lahko tapneš, odkar se prikaže, zato je to okno tisto, kar loči
+     * Perfect od Good: široko okno pomeni, da je vsak zadetek Perfect. Ker je
+     * ploščica pri končni hitrosti na zaslonu komaj `travel / endSpeed` sekunde,
+     * bi fiksnih 530 ms proti koncu razglasilo za Perfect čisto vsak tap — zato
+     * se okno vzdolž komada zoži na `perfectWindowEndMs` po isti krivulji kot
+     * hitrost. Konec komada tako zahteva, da ploščico počakaš nižje.
+     */
     perfectWindowMs: 530,
-    /** Koliko časa po črti je ploščica še igralna, ne glede na hitrost. */
+    /** … in toliko meri, ko je hitrost na vrhu. */
+    perfectWindowEndMs: 250,
+    /** Koliko časa po črti je ploščica še igralna, na začetku komada. */
     lateWindowMs: 260,
+    /** … in toliko ob koncu, po isti krivulji kot Perfect okno. */
+    lateWindowEndMs: 160,
     /** Dva tapa v isti stezi bližje kot toliko sta pomotoma sprožen dvojni tap. */
     doubleTapGuard: 0.08,
     /**
@@ -227,6 +279,16 @@ export const gameConfig = {
     tileMinGap: 6,
   },
   scoring,
+  /**
+   * Točke, ob katerih igrišče na kratko proslavi. Seznam mora biti naraščajoč —
+   * igra ga odklepa po vrsti — in najvišji mejnik pod najnižjim `maxScore` med
+   * komadi, sicer je za tisti komad nedosegljiv.
+   */
+  milestones: [
+    { score: 10000, label: "10K", note: "Ritem je tvoj" },
+    { score: 60000, label: "60K", note: "Zdaj pa gori" },
+    { score: 100000, label: "100K", note: "Legenda Atlasa" },
+  ],
   titles: [
     { minRatio: 0, title: "Izgubljeni turist" },
     { minRatio: 0.3, title: "Lovec refrenov" },

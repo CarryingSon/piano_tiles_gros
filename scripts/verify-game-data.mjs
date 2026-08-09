@@ -169,19 +169,28 @@ function parseScoring(source) {
     perfect: parseNumberField(block, "perfect", "game.ts scoring"),
     hold: parseNumberField(block, "hold", "game.ts scoring"),
     holdGraceBonus: parseNumberField(block, "holdGraceBonus", "game.ts scoring"),
+    finaleBonus: parseNumberField(block, "finaleBonus", "game.ts scoring"),
     multiplierEvery: parseNumberField(block, "multiplierEvery", "game.ts scoring"),
     maxMultiplier: parseNumberField(block, "maxMultiplier", "game.ts scoring"),
   };
 }
 
-function maximumScore(notes, scoring) {
+/** Mirrors finaleStartSeconds() in src/data/game.ts. */
+function finaleStartSeconds(sections) {
+  for (let index = sections.length - 1; index >= 0; index -= 1) {
+    if (sections[index].type === "chorus") return sections[index].startMs / 1000;
+  }
+  return Infinity;
+}
+
+function maximumScore(notes, scoring, finaleStart) {
   let total = 0;
   for (let index = 0; index < notes.length; index += 1) {
     const combo = index + 1;
     const multiplier = Math.min(
       scoring.maxMultiplier,
       1 + Math.floor(combo / scoring.multiplierEvery),
-    );
+    ) * (notes[index].time >= finaleStart ? 1 + scoring.finaleBonus : 1);
     const base = notes[index].holdTicks > 0
       ? scoring.hold * (1 + scoring.holdGraceBonus)
       : scoring.perfect;
@@ -440,7 +449,7 @@ function main() {
       validateSections(chart, sections);
       const noteCount = notes.length;
       const holdCount = notes.filter((note) => note.holdTicks > 0).length;
-      const maxScore = maximumScore(notes, scoring);
+      const maxScore = maximumScore(notes, scoring, finaleStartSeconds(sections));
 
       if (migrationValues) {
         const sqlCount = migrationValues.noteCounts.get(id);

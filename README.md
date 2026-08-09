@@ -23,15 +23,37 @@ igre na telefonu.
 Igra teče po vzoru Piano Tiles: ploščico tapneš v njeni stezi kadar koli,
 odkar se prikaže — ciljne črte ni. Nižje ko je ploščica ob tapu, več točk
 (Perfect proti Good). Dolgo ploščico držiš, dokler njen rep ne zapusti
-igrišča. Sedem zgrešenih ploščic konča igro, proti koncu komada pa ploščice
-padajo do 1,65-krat hitreje. Na koncu se poleg rezultata izpiše največje
-možno število točk.
+igrišča. Na koncu se poleg rezultata izpiše največje možno število točk.
+
+Igralec ima **tri življenja**. Zgrešena ploščica in tap v prazno stezo stanejo
+enako — eno življenje —, tri napake pa končajo krog.
+
+Težavnost raste vzdolž komada in vrh doseže v zaključku:
+
+- ploščice padajo do **2,9-krat** hitreje kot na začetku, kar skrajša čas od
+  prikaza do črte z 1,55 s na približno 0,53 s. Trenutek zadetka je vezan na
+  noto v beatmapu, ne na hitrost, zato tapi ostanejo natanko na ritmu;
+- okno za Perfect se po isti krivulji zoži s **530 ms na 250 ms**, pozno okno
+  pa z 260 ms na 160 ms. Brez tega bi bila proti koncu vsaka zadeta ploščica
+  samodejno Perfect, ker je na zaslonu manj časa, kot je široko okno;
+- od **zadnjega refrena** naprej vse točke veljajo ×1,25.
+
+Ob 10.000, 60.000 in 100.000 točkah igrišče na kratko proslavi; dosežene mejnike
+pokaže tudi zaključni zaslon.
 
 Ploščice sledijo **pevčevemu glasu**: vsak zapeti zlog je ploščica, dolgo
 držan ton je dolga ploščica, steza pa pride iz višine tona — nizki toni levo,
 visoki desno, tako da se plošča vzpenja in spušča z melodijo. Nekajkrat na
 komad se ob najmočnejšem poudarku pojavita dve ploščici hkrati. Vsak komad ima
-svojo barvo (MRFY oranžna, Kokosy roza, Tabu atlas rumena). Kjer se ne poje —
+svojo barvo (MRFY oranžna, Kokosy roza, Tabu atlas rumena).
+
+Refren se od kitice loči na pogled: ozadje dobi drugi, zgornji radij in zadiha v
+tempu komada, ploščice pa nosijo polno barvo benda s širšim sijem, medtem ko so v
+kitici zatemnjene. Ploščica je pobarvana po delu komada, ki mu **pripada**, ne po
+tistem, ki teče — barva zato pripotuje po igrišču navzdol skupaj z glasbo,
+namesto da bi vse ploščice na zaslonu hkrati preskočile.
+
+Kjer se ne poje —
 uvodi so dolgi tudi po dvajset sekund — se prikaže odštevanje do naslednje
 ploščice, da igra ne izgleda pokvarjena.
 
@@ -58,12 +80,18 @@ Za zamenjavo glasbe:
    in jo shranite v `public/media/game/`;
 2. z Demucsom izluščite vokal in z isto skripto zgenerirajte `src/data/charts.ts`;
 3. v `gameSongs` v `src/data/game.ts` popravite `file`, izvajalca, naslov in barvo;
-4. **zaženite novo SQL migracijo z mejami rezultata**, ki jih skripta izpiše na
-   koncu — brez tega strežnik zavrne vsak rezultat;
+4. **zaženite novo SQL migracijo z mejami rezultata**, ki jih izpiše
+   `node scripts/verify-game-data.mjs` — brez tega strežnik zavrne vsak
+   rezultat;
 5. poslušajte preview in na telefonu preverite prvih in zadnjih deset sekund.
 
+Isto velja za vsako spremembo `scoring` v `src/data/game.ts`: strop rezultata se
+premakne in migracija mora za njim. Skripta preverjanja obojo primerja in pade,
+če se razideta.
+
 Ostale nastavitve igre so v `src/data/game.ts`: podatki dogodka, Eventim URL,
-hitrost padanja, število življenj, točkovanje, pragovi naslovov, barve in
+hitrost padanja, končna hitrost, širina oken za zadetek, število življenj,
+točkovanje s finale bonusom, mejniki za proslave, pragovi naslovov, barve in
 besedilo za deljenje.
 
 Uporaba glasbe mora biti pred javno objavo urejena z imetniki pravic.
