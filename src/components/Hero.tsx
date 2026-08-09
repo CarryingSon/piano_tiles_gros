@@ -14,6 +14,28 @@ export default function Hero() {
   const [videoOn, setVideoOn] = useState(false);
 
   useEffect(() => {
+    const previousScrollRestoration = window.history.scrollRestoration;
+    window.history.scrollRestoration = "manual";
+
+    const navigation = performance.getEntriesByType(
+      "navigation",
+    )[0] as PerformanceNavigationTiming | undefined;
+
+    if (navigation?.type === "reload") {
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}`,
+      );
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+
+    return () => {
+      window.history.scrollRestoration = previousScrollRestoration;
+    };
+  }, []);
+
+  useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
     type NetInfo = { saveData?: boolean };
     const connection = (navigator as Navigator & { connection?: NetInfo })
@@ -112,6 +134,19 @@ export default function Hero() {
           </a>
           <a
             href="#aftermovie"
+            onClick={(clickEvent) => {
+              const aftermovie = document.getElementById("aftermovie");
+              if (!aftermovie) return;
+
+              clickEvent.preventDefault();
+              const reduceMotion = window.matchMedia(
+                "(prefers-reduced-motion: reduce)",
+              ).matches;
+              aftermovie.scrollIntoView({
+                behavior: reduceMotion ? "auto" : "smooth",
+                block: "start",
+              });
+            }}
             className="border border-white/40 px-8 py-4 font-display text-lg uppercase tracking-wide text-white transition-colors hover:border-atlas hover:text-atlas"
           >
             Oglej si aftermovie
