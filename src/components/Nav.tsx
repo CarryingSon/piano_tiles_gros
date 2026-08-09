@@ -5,25 +5,40 @@ import { event, navLinks, tickets } from "@/data/event";
 import Wordmark from "./Wordmark";
 
 /**
- * Lepljiva navigacija: ob pomiku se skrči in dobi temno podlago.
+ * Lebdeča navigacija se prikaže, ko junaški del zapusti zaslon.
  * Na mobilnem meni odpre celozaslonski seznam; ob vznožju je stalna
- * vrstica z CTA za vstopnice (prikaže se, ko junaški del zapusti zaslon,
- * da ne prekriva glavnega CTA-ja).
+ * vrstica z CTA za vstopnice.
  */
 export default function Nav() {
-  const [compact, setCompact] = useState(false);
+  const [showNav, setShowNav] = useState(false);
   const [open, setOpen] = useState(false);
   const [showBar, setShowBar] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const hero = document.getElementById("vrh");
+
     const onScroll = () => {
-      setCompact(window.scrollY > 24);
       setShowBar(window.scrollY > window.innerHeight * 0.7);
     };
+
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+
+    if (!hero) {
+      return () => window.removeEventListener("scroll", onScroll);
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowNav(!entry.isIntersecting),
+      { threshold: 0 },
+    );
+    observer.observe(hero);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
   }, []);
 
   useEffect(() => {
@@ -42,30 +57,30 @@ export default function Nav() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-50 transition-[padding,background-color,border-color] duration-300 border-b ${
-          compact
-            ? "bg-night/90 backdrop-blur border-line py-2"
-            : "bg-transparent border-transparent py-4"
+        aria-hidden={!showNav}
+        inert={!showNav}
+        className={`fixed left-1/2 top-3 z-50 w-[calc(100%-1.5rem)] max-w-5xl -translate-x-1/2 border border-line bg-night/90 shadow-[0_12px_40px_rgb(0_0_0/0.45)] backdrop-blur-xl transition-[opacity,transform,visibility] duration-300 sm:top-4 ${
+          showNav
+            ? "visible translate-y-0 opacity-100"
+            : "invisible pointer-events-none -translate-y-4 opacity-0"
         }`}
       >
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
+        <div className="flex h-14 items-center justify-between gap-3 px-3 sm:h-16 sm:px-4">
           <a
             href="#vrh"
             aria-label="Glasbeni Atlas — na vrh strani"
             className="shrink-0"
           >
-            <Wordmark
-              className={`w-auto transition-[height] duration-300 ${compact ? "h-8" : "h-10"}`}
-            />
+            <Wordmark className="h-7 w-auto sm:h-8" />
           </a>
 
           <nav aria-label="Glavna navigacija" className="hidden md:block">
-            <ul className="flex items-center gap-7">
+            <ul className="flex items-center gap-5 lg:gap-7">
               {navLinks.map((link) => (
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="text-sm uppercase tracking-widest text-fog transition-colors hover:text-atlas"
+                    className="text-xs uppercase tracking-widest text-fog transition-colors hover:text-atlas"
                   >
                     {link.label}
                   </a>
@@ -79,7 +94,7 @@ export default function Nav() {
               href={tickets.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-block bg-atlas px-5 py-2.5 font-display text-sm uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5"
+              className="hidden bg-atlas px-4 py-2 font-display text-xs uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5 sm:inline-block"
             >
               Vstopnice
             </a>
@@ -88,7 +103,7 @@ export default function Nav() {
               onClick={() => setOpen(true)}
               aria-expanded={open}
               aria-controls="mobilni-meni"
-              className="md:hidden flex h-11 w-11 flex-col items-center justify-center gap-1.5 border border-line"
+              className="flex h-9 w-9 flex-col items-center justify-center gap-1.5 border border-line md:hidden"
             >
               <span className="sr-only">Odpri meni</span>
               <span aria-hidden className="h-0.5 w-5 bg-atlas" />
