@@ -1,33 +1,101 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import styles from "./GameTeaser.module.css";
 
-const tiles = [
-  { lane: 0, delay: "-2.1s", color: "#ffd800" },
-  { lane: 2, delay: "-1.55s", color: "#e99fd6" },
-  { lane: 1, delay: "-.95s", color: "#ffd800" },
-  { lane: 3, delay: "-.35s", color: "#e99fd6" },
-];
+type LeaderboardEntry = {
+  id: string;
+  name: string;
+  rating: number;
+};
 
 export default function GameTeaser() {
+  const [entries, setEntries] = useState<LeaderboardEntry[] | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/api/leaderboard", {
+      cache: "no-store",
+      signal: controller.signal,
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error("leaderboard");
+        return response.json() as Promise<{ entries: LeaderboardEntry[] }>;
+      })
+      .then((data) => setEntries(data.entries.slice(0, 5)))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setUnavailable(true);
+        setEntries([]);
+      });
+
+    return () => controller.abort();
+  }, []);
+
   return (
     <section className={styles.section} aria-labelledby="igra-naslov">
       <div className={styles.inner}>
-        <div>
-          <p className={styles.kicker}>Nova postaja · cel komad</p>
-          <h2 id="igra-naslov" className={styles.title}>Misliš, da imaš ritem?</h2>
-          <p className={styles.copy}>Štiri steze. En beat. Pot do Ivančne Gorice se začne s prvim tapom.</p>
-          <Link href="/igra" className={styles.cta}>Zaigraj <span aria-hidden>↗</span></Link>
+        <div className={styles.intro}>
+          <p className={styles.kicker}>Skupni leaderboard · v živo</p>
+          <h2 id="igra-naslov" className={styles.title}>
+            Kdo vodi ritem?
+          </h2>
+          <p className={styles.copy}>
+            Ena skupna lestvica za vse tri komade. Vsak rezultat je preračunan
+            na največ 10.000 skupnih točk.
+          </p>
         </div>
-        <div className={styles.preview} aria-hidden="true">
-          <span className={styles.previewLabel}>Ujemi ritem</span>
-          <div className={styles.lanes}>{[0, 1, 2, 3].map((lane) => <span className={styles.lane} key={lane} />)}</div>
-          {tiles.map((tile) => (
-            <span
-              className={styles.tile}
-              key={tile.lane}
-              style={{ "--lane": tile.lane, "--delay": tile.delay, "--tile-color": tile.color } as React.CSSProperties}
-            />
-          ))}
+
+        <div className={styles.board} aria-busy={entries === null}>
+          <div className={styles.boardHeader}>
+            <div>
+              <span>Glasbeni Atlas 2026</span>
+              <h3>Skupna lestvica</h3>
+            </div>
+            <span className={styles.live}>
+              <i aria-hidden /> V živo
+            </span>
+          </div>
+
+          {entries === null ? (
+            <p className={styles.empty} role="status">
+              Nalagam lestvico …
+            </p>
+          ) : entries.length === 0 ? (
+            <p className={styles.empty} role="status">
+              {unavailable
+                ? "Lestvica trenutno ni dosegljiva."
+                : "Prvo mesto še čaka na svojega igralca."}
+            </p>
+          ) : (
+            <ol className={styles.list}>
+              {entries.map((entry, index) => (
+                <li
+                  key={entry.id}
+                  className={index === 0 ? styles.leader : undefined}
+                >
+                  <span className={styles.rank}>
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <span className={styles.player}>
+                    <strong>{entry.name}</strong>
+                    <small>{index === 0 ? "Trenutno vodi" : "Skupni rezultat"}</small>
+                  </span>
+                  <span className={styles.score}>
+                    <strong>{entry.rating.toLocaleString("sl-SI")}</strong>
+                    <small>točk</small>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          )}
+
+          <Link href="/igra" className={styles.cta}>
+            Zaigraj in se uvrsti <span aria-hidden>↗</span>
+          </Link>
         </div>
       </div>
     </section>

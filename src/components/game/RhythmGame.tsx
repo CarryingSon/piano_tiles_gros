@@ -28,6 +28,14 @@ const LANE_COLORS = ["#ffd800", "#e99fd6", "#ffd800", "#e99fd6"] as const;
 const LANE_IDLE = ["rgba(255,255,255,.02)", "rgba(255,255,255,.05)"] as const;
 const TAU = Math.PI * 2;
 
+function isTypingTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  return (
+    target.isContentEditable ||
+    target.closest("input, textarea, select, [contenteditable='true']") !== null
+  );
+}
+
 const highScoreKey = (song: GameSong) => `glasbeni-atlas-ritem-high-score-${song.id}`;
 
 type Layout = {
@@ -672,15 +680,16 @@ export default function RhythmGame() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.repeat) return;
+      if (event.repeat || isTypingTarget(event.target)) return;
       const lane = KEY_LANES[event.key.toLowerCase()];
-      if (lane !== undefined) {
+      if (lane !== undefined && phaseRef.current === "playing") {
         event.preventDefault();
         pressLane(lane, window.performance.now());
       }
       if (event.key === "Escape") pause("Igra je ustavljena.");
     };
     const onKeyUp = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return;
       const lane = KEY_LANES[event.key.toLowerCase()];
       if (lane !== undefined) releaseLane(lane);
     };
