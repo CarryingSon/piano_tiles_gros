@@ -12,11 +12,11 @@ export default function Story() {
   return (
     <section
       aria-labelledby="projekt-naslov"
-      className="relative overflow-hidden py-24 sm:py-32"
+      className="relative overflow-hidden py-16 sm:py-32"
     >
       <PhotoWall variant="story" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="grid gap-12 md:grid-cols-2 md:gap-16">
+        <div className="grid gap-10 sm:gap-12 md:grid-cols-2 md:gap-16">
           <div>
             <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
               Zakaj Atlas obstaja

@@ -40,6 +40,28 @@ export default function DesktopGameGate() {
 
   return (
     <aside className={styles.desktopGate} aria-labelledby="desktop-game-title">
+      <Link
+        href="/"
+        className={styles.desktopBack}
+        aria-label="Nazaj na Glasbeni Atlas"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden
+        >
+          <path
+            d="M19 12H5m0 0 6-6m-6 6 6 6"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        <span>Nazaj</span>
+      </Link>
       <div className={styles.desktopGateInner}>
         <Image
           src="/media/logo-glasbeni-atlas.svg"
@@ -60,7 +82,9 @@ export default function DesktopGameGate() {
           )}
         </div>
         <strong className={styles.desktopPrize}>{gameConfig.competition.headline}</strong>
-        <Link href="/">Nazaj na Glasbeni Atlas</Link>
+        <Link href="/" className={styles.desktopTextLink}>
+          Nazaj na Glasbeni Atlas
+        </Link>
       </div>
     </aside>
   );

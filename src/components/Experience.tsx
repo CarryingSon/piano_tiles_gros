@@ -10,7 +10,7 @@ export default function Experience() {
     <section
       id="dozivetje"
       aria-labelledby="dozivetje-naslov"
-      className="relative overflow-hidden py-24 sm:py-32"
+      className="relative overflow-hidden py-16 sm:py-32"
     >
       <PhotoWall variant="experience" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
@@ -25,7 +25,7 @@ export default function Experience() {
           <span className="text-atlas">To je večer, ki ga doživiš skupaj.</span>
         </h2>
 
-        <div className="mt-14 grid gap-10 md:grid-cols-12 md:gap-6">
+        <div className="mt-10 grid gap-8 sm:mt-14 md:grid-cols-12 md:gap-6">
           {/* Velika slika — publika */}
           <figure className="reveal md:col-span-7">
             <div className="relative aspect-[3/2] overflow-hidden">
@@ -43,7 +43,7 @@ export default function Experience() {
           </figure>
 
           {/* Stolpec dveh manjših */}
-          <div className="grid gap-10 md:col-span-5 md:gap-6">
+          <div className="grid gap-8 md:col-span-5 md:gap-6">
             <figure className="reveal">
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image
@@ -75,7 +75,7 @@ export default function Experience() {
           </div>
         </div>
 
-        <div className="mt-14 grid gap-8 md:grid-cols-2 md:items-center">
+        <div className="mt-10 grid gap-8 sm:mt-14 md:grid-cols-2 md:items-center">
           <p className="reveal max-w-prose text-lg leading-relaxed text-fog">
             En večer, en oder in publika, ki pride od blizu in daleč. Mlade
             zasedbe, ki jih slišiš prvič, in imena, ki jih poznaš na pamet —

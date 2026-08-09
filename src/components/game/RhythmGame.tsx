@@ -4,28 +4,40 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  chorusPulseSeconds,
   comboMultiplier,
   countdownLead,
   gameConfig,
   getPerformance,
+  holdPointsPerSecond,
+  sectionAt,
   songLength,
   type GameSong,
   type Lane,
+  type SectionType,
 } from "@/data/game";
 import Leaderboard from "./Leaderboard";
 import DesktopGameGate from "./DesktopGameGate";
 import styles from "./RhythmGame.module.css";
 
 type Phase = "intro" | "loading" | "playing" | "paused" | "result";
-type Grade = "perfect" | "good" | "miss" | "hold";
+type Grade = "perfect" | "good" | "miss" | "misclick" | "hold";
 
 const PENDING = 0;
 const HOLDING = 1;
 const DONE = 2;
+/** Let go before the tail cleared: keeps the points it earned, and is no miss. */
+const RELEASED = 3;
 
 const KEY_LANES: Record<string, Lane> = { d: 0, f: 1, j: 2, k: 3 };
 const LANE_IDLE = ["rgba(255,255,255,.02)", "rgba(255,255,255,.05)"] as const;
 const TAU = Math.PI * 2;
+/** How long the pastel afterimage of a tapped tile stays on the board. */
+const TAP_FLASH_MS = 150;
+
+/** The colour tokens the board paints with, read back off the stylesheet. */
+const TOKENS = ["color", "pastel", "deep", "glow"] as const;
+type Palette = Record<(typeof TOKENS)[number], string>;
 
 function isTypingTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
@@ -35,7 +47,7 @@ function isTypingTarget(target: EventTarget | null) {
   );
 }
 
-/** Mixes a hex colour towards white, so held tiles read apart from taps. */
+/** Fallback for --band-pastel where color-mix() is missing. */
 function lighten(hex: string, amount: number) {
   const value = parseInt(hex.slice(1), 16);
   const channel = (shift: number) => {
@@ -45,10 +57,38 @@ function lighten(hex: string, amount: number) {
   return `rgb(${channel(16)},${channel(8)},${channel(0)})`;
 }
 
-/** Same mix towards the night background, for the unlit tail of a hold. */
+/** Fallback for --band-deep: the same mix towards the night background. */
+function darken(hex: string, amount: number) {
+  const value = parseInt(hex.slice(1), 16);
+  const channel = (shift: number) => Math.round((((value >> shift) & 255) - 10) * amount + 10);
+  return `rgb(${channel(16)},${channel(8)},${channel(0)})`;
+}
+
 function fade(hex: string, alpha: number) {
   const value = parseInt(hex.slice(1), 16);
   return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${alpha})`;
+}
+
+/**
+ * Re-alphas a colour read off a probe element. A browser reports a color-mix()
+ * result as `color(srgb …)` rather than `rgb()`, and both have to survive here.
+ */
+function withAlpha(color: string, alpha: number) {
+  if (color.startsWith("color(")) {
+    const body = color.slice(6, color.lastIndexOf(")")).split("/")[0].trim();
+    return `color(${body} / ${alpha})`;
+  }
+  const parts = color.match(/[\d.]+/g);
+  if (!parts || parts.length < 3) return color;
+  return `rgba(${parts[0]},${parts[1]},${parts[2]},${alpha})`;
+}
+
+/** Both spellings a computed colour can come back in. */
+const RESOLVED_COLOR = /^(rgb|color\()/;
+
+function reducedMotion() {
+  return typeof window !== "undefined"
+    && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 const highScoreKey = (song: GameSong) => `glasbeni-atlas-ritem-high-score-${song.id}`;
@@ -66,30 +106,52 @@ type Layout = {
 };
 
 type Sprite = { canvas: HTMLCanvasElement; pad: number; width: number; height: number };
-type Painters = { sprites: Record<string, Sprite>; flash: CanvasGradient | null };
+type Painters = { sprites: Record<string, Sprite>; flash: CanvasGradient | null; palette: Palette };
 
 /** Per-round mutable state. Lives in a ref so the frame loop never re-renders. */
 type Run = {
   song: GameSong;
   state: Uint8Array;
+  /** Index of the next note in the same lane, so tiles never overlap. */
+  nextInLane: Int32Array;
   cursor: number;
+  /** Kept as a float: holds pay out in fragments of a point every frame. */
   score: number;
   combo: number;
   bestCombo: number;
   perfect: number;
   good: number;
+  /** A tile crossed the line untouched. */
   misses: number;
+  /** A lane was pressed with no note in the window. */
+  misclicks: number;
   over: boolean;
+  section: SectionType | "";
+  frameAt: number;
   activeHold: Int32Array;
+  holdHeldMs: Float64Array;
+  holdEarned: Float64Array;
   lanePresses: Int32Array;
   laneFlash: Float64Array;
   laneTapAt: Float64Array;
+  /** Where and until when to leave the pastel print of a struck tile. */
+  laneHitAt: Float64Array;
+  laneHitY: Float64Array;
 };
 
 function createRun(song: GameSong): Run {
+  const notes = song.notes;
+  const nextInLane = new Int32Array(notes.length).fill(-1);
+  const seen = [-1, -1, -1, -1];
+  for (let i = notes.length - 1; i >= 0; i -= 1) {
+    nextInLane[i] = seen[notes[i].lane];
+    seen[notes[i].lane] = i;
+  }
+
   return {
     song,
-    state: new Uint8Array(song.notes.length),
+    state: new Uint8Array(notes.length),
+    nextInLane,
     cursor: 0,
     score: 0,
     combo: 0,
@@ -97,11 +159,18 @@ function createRun(song: GameSong): Run {
     perfect: 0,
     good: 0,
     misses: 0,
+    misclicks: 0,
     over: false,
+    section: "",
+    frameAt: 0,
     activeHold: Int32Array.from([-1, -1, -1, -1]),
+    holdHeldMs: new Float64Array(4),
+    holdEarned: new Float64Array(4),
     lanePresses: new Int32Array(4),
     laneFlash: new Float64Array(4),
     laneTapAt: Float64Array.from([-1, -1, -1, -1]),
+    laneHitAt: new Float64Array(4),
+    laneHitY: new Float64Array(4),
   };
 }
 
@@ -114,7 +183,7 @@ export default function RhythmGame() {
   const [shareStatus, setShareStatus] = useState("");
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [result, setResult] = useState({
-    score: 0, perfect: 0, good: 0, misses: 0, bestCombo: 0, best: 0, over: false,
+    score: 0, perfect: 0, good: 0, misses: 0, misclicks: 0, bestCombo: 0, best: 0, over: false,
   });
 
   const phaseRef = useRef<Phase>(phase);
@@ -132,8 +201,18 @@ export default function RhythmGame() {
   const stageRef = useRef<HTMLElement>(null);
   const hudRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<Layout | null>(null);
-  const paintersRef = useRef<Painters>({ sprites: {}, flash: null });
+  const paintersRef = useRef<Painters>({
+    sprites: {},
+    flash: null,
+    palette: { color: "#ffd800", pastel: "#ffd800", deep: "#0a0a0a", glow: "rgba(255,216,0,.4)" },
+  });
   const pointerLanesRef = useRef(new Map<number, Lane>());
+
+  const laneRefs = useRef<(HTMLDivElement | null)[]>([null, null, null, null]);
+  const laneStateRef = useRef(["", "", "", ""]);
+  const laneErrorTimersRef = useRef<number[]>([0, 0, 0, 0]);
+  const floatersRef = useRef<HTMLDivElement>(null);
+  const probesRef = useRef<HTMLDivElement>(null);
 
   const scoreElRef = useRef<HTMLElement>(null);
   const comboElRef = useRef<HTMLElement>(null);
@@ -220,27 +299,127 @@ export default function RhythmGame() {
     );
   }, []);
 
-  const awardHit = useCallback((run: Run, perfect: boolean) => {
+  /** Short red shake for a missed tile, short grey blink for a stray press. */
+  const pulseLane = useCallback((lane: Lane, kind: "miss" | "misclick") => {
+    const el = laneRefs.current[lane];
+    if (!el) return;
+    window.clearTimeout(laneErrorTimersRef.current[lane]);
+    el.removeAttribute("data-error");
+    void el.offsetWidth; // restart the animation for a second error in a row
+    el.dataset.error = kind;
+    laneErrorTimersRef.current[lane] = window.setTimeout(() => {
+      el.removeAttribute("data-error");
+    }, 360);
+  }, []);
+
+  /** A circle growing out of the point of contact. */
+  const rippleAt = useCallback((lane: Lane, x: number, y: number) => {
+    const host = laneRefs.current[lane];
+    if (!host || reducedMotion()) return;
+    const ripple = document.createElement("span");
+    ripple.className = styles.ripple;
+    ripple.style.left = `${x}px`;
+    ripple.style.top = `${y}px`;
+    host.append(ripple);
+    const animation = ripple.animate(
+      [
+        { transform: "scale(0)", opacity: 0.5 },
+        { transform: "scale(2.2)", opacity: 0 },
+      ],
+      { duration: 260, easing: "ease-out" },
+    );
+    animation.finished.then(() => ripple.remove()).catch(() => ripple.remove());
+  }, []);
+
+  /** The "+N" a finished hold leaves behind, just above the hit line. */
+  const floatPoints = useCallback((lane: Lane, points: number) => {
+    const host = floatersRef.current;
+    const layout = layoutRef.current;
+    if (!host || !layout || points <= 0) return;
+    const label = document.createElement("span");
+    label.className = styles.floater;
+    label.textContent = `+${points}`;
+    label.style.left = `${(lane + 0.5) * layout.laneWidth}px`;
+    label.style.top = `${Math.max(0, layout.playHeight - layout.tileHeight - 12)}px`;
+    host.append(label);
+    const animation = label.animate(
+      [
+        { transform: "translate(-50%, 0)", opacity: 0 },
+        { opacity: 1, offset: 0.18 },
+        { transform: "translate(-50%, -40px)", opacity: 0 },
+      ],
+      { duration: 700, easing: "ease-out" },
+    );
+    animation.finished.then(() => label.remove()).catch(() => label.remove());
+  }, []);
+
+  const awardHit = useCallback((run: Run, perfect: boolean, lane: Lane, y: number, now: number) => {
     run.combo += 1;
     if (run.combo > run.bestCombo) run.bestCombo = run.combo;
     run.score += (perfect ? gameConfig.scoring.perfect : gameConfig.scoring.good) * comboMultiplier(run.combo);
     if (perfect) run.perfect += 1;
     else run.good += 1;
+    run.laneHitAt[lane] = now + TAP_FLASH_MS;
+    run.laneHitY[lane] = y;
     flashFeedback(perfect ? "Perfect" : "Good", perfect ? "perfect" : "good");
-    if (perfect && "vibrate" in navigator) navigator.vibrate(10);
+    navigator.vibrate?.(12);
   }, [flashFeedback]);
 
-  const registerMiss = useCallback((run: Run) => {
+  /** A tile crossed the line untouched — the only thing that costs a life. */
+  const registerMiss = useCallback((run: Run, lane: Lane) => {
     if (run.over) return;
     run.combo = 0;
     run.misses += 1;
+    pulseLane(lane, "miss");
     if (run.misses >= gameConfig.lives) {
       run.over = true;
       flashFeedback("Konec", "miss");
       return;
     }
     flashFeedback("Miss", "miss");
-  }, [flashFeedback]);
+  }, [flashFeedback, pulseLane]);
+
+  /** A press with no note in the window: breaks the combo, costs no life. */
+  const registerMisclick = useCallback((run: Run, lane: Lane) => {
+    if (run.over) return;
+    run.combo = 0;
+    run.misclicks += 1;
+    pulseLane(lane, "misclick");
+    flashFeedback("Mimo", "misclick");
+  }, [flashFeedback, pulseLane]);
+
+  /* ---------------------------------------------------------------- colours */
+
+  /**
+   * A canvas cannot resolve `var(--band-pastel)`, so the stage carries one
+   * probe element per token and this reads the colour the browser computed for
+   * it. The stylesheet stays the only place a shade is defined; the fallback
+   * repeats the same two mixes in JS for browsers without color-mix().
+   */
+  const readPalette = useCallback((baseColor: string): Palette => {
+    const host = probesRef.current;
+    const supported = typeof CSS !== "undefined"
+      && CSS.supports?.("color", "color-mix(in srgb, red 45%, white)");
+
+    if (host && supported) {
+      const palette = {} as Palette;
+      let complete = true;
+      for (const token of TOKENS) {
+        const probe = host.querySelector(`[data-token="${token}"]`);
+        const color = probe ? window.getComputedStyle(probe).color : "";
+        if (!RESOLVED_COLOR.test(color)) complete = false;
+        palette[token] = color;
+      }
+      if (complete) return palette;
+    }
+
+    return {
+      color: baseColor,
+      pastel: lighten(baseColor, 0.55),
+      deep: darken(baseColor, 0.22),
+      glow: fade(baseColor, 0.4),
+    };
+  }, []);
 
   /* ---------------------------------------------------------------- layout */
 
@@ -259,19 +438,28 @@ export default function RhythmGame() {
     const playHeight = Math.max(1, bottom - top);
     const laneWidth = width / 4;
     const tileWidth = laneWidth - 12;
-    const tileHeight = Math.max(48, Math.min(96, playHeight * 0.14));
+    // Tile height follows the width of its lane, so a tile keeps the same shape
+    // on every screen. gameConfig.play.tileScale is the only knob for its size.
+    const tileHeight = Math.max(48, Math.min(playHeight * 0.4, laneWidth * gameConfig.play.tileScale));
 
     canvas.width = Math.round(width * dpr);
     canvas.height = Math.round(height * dpr);
     layoutRef.current = { width, height, dpr, top, bottom, playHeight, laneWidth, tileWidth, tileHeight };
 
+    // The lane overlay and the "+N" labels are plain DOM on top of the board,
+    // so they need to know where the playfield starts and how tall it is.
+    stage.style.setProperty("--board-top", `${top}px`);
+    stage.style.setProperty("--board-height", `${playHeight}px`);
+
+    const palette = readPalette(runRef.current.song.baseColor);
+    const radius = tileHeight * gameConfig.play.tileRadius;
+
     // Glow is baked into a sprite once per size — drawing it per tile per frame
     // is what made the old board stutter on phones. Two sprites per round: the
-    // song's colour for taps, a lighter mix of it for holds.
-    const accent = runRef.current.song.accent;
-    const pad = 16;
+    // band's colour for a waiting tile, its pastel for one under the finger.
+    const pad = 18;
     const sprites: Record<string, Sprite> = {};
-    for (const color of [accent, lighten(accent, 0.45)]) {
+    for (const color of [palette.color, palette.pastel]) {
       const sprite = document.createElement("canvas");
       const w = tileWidth + pad * 2;
       const h = tileHeight + pad * 2;
@@ -281,10 +469,10 @@ export default function RhythmGame() {
       if (!g) continue;
       g.scale(dpr, dpr);
       g.shadowColor = color;
-      g.shadowBlur = 14;
+      g.shadowBlur = 16;
       g.fillStyle = color;
       g.beginPath();
-      g.roundRect(pad, pad, tileWidth, tileHeight, 8);
+      g.roundRect(pad, pad, tileWidth, tileHeight, radius);
       g.fill();
       g.shadowBlur = 0;
       g.fillStyle = "rgba(5,7,8,.8)";
@@ -300,11 +488,11 @@ export default function RhythmGame() {
     let flash: CanvasGradient | null = null;
     if (board) {
       flash = board.createLinearGradient(0, top, 0, bottom);
-      flash.addColorStop(0, fade(accent, 0));
-      flash.addColorStop(1, fade(accent, 0.18));
+      flash.addColorStop(0, withAlpha(palette.color, 0));
+      flash.addColorStop(1, withAlpha(palette.color, 0.18));
     }
-    paintersRef.current = { sprites, flash };
-  }, []);
+    paintersRef.current = { sprites, flash, palette };
+  }, [readPalette]);
 
   useEffect(() => {
     if (phase !== "playing" && phase !== "paused") return;
@@ -354,37 +542,72 @@ export default function RhythmGame() {
       break;
     }
 
+    // Nothing in the window: a stray press. Breaks the combo, costs no life.
     if (target < 0) {
-      registerMiss(run);
+      registerMisclick(run, lane);
       return;
     }
 
     const lead = positionAt(notes[target].time, song) - here;
     const perfect = lead / travel <= gameConfig.play.perfectZone;
+    const hitY = layout ? layout.top + (1 - lead / travel) * layout.playHeight : 0;
     if (notes[target].hold > 0) {
+      // The head counts as a hit right away; the points come in over the hold.
       state[target] = HOLDING;
       run.activeHold[lane] = target;
+      run.holdHeldMs[lane] = 0;
+      run.holdEarned[lane] = 0;
       run.laneFlash[lane] = now + 400;
+      run.combo += 1;
+      if (run.combo > run.bestCombo) run.bestCombo = run.combo;
+      if (perfect) run.perfect += 1;
+      else run.good += 1;
       flashFeedback("Drži", "hold");
-      if ("vibrate" in navigator) navigator.vibrate(8);
+      navigator.vibrate?.(12);
       return;
     }
     state[target] = DONE;
-    awardHit(run, perfect);
-  }, [awardHit, flashFeedback, positionAt, registerMiss, songTimeAt]);
+    awardHit(run, perfect, lane, hitY, now);
+  }, [awardHit, flashFeedback, positionAt, registerMisclick, songTimeAt]);
+
+  /**
+   * Ends a hold and pays out what it earned. Letting go early is not a miss:
+   * the points already banked stay, the combo survives, and only the rest of
+   * the tail goes grey. Releasing inside the last `holdGraceMs` counts as the
+   * whole hold and pays the precision bonus on top.
+   */
+  const finishHold = useCallback((run: Run, lane: Lane, songTime: number, released: boolean) => {
+    const held = run.activeHold[lane];
+    if (held < 0) return;
+    const note = run.song.notes[held];
+    const { hold: holdPoints, holdGraceMs, holdGraceBonus } = gameConfig.scoring;
+    const multiplier = comboMultiplier(run.combo);
+    const remainingMs = (note.time + note.hold - songTime) * 1000;
+    const full = holdPoints * multiplier;
+
+    let earned = run.holdEarned[lane];
+    if (!released || remainingMs <= holdGraceMs) {
+      earned += Math.max(0, full - earned);
+      if (released) earned += holdPoints * holdGraceBonus * multiplier;
+      run.state[held] = DONE;
+    } else {
+      run.state[held] = RELEASED;
+    }
+
+    run.score += earned - run.holdEarned[lane];
+    run.activeHold[lane] = -1;
+    run.holdHeldMs[lane] = 0;
+    run.holdEarned[lane] = 0;
+    floatPoints(lane, Math.round(earned));
+  }, [floatPoints]);
 
   const releaseLane = useCallback((lane: Lane) => {
     const run = runRef.current;
     if (run.lanePresses[lane] > 0) run.lanePresses[lane] -= 1;
     if (run.lanePresses[lane] > 0 || run.over) return;
-
-    const held = run.activeHold[lane];
-    if (held < 0) return;
-    // Letting go before the tail clears the board loses the note.
-    run.activeHold[lane] = -1;
-    run.state[held] = DONE;
-    if (phaseRef.current === "playing") registerMiss(run);
-  }, [registerMiss]);
+    if (run.activeHold[lane] < 0 || phaseRef.current !== "playing") return;
+    finishHold(run, lane, songTimeAt(window.performance.now()), true);
+  }, [finishHold, songTimeAt]);
 
   const onPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
     if (phaseRef.current !== "playing" || (event.target as Element).closest("button, a")) return;
@@ -393,8 +616,13 @@ export default function RhythmGame() {
     const lane = Math.max(0, Math.min(3, Math.floor(((event.clientX - rect.left) / rect.width) * 4))) as Lane;
     pointerLanesRef.current.set(event.pointerId, lane);
     try { event.currentTarget.setPointerCapture(event.pointerId); } catch { /* kazalec je že sproščen */ }
+    const laneEl = laneRefs.current[lane];
+    if (laneEl) {
+      const laneRect = laneEl.getBoundingClientRect();
+      rippleAt(lane, event.clientX - laneRect.left, event.clientY - laneRect.top);
+    }
     pressLane(lane, window.performance.now());
-  }, [pressLane]);
+  }, [pressLane, rippleAt]);
 
   const onPointerEnd = useCallback((event: React.PointerEvent<HTMLElement>) => {
     const lane = pointerLanesRef.current.get(event.pointerId);
@@ -443,13 +671,37 @@ export default function RhythmGame() {
     const travel = gameConfig.play.travel;
     const here = positionAt(songTime, song);
     const sprites = painters.sprites;
-    const tapColor = song.accent;
-    const holdColor = lighten(song.accent, 0.45);
+    const { color, pastel } = painters.palette;
+    const radius = tileHeight * gameConfig.play.tileRadius;
+    const trailWidth = tileWidth * 0.4;
+    const trailX = tileWidth * 0.3;
 
     context.save();
     context.beginPath();
     context.rect(0, top, width, playHeight);
     context.clip();
+
+    // The pastel print a struck tile leaves behind, so a tap is visible even
+    // though the tile itself is gone the instant it is hit.
+    context.fillStyle = pastel;
+    for (let lane = 0; lane < 4; lane += 1) {
+      const until = run.laneHitAt[lane];
+      if (until <= now) continue;
+      const life = (until - now) / TAP_FLASH_MS;
+      const y = run.laneHitY[lane];
+      const scale = 0.96;
+      const w = tileWidth * scale;
+      const h = tileHeight * scale;
+      context.globalAlpha = life * 0.75;
+      context.beginPath();
+      context.roundRect(
+        lane * laneWidth + 6 + (tileWidth - w) / 2,
+        y - tileHeight + (tileHeight - h) / 2,
+        w, h, radius,
+      );
+      context.fill();
+    }
+    context.globalAlpha = 1;
 
     for (let i = run.cursor; i < notes.length; i += 1) {
       if (state[i] === DONE) continue;
@@ -457,28 +709,68 @@ export default function RhythmGame() {
       const lead = positionAt(note.time, song) - here;
       if (lead > travel) break;
 
-      const accent = note.hold > 0 ? holdColor : tapColor;
+      const held = state[i] === HOLDING;
+      const dropped = state[i] === RELEASED;
       const x = note.lane * laneWidth + 6;
       const y = top + (1 - lead / travel) * playHeight;
+
+      // A taller tile must never swallow the next one in its lane.
+      let height = tileHeight;
+      const next = run.nextInLane[i];
+      if (next >= 0) {
+        const gap = ((positionAt(notes[next].time, song) - positionAt(note.time, song)) / travel) * playHeight;
+        if (gap < tileHeight) height = Math.max(18, gap - gameConfig.play.tileMinGap);
+      }
 
       if (note.hold > 0) {
         const tailLead = positionAt(note.time + note.hold, song) - here;
         const tailY = top + (1 - Math.min(tailLead, travel) / travel) * playHeight;
-        context.fillStyle = state[i] === HOLDING ? accent : fade(song.accent, 0.6);
+        const trailTop = tailY - height / 2;
+        const trailBottom = Math.max(trailTop, y);
+
+        context.globalAlpha = dropped ? 0.25 : 1;
+        context.fillStyle = dropped ? "#f6f6f6" : withAlpha(color, 0.45);
         context.beginPath();
-        context.roundRect(x + tileWidth * 0.3, tailY - tileHeight / 2, tileWidth * 0.4, Math.max(0, y - tailY), 10);
+        context.roundRect(x + trailX, trailTop, trailWidth, trailBottom - trailTop, 10);
         context.fill();
+
+        // While the hold pays out, the banked part of the tail fills in pastel
+        // from the hit line upwards and meets the tail end as it completes.
+        if (held) {
+          const requiredMs = note.hold * 1000;
+          const progress = requiredMs > 0 ? Math.min(1, run.holdHeldMs[note.lane] / requiredMs) : 1;
+          const filled = (trailBottom - trailTop) * progress;
+          context.fillStyle = pastel;
+          context.beginPath();
+          context.roundRect(x + trailX, trailBottom - filled, trailWidth, filled, 10);
+          context.fill();
+        }
+        context.globalAlpha = 1;
       }
 
-      const sprite = sprites[accent];
+      const sprite = sprites[held ? pastel : color];
       if (sprite) {
-        context.drawImage(sprite.canvas, x - sprite.pad, y - tileHeight - sprite.pad, sprite.width, sprite.height);
+        // A held head sits pressed under the finger: pastel and a touch smaller.
+        const scale = held ? 0.96 : 1;
+        const w = tileWidth * scale;
+        const h = height * scale;
+        const padX = sprite.pad * (w / tileWidth);
+        const padY = sprite.pad * (h / tileHeight);
+        context.globalAlpha = dropped ? 0.25 : 1;
+        context.drawImage(
+          sprite.canvas,
+          x - padX + (tileWidth - w) / 2,
+          y - height + (height - h) / 2 - padY,
+          w + padX * 2,
+          h + padY * 2,
+        );
+        context.globalAlpha = 1;
       }
-      if (note.hold > 0) {
+      if (note.hold > 0 && height > 24) {
         context.fillStyle = "#050708";
         context.font = "800 9px system-ui";
         context.textAlign = "center";
-        context.fillText(state[i] === HOLDING ? "DRŽI" : "HOLD", x + tileWidth / 2, y - tileHeight / 2 + 3);
+        context.fillText(held ? "DRŽI" : "HOLD", x + tileWidth / 2, y - height / 2 + 3);
       }
     }
 
@@ -491,9 +783,11 @@ export default function RhythmGame() {
     const run = runRef.current;
     const cache = hudCacheRef.current;
 
-    if (cache.score !== run.score && scoreElRef.current) {
-      cache.score = run.score;
-      scoreElRef.current.textContent = run.score.toLocaleString("sl-SI");
+    // The score is a float while a hold pays out, but only whole points show.
+    const score = Math.floor(run.score);
+    if (cache.score !== score && scoreElRef.current) {
+      cache.score = score;
+      scoreElRef.current.textContent = score.toLocaleString("sl-SI");
     }
     if (cache.combo !== run.combo) {
       cache.combo = run.combo;
@@ -538,6 +832,34 @@ export default function RhythmGame() {
     }
   }, []);
 
+  /**
+   * The lane overlay carries everything CSS can do better than the canvas: the
+   * press flash, the glow that breathes under a hold, and the error blinks.
+   * Attributes are only written when they actually change.
+   */
+  const paintLanes = useCallback((now: number, songTime: number) => {
+    const run = runRef.current;
+    for (let lane = 0; lane < 4; lane += 1) {
+      const el = laneRefs.current[lane];
+      if (!el) continue;
+      const holding = run.activeHold[lane] >= 0;
+      const pressed = run.lanePresses[lane] > 0 || run.laneFlash[lane] > now;
+      const next = `${holding ? "h" : ""}${pressed ? "p" : ""}`;
+      if (laneStateRef.current[lane] === next) continue;
+      laneStateRef.current[lane] = next;
+      if (holding) el.dataset.holding = "1";
+      else el.removeAttribute("data-holding");
+      if (pressed) el.dataset.pressed = "1";
+      else el.removeAttribute("data-pressed");
+    }
+
+    const section = sectionAt(run.song, songTime);
+    if (section !== run.section) {
+      run.section = section;
+      if (stageRef.current) stageRef.current.dataset.section = section;
+    }
+  }, []);
+
   /* ------------------------------------------------------------ round flow */
 
   const stopAudio = useCallback(() => {
@@ -553,14 +875,15 @@ export default function RhythmGame() {
     stopAudio();
 
     const stored = Number(window.localStorage.getItem(highScoreKey(run.song)) ?? 0);
-    const best = Math.max(Number.isFinite(stored) ? stored : 0, run.score);
+    const best = Math.max(Number.isFinite(stored) ? Math.floor(stored) : 0, Math.floor(run.score));
     window.localStorage.setItem(highScoreKey(run.song), String(best));
 
     setResult({
-      score: run.score,
+      score: Math.floor(run.score),
       perfect: run.perfect,
       good: run.good,
       misses: run.misses,
+      misclicks: run.misclicks,
       bestCombo: run.bestCombo,
       best,
       over: run.over,
@@ -580,29 +903,50 @@ export default function RhythmGame() {
       const layout = layoutRef.current;
       const travel = gameConfig.play.travel;
       const expire = layout ? -(layout.tileHeight / layout.playHeight) * travel : -0.25;
+      // A tab that was in the background can hand back a huge gap; a hold must
+      // not be paid for time the player never spent holding it.
+      const deltaMs = run.frameAt > 0 ? Math.min(64, now - run.frameAt) : 0;
+      run.frameAt = now;
 
-      // Holds pay out once their tail has cleared the board.
+      // Holds pay as they are held, a fragment of a point per frame, and settle
+      // up once the tail has crossed the line.
       for (let lane = 0; lane < 4; lane += 1) {
         const held = run.activeHold[lane];
         if (held < 0) continue;
-        if (positionAt(notes[held].time + notes[held].hold, song) - here <= 0) {
-          run.activeHold[lane] = -1;
-          state[held] = DONE;
-          awardHit(run, true);
+        const note = notes[held];
+        const requiredMs = note.hold * 1000;
+        const before = run.holdHeldMs[lane];
+        const after = Math.min(requiredMs, before + deltaMs);
+        if (after > before) {
+          const earned = holdPointsPerSecond(note.hold)
+            * ((after - before) / 1000)
+            * comboMultiplier(run.combo);
+          run.holdHeldMs[lane] = after;
+          run.holdEarned[lane] += earned;
+          run.score += earned;
+        }
+        if (positionAt(note.time + note.hold, song) - here <= 0) {
+          finishHold(run, lane as Lane, songTime, false);
         }
       }
 
       for (let i = run.cursor; i < notes.length && !run.over; i += 1) {
         if (positionAt(notes[i].time, song) - here > expire) break;
+        // A tile nobody touched is the one and only miss.
         if (state[i] === PENDING) {
           state[i] = DONE;
-          registerMiss(run);
+          registerMiss(run, notes[i].lane);
+        } else if (state[i] === RELEASED
+          && positionAt(notes[i].time + notes[i].hold, song) - here <= 0) {
+          // The grey stub of a hold that was let go has finished scrolling.
+          state[i] = DONE;
         }
       }
       while (run.cursor < notes.length && state[run.cursor] === DONE) run.cursor += 1;
 
       draw(songTime, now);
       paintHud(songTime);
+      paintLanes(now, songTime);
 
       if (run.over || songTime >= song.duration - 0.05) {
         finishGame();
@@ -611,9 +955,11 @@ export default function RhythmGame() {
       frameRef.current = window.requestAnimationFrame(tick);
     };
 
+    // Time spent paused is nobody's hold: start the frame clock from scratch.
+    runRef.current.frameAt = 0;
     frameRef.current = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frameRef.current);
-  }, [awardHit, draw, finishGame, paintHud, phase, positionAt, registerMiss, songTimeAt]);
+  }, [draw, finishGame, finishHold, paintHud, paintLanes, phase, positionAt, registerMiss, songTimeAt]);
 
   const startGame = useCallback(() => {
     const el = audioElRef.current;
@@ -621,6 +967,7 @@ export default function RhythmGame() {
     hudCacheRef.current = { score: -1, combo: -1, misses: -1, progress: -1, count: -1, cue: -2 };
     clockRef.current = { media: -1, anchor: 0, at: 0 };
     pointerLanesRef.current.clear();
+    laneStateRef.current = ["", "", "", ""];
     silentStartRef.current = null;
     setAudioError("");
     setShareStatus("");
@@ -717,6 +1064,9 @@ export default function RhythmGame() {
       const lane = KEY_LANES[event.key.toLowerCase()];
       if (lane !== undefined && phaseRef.current === "playing") {
         event.preventDefault();
+        const laneEl = laneRefs.current[lane];
+        // No touch point on a keyboard, so the ripple starts at the hit line.
+        if (laneEl) rippleAt(lane, laneEl.clientWidth / 2, laneEl.clientHeight - 40);
         pressLane(lane, window.performance.now());
       }
       if (event.key === "Escape") pause("Igra je ustavljena.");
@@ -732,7 +1082,7 @@ export default function RhythmGame() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [pause, pressLane, releaseLane]);
+  }, [pause, pressLane, releaseLane, rippleAt]);
 
   useEffect(() => {
     const onHidden = () => {
@@ -746,6 +1096,19 @@ export default function RhythmGame() {
     setSelectedSong(song);
     setAudioError("");
   }, []);
+
+  const showSongSelection = useCallback((song?: GameSong) => {
+    window.cancelAnimationFrame(frameRef.current);
+    stopAudio();
+    if (song) setSelectedSong(song);
+    setAudioError("");
+    setShareStatus("");
+    setSessionId(null);
+    setPhase("intro");
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    });
+  }, [stopAudio]);
 
   /* ----------------------------------------------------------------- share */
 
@@ -779,20 +1142,20 @@ export default function RhythmGame() {
     context.fillStyle = gameConfig.colors.white;
     context.font = "900 118px Arial Narrow, sans-serif";
     context.fillText("UJEMI RITEM", 72, 270);
-    context.fillStyle = selectedSong.accent;
+    context.fillStyle = selectedSong.baseColor;
     context.font = "900 240px Arial Narrow, sans-serif";
     context.fillText(result.score.toLocaleString("sl-SI"), 60, 605);
     context.fillStyle = gameConfig.colors.white;
     context.font = "700 32px system-ui";
     context.fillText(`OD ${selectedSong.maxScore.toLocaleString("sl-SI")} MOŽNIH TOČK`, 74, 665);
-    context.fillStyle = lighten(selectedSong.accent, 0.4);
+    context.fillStyle = lighten(selectedSong.baseColor, 0.4);
     context.font = "900 70px Arial Narrow, sans-serif";
     context.fillText(performance.title.toUpperCase(), 72, 800);
     context.fillStyle = gameConfig.colors.white;
     context.font = "600 34px system-ui";
     context.fillText(`${selectedSong.artist.toUpperCase()}  ·  ${selectedSong.title.toUpperCase()}`, 72, 880);
     context.fillText(`${gameConfig.event.date}  ·  IVANČNA GORICA`, 72, 1095);
-    context.fillStyle = selectedSong.accent;
+    context.fillStyle = selectedSong.baseColor;
     context.fillRect(72, 1145, 936, 4);
     context.font = "600 29px system-ui";
     context.fillText(gameConfig.siteUrl, 72, 1218);
@@ -835,9 +1198,15 @@ export default function RhythmGame() {
 
   const performance = getPerformance(result.score, selectedSong.maxScore);
   const accuracy = selectedSong.maxScore > 0 ? Math.round((result.score / selectedSong.maxScore) * 100) : 0;
+  const hits = result.perfect + result.good;
+  const attempts = hits + result.misses + result.misclicks;
+  const precision = attempts > 0 ? Math.round((hits / attempts) * 100) : 0;
+  const recommendedSongs = gameConfig.songs.filter(
+    (song) => song.id !== selectedSong.id,
+  );
 
   return (
-    <main className={styles.shell} style={{ "--song": selectedSong.accent } as React.CSSProperties}>
+    <main className={styles.shell} style={{ "--band-color": selectedSong.baseColor } as React.CSSProperties}>
       <audio
         ref={audioElRef}
         preload="none"
@@ -879,7 +1248,7 @@ export default function RhythmGame() {
                     key={song.id}
                     aria-pressed={selectedSong.id === song.id}
                     className={styles.songButton}
-                    style={{ "--song-accent": song.accent } as React.CSSProperties}
+                    style={{ "--band-color": song.baseColor } as React.CSSProperties}
                     onClick={() => chooseSong(song)}
                   >
                     <strong>{song.artist}</strong>
@@ -908,11 +1277,14 @@ export default function RhythmGame() {
         <section
           ref={stageRef}
           className={styles.game}
+          data-section="intro"
+          style={{ "--chorus-pulse": `${chorusPulseSeconds(selectedSong)}s` } as React.CSSProperties}
           onPointerDown={onPointerDown}
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
           aria-label="Igralno polje. Tapni ploščico v njeni stezi, takoj ko se prikaže."
         >
+          <div className={styles.backdrop} aria-hidden="true" />
           <div className={styles.gameHud} ref={hudRef}>
             <div className={styles.hudValue}><span>Točke</span><strong ref={scoreElRef}>0</strong></div>
             <div className={styles.hudValue}><span>Combo</span><strong><i ref={comboElRef}>0</i><small ref={multElRef}>×1</small></strong></div>
@@ -927,7 +1299,21 @@ export default function RhythmGame() {
             </div>
           </div>
 
+          <div className={styles.lanes} aria-hidden="true">
+            {[0, 1, 2, 3].map((lane) => (
+              <div
+                key={lane}
+                className={styles.lane}
+                ref={(el) => { laneRefs.current[lane] = el; }}
+              />
+            ))}
+          </div>
+
           <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
+          <div className={styles.floaters} ref={floatersRef} aria-hidden="true" />
+          <div className={styles.probes} ref={probesRef} aria-hidden="true">
+            {TOKENS.map((token) => <i key={token} data-token={token} />)}
+          </div>
           <p ref={feedbackElRef} className={styles.feedback} data-grade="perfect" aria-hidden="true" />
           <div ref={countElRef} className={styles.countdown} aria-hidden="true" />
           <div ref={cueElRef} className={styles.cue} hidden aria-hidden="true">
@@ -966,18 +1352,39 @@ export default function RhythmGame() {
                 : "Ritem imaš. Zdaj potrebuješ samo še vstopnico."}
             </p>
             <dl className={styles.breakdown}>
-              <div><dt>Perfect</dt><dd>{result.perfect}</dd></div>
-              <div><dt>Good</dt><dd>{result.good}</dd></div>
+              <div><dt>Zadetki</dt><dd>{hits}</dd></div>
               <div><dt>Zgrešeno</dt><dd>{result.misses}</dd></div>
+              <div><dt>Napačni kliki</dt><dd>{result.misclicks}</dd></div>
               <div><dt>Najboljši combo</dt><dd>{result.bestCombo}</dd></div>
+              <div><dt>Natančnost</dt><dd>{precision} %</dd></div>
             </dl>
             <div className={styles.record}><span>Osebni rekord</span><strong>{result.best.toLocaleString("sl-SI")}</strong></div>
             <div className={styles.actions}>
               <button className={styles.primary} type="button" onClick={startGame}>Igraj znova</button>
+              <button className={styles.secondary} type="button" onClick={() => showSongSelection()}>Izberi drug komad</button>
               <button className={styles.secondary} type="button" onClick={shareResult}>Deli rezultat</button>
+              <Link className={styles.secondary} href="/">Nazaj na spletno stran</Link>
               <a className={styles.ticket} href={gameConfig.ticketUrl} target="_blank" rel="noopener noreferrer">{gameConfig.ticketLabel} ↗</a>
             </div>
             <p className={styles.shareStatus} role="status">{shareStatus}</p>
+            <div className={styles.recommendations}>
+              <p>Naslednji izziv</p>
+              <div className={styles.recommendationGrid}>
+                {recommendedSongs.map((song) => (
+                  <button
+                    key={song.id}
+                    type="button"
+                    className={styles.recommendation}
+                    style={{ "--recommendation": song.baseColor } as React.CSSProperties}
+                    onClick={() => showSongSelection(song)}
+                  >
+                    <span>Poskusi še</span>
+                    <strong>{song.artist}</strong>
+                    <small>{song.title}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className={styles.eventStrip}><span>Datum</span><strong>{gameConfig.event.date}</strong><span>Lokacija</span><strong>{gameConfig.event.location}</strong></div>
             <Leaderboard
               song={selectedSong}

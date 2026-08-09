@@ -58,11 +58,11 @@ export default function Hero() {
           fill
           priority
           sizes="100vw"
-          className="scale-[1.25] object-cover grayscale-[35%]"
+          className="scale-y-[1.24] object-cover object-center grayscale-[35%] sm:scale-[1.25]"
         />
         {videoOn && (
           <video
-            className="absolute inset-0 h-full w-full scale-[1.25] object-cover grayscale-[35%]"
+            className="absolute inset-0 h-full w-full scale-y-[1.24] object-cover object-center grayscale-[35%] sm:scale-[1.25]"
             autoPlay
             muted
             loop
@@ -75,8 +75,8 @@ export default function Hero() {
           </video>
         )}
         {/* Temnitev za berljivost */}
-        <div className="absolute inset-0 bg-gradient-to-t from-night via-night/55 to-night/30" />
-        <div className="absolute inset-0 bg-gradient-to-r from-night/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-night via-night/45 to-night/10 sm:via-night/55 sm:to-night/30" />
+        <div className="absolute inset-0 bg-gradient-to-r from-night/55 to-transparent sm:from-night/60" />
       </div>
 
       {/* Koordinatni okvir — atlas motiv */}
@@ -91,8 +91,8 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="relative mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 sm:py-28">
-        <p className="mb-4 inline-flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-atlas sm:text-sm">
+      <div className="relative mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-28">
+        <p className="mb-3 inline-flex items-center gap-2.5 text-[0.68rem] uppercase tracking-[0.24em] text-atlas sm:mb-4 sm:gap-3 sm:text-sm sm:tracking-[0.3em]">
           <span aria-hidden className="relative flex h-2 w-2">
             <span className="motion-pulse absolute inline-flex h-full w-full rounded-full bg-atlas" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-atlas" />
@@ -114,7 +114,7 @@ export default function Hero() {
           </span>
         </h1>
 
-        <p className="mt-6 max-w-xl text-base text-white sm:text-lg">
+        <p className="mt-5 max-w-xl text-[0.95rem] text-white sm:mt-6 sm:text-lg">
           <strong className="text-atlas">
             {lineup.map((p) => p.name).join(" · ")}
           </strong>
@@ -123,12 +123,12 @@ export default function Hero() {
           </span>
         </p>
 
-        <div className="mt-8 flex flex-wrap items-center gap-4">
+        <div className="mt-6 grid w-full max-w-[21rem] gap-3 sm:mt-8 sm:flex sm:max-w-none sm:flex-wrap sm:items-center sm:gap-4">
           <a
             href={tickets.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-atlas px-8 py-4 font-display text-lg uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5"
+            className="bg-atlas px-6 py-3 text-center font-display text-base uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5 sm:px-8 sm:py-4 sm:text-lg"
           >
             {tickets.ctaLabel}
           </a>
@@ -147,13 +147,13 @@ export default function Hero() {
                 block: "start",
               });
             }}
-            className="border border-white/40 px-8 py-4 font-display text-lg uppercase tracking-wide text-white transition-colors hover:border-atlas hover:text-atlas"
+            className="border border-white/40 px-6 py-3 text-center font-display text-base uppercase tracking-wide text-white transition-colors hover:border-atlas hover:text-atlas sm:px-8 sm:py-4 sm:text-lg"
           >
             Oglej si aftermovie
           </a>
         </div>
 
-        <p className="mt-4 text-sm text-fog">
+        <p className="mt-3 text-xs text-fog sm:mt-4 sm:text-sm">
           Vstopnice {tickets.priceFromHuman} · {tickets.provider}
         </p>
       </div>

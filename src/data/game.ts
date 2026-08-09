@@ -1,5 +1,8 @@
 import { songCharts } from "@/data/charts";
 import { event, site, tickets } from "@/data/event";
+import { songSections, type SongSection } from "@/data/song-sections";
+
+export type { SectionType, SongSection } from "@/data/song-sections";
 
 export type Lane = 0 | 1 | 2 | 3;
 
@@ -17,12 +20,16 @@ export type GameSong = {
   id: SongId;
   artist: string;
   title: string;
+  /** Band behind the track — the colour of the whole board comes from it. */
+  band: string;
   file: string;
   bpm: number;
   /** Length of the audio file including the silent countdown head. */
   duration: number;
-  accent: string;
+  /** The band's colour. Every other shade on the board is mixed from it in CSS. */
+  baseColor: string;
   notes: Note[];
+  sections: SongSection[];
   maxScore: number;
 };
 
@@ -70,32 +77,53 @@ function decodeChart(code: string): Note[] {
 }
 
 /**
- * Every note hit as Perfect, with the combo multiplier climbing from the start.
+ * Every note played at its best: taps as Perfect, holds carried the whole way
+ * and released inside the grace window, with the combo multiplier climbing from
+ * the start.
  *
  * `submit_leaderboard_score` in supabase/migrations mirrors this ceiling and the
- * note count per song, and rejects anything above it. A new beat map means both
- * sides have to move together — scripts/build-charts.py prints the SQL values.
+ * note count per song, and rejects anything above it. A new beat map — or a
+ * change to the numbers in `scoring` — means both sides have to move together;
+ * scripts/build-charts.py prints the SQL values.
  */
-function maxPossibleScore(noteCount: number) {
+function maxPossibleScore(notes: Note[]) {
   let total = 0;
-  for (let i = 1; i <= noteCount; i += 1) {
-    total += scoring.perfect * comboMultiplier(i);
+  for (let i = 0; i < notes.length; i += 1) {
+    const multiplier = comboMultiplier(i + 1);
+    total += notes[i].hold > 0
+      ? scoring.hold * (1 + scoring.holdGraceBonus) * multiplier
+      : scoring.perfect * multiplier;
   }
-  return total;
+  return Math.floor(total);
 }
 
 export function comboMultiplier(combo: number) {
   return Math.min(scoring.maxMultiplier, 1 + Math.floor(combo / scoring.multiplierEvery));
 }
 
+/**
+ * Points a hold pays per second it is actually held. A hold carried end to end
+ * is worth `scoring.hold` however long it is, so a short hold simply pays faster
+ * — letting go early keeps whatever was earned up to that point.
+ */
+export function holdPointsPerSecond(holdSeconds: number) {
+  return holdSeconds > 0 ? scoring.hold / holdSeconds : 0;
+}
+
 const scoring = {
   perfect: 100,
   good: 55,
+  /** A hold carried the whole way, before the combo multiplier. */
+  hold: 300,
+  /** Releasing this close to the end of a hold counts as the full hold … */
+  holdGraceMs: 120,
+  /** … and pays this much on top, for hitting the release on the beat. */
+  holdGraceBonus: 0.1,
   multiplierEvery: 10,
   maxMultiplier: 4,
 } as const;
 
-type SongMeta = Pick<GameSong, "id" | "artist" | "title" | "file" | "accent">;
+type SongMeta = Pick<GameSong, "id" | "artist" | "title" | "band" | "file" | "baseColor">;
 
 function createSong(meta: SongMeta): GameSong {
   const chart = songCharts[meta.id];
@@ -105,7 +133,8 @@ function createSong(meta: SongMeta): GameSong {
     bpm: chart.bpm,
     duration: chart.duration,
     notes,
-    maxScore: maxPossibleScore(notes.length),
+    sections: songSections[meta.id],
+    maxScore: maxPossibleScore(notes),
   };
 }
 
@@ -113,25 +142,42 @@ export const gameSongs: GameSong[] = [
   createSong({
     id: "mrfy",
     artist: "MRFY",
+    band: "MRFY",
     title: "Prjatučki",
     file: "/media/game/mrfy-prjatucki.m4a",
-    accent: "#F4510B",
+    baseColor: "#F4510B",
   }),
   createSong({
     id: "kokosy",
     artist: "Kokosy",
+    band: "KOKOSY",
     title: "Planeti se vrtijo",
     file: "/media/game/kokosy-planeti-se-vrtijo.m4a",
-    accent: "#E38DCE",
+    baseColor: "#E38DCE",
   }),
   createSong({
     id: "tabu",
     artist: "Tabu",
+    band: "TABU",
     title: "Poljubljena",
     file: "/media/game/tabu-poljubljena.m4a",
-    accent: "#FCDB27",
+    baseColor: "#FCDB27",
   }),
 ];
+
+/** The part of the song playing at `songTime` seconds; "verse" outside the map. */
+export function sectionAt(song: GameSong, songTime: number): SongSection["type"] {
+  const ms = songTime * 1000;
+  for (const section of song.sections) {
+    if (ms >= section.startMs && ms < section.endMs) return section.type;
+  }
+  return "verse";
+}
+
+/** One breath of the chorus pulse: four bars of 4/4 at the song's tempo. */
+export function chorusPulseSeconds(song: GameSong) {
+  return song.bpm > 0 ? (60 / song.bpm) * 16 : 8;
+}
 
 export const gameConfig = {
   name: "Ujemi ritem",
@@ -163,6 +209,12 @@ export const gameConfig = {
     perfectZone: 0.34,
     /** Dva tapa v isti stezi bližje kot toliko sta pomotoma sprožen dvojni tap. */
     doubleTapGuard: 0.08,
+    /** Višina ploščice glede na širino steze. Edini gumb za velikost ploščic. */
+    tileScale: 0.95,
+    /** Zaobljenost ploščice glede na njeno višino. */
+    tileRadius: 0.14,
+    /** Najmanjši razmik med sosednjima ploščicama v isti stezi, v pikslih. */
+    tileMinGap: 6,
   },
   scoring,
   titles: [

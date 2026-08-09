@@ -399,9 +399,14 @@ def encode(notes):
     return "".join(out)
 
 
-def max_score(note_count):
-    """Mirror of maxPossibleScore() in src/data/game.ts."""
-    return sum(100 * min(4, 1 + combo // 10) for combo in range(1, note_count + 1))
+def max_score(notes):
+    """Mirror of maxPossibleScore() in src/data/game.ts.
+
+    Taps pay 100, a hold carried to the end pays 300 plus the 10 % grace bonus,
+    both times the combo multiplier of their position in the chart.
+    """
+    return int(sum((330 if note[1] > 0 else 100) * min(4, 1 + combo // 10)
+                   for combo, note in enumerate(notes, start=1)))
 
 
 def preview(song_id, master, notes):
@@ -470,11 +475,11 @@ if __name__ == "__main__":
             f"    tiles/s per 30 s: {' '.join(f'{b:.1f}' for b in buckets)}\n")
         if want_preview:
             sys.stderr.write(f"    preview -> {preview(song_id, master, notes)}\n")
-        rows.append((song_id, len(notes), holds, chart["bpm"], total, code))
+        rows.append((song_id, len(notes), holds, chart["bpm"], total, code, notes))
 
     print(HEADER)
     print("export const songCharts = {")
-    for song_id, count, holds, bpm, total, code in rows:
+    for song_id, count, holds, bpm, total, code, _ in rows:
         print(f"  // {count} notes ({holds} holds), {bpm:.2f} BPM")
         print(f"  {song_id}: {{")
         print(f"    duration: {total:.2f},")
@@ -487,8 +492,8 @@ if __name__ == "__main__":
     # anything above them, so a new chart is only half-deployed until the SQL moves.
     sys.stderr.write("\nUpdate submit_leaderboard_score in supabase/migrations with:\n")
     sys.stderr.write("  v_max_score\n")
-    for song_id, count, *_ in rows:
-        sys.stderr.write(f"    WHEN '{song_id}' THEN {max_score(count)}\n")
+    for song_id, *_, notes in rows:
+        sys.stderr.write(f"    WHEN '{song_id}' THEN {max_score(notes)}\n")
     sys.stderr.write("  v_note_count\n")
     for song_id, count, *_ in rows:
         sys.stderr.write(f"    WHEN '{song_id}' THEN {count}\n")

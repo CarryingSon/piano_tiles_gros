@@ -12,7 +12,7 @@ export default function Timeline() {
     <section
       id="zgodba"
       aria-labelledby="zgodba-naslov"
-      className="relative overflow-hidden py-24 sm:py-32"
+      className="relative overflow-hidden py-16 sm:py-32"
     >
       <PhotoWall variant="timeline" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
@@ -27,7 +27,7 @@ export default function Timeline() {
           zemljevidu.
         </h2>
 
-        <ol className="relative mt-16 space-y-16 border-l-2 border-dashed border-atlas/40 pl-8 sm:space-y-20 sm:pl-12">
+        <ol className="relative mt-10 space-y-12 border-l-2 border-dashed border-atlas/40 pl-8 sm:mt-16 sm:space-y-20 sm:pl-12">
           {editions.map((edition) => {
             const is2026 = edition.year === "2026";
             return (
