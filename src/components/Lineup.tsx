@@ -1,6 +1,12 @@
 import Image from "next/image";
 import { lineup } from "@/data/event";
 
+const performerTitleColors: Record<string, string> = {
+  Kokosy: "text-kokosy",
+  MRFY: "text-mrfy",
+  Tabu: "text-atlas",
+};
+
 /**
  * Zasedba 2026 kot legenda zemljevida: tri velike tipografske vrstice.
  * Fotografije skupin so pripravljene iz uradnih kampanjskih materialov 2026;
@@ -43,7 +49,9 @@ export default function Lineup() {
                     >
                       {performer.index}
                     </span>
-                    <span className="text-6xl text-white transition-colors group-hover:text-atlas sm:text-7xl lg:text-8xl">
+                    <span
+                      className={`text-6xl transition-[filter] group-hover:brightness-125 sm:text-7xl lg:text-8xl ${performerTitleColors[performer.name] ?? "text-white"}`}
+                    >
                       {performer.name}
                     </span>
                   </h3>

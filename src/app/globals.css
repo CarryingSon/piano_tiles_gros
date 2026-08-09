@@ -5,6 +5,8 @@
    rumenem polju, črno-bela koncertna fotografija). */
 @theme {
   --color-atlas: #fcdb27; /* uradna rumena logotipa */
+  --color-kokosy: #e38dce; /* roza iz kampanjske grafike izvajalcev */
+  --color-mrfy: #f4510b; /* oranžna iz kampanjske grafike izvajalcev */
   --color-night: #050708; /* skoraj-črna podlaga */
   --color-coal: #0d0f10; /* dvignjene ploskve */
   --color-fog: #a8adb3; /* sekundarno besedilo — AA na night */
