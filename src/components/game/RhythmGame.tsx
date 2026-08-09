@@ -24,7 +24,6 @@ const HOLDING = 1;
 const DONE = 2;
 
 const KEY_LANES: Record<string, Lane> = { d: 0, f: 1, j: 2, k: 3 };
-const LANE_COLORS = ["#ffd800", "#e99fd6", "#ffd800", "#e99fd6"] as const;
 const LANE_IDLE = ["rgba(255,255,255,.02)", "rgba(255,255,255,.05)"] as const;
 const TAU = Math.PI * 2;
 
@@ -34,6 +33,22 @@ function isTypingTarget(target: EventTarget | null) {
     target.isContentEditable ||
     target.closest("input, textarea, select, [contenteditable='true']") !== null
   );
+}
+
+/** Mixes a hex colour towards white, so held tiles read apart from taps. */
+function lighten(hex: string, amount: number) {
+  const value = parseInt(hex.slice(1), 16);
+  const channel = (shift: number) => {
+    const c = (value >> shift) & 255;
+    return Math.round(c + (255 - c) * amount);
+  };
+  return `rgb(${channel(16)},${channel(8)},${channel(0)})`;
+}
+
+/** Same mix towards the night background, for the unlit tail of a hold. */
+function fade(hex: string, alpha: number) {
+  const value = parseInt(hex.slice(1), 16);
+  return `rgba(${(value >> 16) & 255},${(value >> 8) & 255},${value & 255},${alpha})`;
 }
 
 const highScoreKey = (song: GameSong) => `glasbeni-atlas-ritem-high-score-${song.id}`;
@@ -128,7 +143,9 @@ export default function RhythmGame() {
   const feedbackElRef = useRef<HTMLParagraphElement>(null);
   const feedbackAnimRef = useRef<Animation | null>(null);
   const countElRef = useRef<HTMLDivElement>(null);
-  const hudCacheRef = useRef({ score: -1, combo: -1, misses: -1, progress: -1, count: -1 });
+  const cueElRef = useRef<HTMLDivElement>(null);
+  const cueSecondsRef = useRef<HTMLElement>(null);
+  const hudCacheRef = useRef({ score: -1, combo: -1, misses: -1, progress: -1, count: -1, cue: -2 });
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -249,10 +266,12 @@ export default function RhythmGame() {
     layoutRef.current = { width, height, dpr, top, bottom, playHeight, laneWidth, tileWidth, tileHeight };
 
     // Glow is baked into a sprite once per size — drawing it per tile per frame
-    // is what made the old board stutter on phones.
+    // is what made the old board stutter on phones. Two sprites per round: the
+    // song's colour for taps, a lighter mix of it for holds.
+    const accent = runRef.current.song.accent;
     const pad = 16;
     const sprites: Record<string, Sprite> = {};
-    for (const color of new Set(LANE_COLORS)) {
+    for (const color of [accent, lighten(accent, 0.45)]) {
       const sprite = document.createElement("canvas");
       const w = tileWidth + pad * 2;
       const h = tileHeight + pad * 2;
@@ -281,8 +300,8 @@ export default function RhythmGame() {
     let flash: CanvasGradient | null = null;
     if (board) {
       flash = board.createLinearGradient(0, top, 0, bottom);
-      flash.addColorStop(0, "rgba(255,216,0,0)");
-      flash.addColorStop(1, "rgba(255,216,0,.16)");
+      flash.addColorStop(0, fade(accent, 0));
+      flash.addColorStop(1, fade(accent, 0.18));
     }
     paintersRef.current = { sprites, flash };
   }, []);
@@ -424,6 +443,8 @@ export default function RhythmGame() {
     const travel = gameConfig.play.travel;
     const here = positionAt(songTime, song);
     const sprites = painters.sprites;
+    const tapColor = song.accent;
+    const holdColor = lighten(song.accent, 0.45);
 
     context.save();
     context.beginPath();
@@ -436,14 +457,14 @@ export default function RhythmGame() {
       const lead = positionAt(note.time, song) - here;
       if (lead > travel) break;
 
-      const accent = LANE_COLORS[note.lane];
+      const accent = note.hold > 0 ? holdColor : tapColor;
       const x = note.lane * laneWidth + 6;
       const y = top + (1 - lead / travel) * playHeight;
 
       if (note.hold > 0) {
         const tailLead = positionAt(note.time + note.hold, song) - here;
         const tailY = top + (1 - Math.min(tailLead, travel) / travel) * playHeight;
-        context.fillStyle = state[i] === HOLDING ? accent : `${accent}99`;
+        context.fillStyle = state[i] === HOLDING ? accent : fade(song.accent, 0.6);
         context.beginPath();
         context.roundRect(x + tileWidth * 0.3, tailY - tileHeight / 2, tileWidth * 0.4, Math.max(0, y - tailY), 10);
         context.fill();
@@ -502,6 +523,18 @@ export default function RhythmGame() {
       cache.count = count;
       countElRef.current.textContent = count > 0 ? String(count) : "";
       countElRef.current.hidden = count === 0;
+    }
+
+    // These songs open with long instrumental intros and leave gaps between
+    // verses. Without a sign there, an empty board reads as a broken game.
+    const notes = run.song.notes;
+    const nextAt = run.cursor < notes.length ? notes[run.cursor].time : Infinity;
+    const wait = count > 0 || nextAt === Infinity ? 0 : Math.ceil(nextAt - songTime);
+    const showCue = wait > 3 ? wait : 0;
+    if (cache.cue !== showCue) {
+      cache.cue = showCue;
+      if (cueElRef.current) cueElRef.current.hidden = showCue === 0;
+      if (cueSecondsRef.current && showCue > 0) cueSecondsRef.current.textContent = `${showCue} s`;
     }
   }, []);
 
@@ -585,7 +618,7 @@ export default function RhythmGame() {
   const startGame = useCallback(() => {
     const el = audioElRef.current;
     runRef.current = createRun(selectedSong);
-    hudCacheRef.current = { score: -1, combo: -1, misses: -1, progress: -1, count: -1 };
+    hudCacheRef.current = { score: -1, combo: -1, misses: -1, progress: -1, count: -1, cue: -2 };
     clockRef.current = { media: -1, anchor: 0, at: 0 };
     pointerLanesRef.current.clear();
     silentStartRef.current = null;
@@ -746,20 +779,20 @@ export default function RhythmGame() {
     context.fillStyle = gameConfig.colors.white;
     context.font = "900 118px Arial Narrow, sans-serif";
     context.fillText("UJEMI RITEM", 72, 270);
-    context.fillStyle = gameConfig.colors.yellow;
+    context.fillStyle = selectedSong.accent;
     context.font = "900 240px Arial Narrow, sans-serif";
     context.fillText(result.score.toLocaleString("sl-SI"), 60, 605);
     context.fillStyle = gameConfig.colors.white;
     context.font = "700 32px system-ui";
     context.fillText(`OD ${selectedSong.maxScore.toLocaleString("sl-SI")} MOŽNIH TOČK`, 74, 665);
-    context.fillStyle = gameConfig.colors.pink;
+    context.fillStyle = lighten(selectedSong.accent, 0.4);
     context.font = "900 70px Arial Narrow, sans-serif";
     context.fillText(performance.title.toUpperCase(), 72, 800);
     context.fillStyle = gameConfig.colors.white;
     context.font = "600 34px system-ui";
     context.fillText(`${selectedSong.artist.toUpperCase()}  ·  ${selectedSong.title.toUpperCase()}`, 72, 880);
     context.fillText(`${gameConfig.event.date}  ·  IVANČNA GORICA`, 72, 1095);
-    context.fillStyle = gameConfig.colors.yellow;
+    context.fillStyle = selectedSong.accent;
     context.fillRect(72, 1145, 936, 4);
     context.font = "600 29px system-ui";
     context.fillText(gameConfig.siteUrl, 72, 1218);
@@ -804,7 +837,7 @@ export default function RhythmGame() {
   const accuracy = selectedSong.maxScore > 0 ? Math.round((result.score / selectedSong.maxScore) * 100) : 0;
 
   return (
-    <main className={styles.shell}>
+    <main className={styles.shell} style={{ "--song": selectedSong.accent } as React.CSSProperties}>
       <audio
         ref={audioElRef}
         preload="none"
@@ -897,6 +930,10 @@ export default function RhythmGame() {
           <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
           <p ref={feedbackElRef} className={styles.feedback} data-grade="perfect" aria-hidden="true" />
           <div ref={countElRef} className={styles.countdown} aria-hidden="true" />
+          <div ref={cueElRef} className={styles.cue} hidden aria-hidden="true">
+            <span>Poslušaj</span>
+            <i ref={cueSecondsRef} />
+          </div>
           <div className={styles.progress}><span ref={progressElRef} /></div>
 
           {phase === "paused" && (

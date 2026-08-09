@@ -27,25 +27,40 @@ igrišča. Sedem zgrešenih ploščic konča igro, proti koncu komada pa plošč
 padajo do 1,65-krat hitreje. Na koncu se poleg rezultata izpiše največje
 možno število točk.
 
+Ploščice sledijo **pevčevemu glasu**: vsak zapeti zlog je ploščica, dolgo
+držan ton je dolga ploščica, steza pa pride iz višine tona — nizki toni levo,
+visoki desno, tako da se plošča vzpenja in spušča z melodijo. Nekajkrat na
+komad se ob najmočnejšem poudarku pojavita dve ploščici hkrati. Vsak komad ima
+svojo barvo (MRFY oranžna, Kokosy roza, Tabu atlas rumena). Kjer se ne poje —
+uvodi so dolgi tudi po dvajset sekund — se prikaže odštevanje do naslednje
+ploščice, da igra ne izgleda pokvarjena.
+
 En krog traja cel komad. Zvok je v `public/media/game/` kot mono AAC
 (≈ 64 kbit/s, 1,8–2,0 MB na komad) in se pretaka, ne nalaga v pomnilnik.
 Vsaka datoteka ima na začetku 3 sekunde tišine, čez katere teče odštevanje.
 
 Note so v `src/data/charts.ts` — generirana datoteka, ki jo napiše
-`scripts/build-charts.py` (potrebuje ffmpeg in numpy). Skripta iz mastra
-zazna tempo, sledi udarcem in gostoto not prilagodi energiji komada:
+`scripts/build-charts.py` (potrebuje ffmpeg, numpy in Demucs). Skripta iz
+mastra vzame tempo, iz izoliranega vokala pa note, njihovo dolžino in višino:
 
 ```bash
-python3 scripts/build-charts.py mrfy=master/prjatucki.mp3 ... > src/data/charts.ts
+python3 -m demucs --two-stems=vocals -d mps -o stems master.mp3
+python3 scripts/build-charts.py --preview \
+    mrfy=master.mp3:stems/htdemucs/master/vocals.wav ... > src/data/charts.ts
 ```
+
+Z `--preview` nastane za vsak komad še mp3 s klikom na vsaki ploščici — edini
+zanesljiv način, da preverite, ali se ploščice ujemajo s petjem.
 
 Za zamenjavo glasbe:
 
 1. iz potrjenega mastra kodirajte predvajalno datoteko (ukaz je v glavi skripte)
    in jo shranite v `public/media/game/`;
-2. z isto skripto in istim mastrom na novo zgenerirajte `src/data/charts.ts`;
-3. v `gameSongs` v `src/data/game.ts` popravite `file`, izvajalca in naslov;
-4. na telefonu preverite prvih in zadnjih deset sekund igre.
+2. z Demucsom izluščite vokal in z isto skripto zgenerirajte `src/data/charts.ts`;
+3. v `gameSongs` v `src/data/game.ts` popravite `file`, izvajalca, naslov in barvo;
+4. **zaženite novo SQL migracijo z mejami rezultata**, ki jih skripta izpiše na
+   koncu — brez tega strežnik zavrne vsak rezultat;
+5. poslušajte preview in na telefonu preverite prvih in zadnjih deset sekund.
 
 Ostale nastavitve igre so v `src/data/game.ts`: podatki dogodka, Eventim URL,
 hitrost padanja, število življenj, točkovanje, pragovi naslovov, barve in
@@ -72,11 +87,9 @@ izenačenih rezultatov in način prevzema popusta.
 ### Prvi zagon baze
 
 1. V projektu Supabase odprite **SQL Editor → New query**.
-2. Kopirajte in zaženite celotno datoteko
-   `supabase/migrations/20260808190000_leaderboard.sql`, nato še
-   `supabase/migrations/20260809120000_leaderboard_full_songs.sql`
-   (ta popravi zgornjo mejo rezultata na cele komade — brez nje strežnik
-   zavrne vsak nov rezultat).
+2. Zaženite migracije iz `supabase/migrations/` po vrsti, od najstarejše do
+   najnovejše. Zadnja vedno nosi trenutne meje rezultata; brez nje strežnik
+   zavrne vsak nov rezultat kot »invalid score«.
 3. Lokalno ustvarite `.env.local` po vzoru `.env.example`.
 4. V Vercelu pod **Project Settings → Environment Variables** dodajte:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in

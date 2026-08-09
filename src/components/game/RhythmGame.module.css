@@ -1,9 +1,14 @@
 .shell {
+  --song: #ffd800;
   position: fixed;
   inset: 0;
   z-index: 100;
   min-height: 100dvh;
-  overflow: hidden;
+  /* clip, not hidden: focusing a song button lower down the intro made the
+     browser scroll this box to reveal it, and the offset stayed once the board
+     mounted, pushing the HUD off the top of the screen. `clip` never becomes a
+     scroll container, so there is nothing to scroll. */
+  overflow: clip;
   overscroll-behavior: none;
   touch-action: pan-y;
   user-select: none;
@@ -371,7 +376,7 @@
   width: .42rem;
   height: .42rem;
   border-radius: 50%;
-  background: #ffd800;
+  background: var(--song);
   transition: background .15s ease;
 }
 
@@ -401,7 +406,7 @@
   display: block;
   width: 100%;
   height: 100%;
-  background: #ffd800;
+  background: var(--song);
   transform: scaleX(var(--progress));
   transform-origin: left;
 }
@@ -421,17 +426,44 @@
   transform: translateX(-50%) rotate(-3deg);
 }
 
-.feedback[data-grade="perfect"] { color: #ffd800; }
+.feedback[data-grade="perfect"] { color: var(--song); }
 .feedback[data-grade="good"] { color: #e99fd6; }
 .feedback[data-grade="miss"] { color: #e05110; }
 .feedback[data-grade="hold"] { color: #f6f6f6; }
+
+.cue {
+  position: absolute;
+  z-index: 6;
+  top: 46%;
+  left: 50%;
+  display: grid;
+  justify-items: center;
+  gap: .35rem;
+  pointer-events: none;
+  text-align: center;
+  transform: translate(-50%, -50%);
+  animation: breathe 2.4s ease-in-out infinite;
+}
+
+.cue span {
+  color: #a8adb3;
+  font-size: .68rem;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+}
+
+.cue i {
+  color: var(--song);
+  font: 400 2.4rem/1 var(--font-display);
+  font-style: normal;
+}
 
 .countdown {
   position: absolute;
   z-index: 6;
   top: 50%;
   left: 50%;
-  color: #ffd800;
+  color: var(--song);
   font-family: var(--font-display);
   font-size: min(42vw, 11rem);
   line-height: 1;
@@ -594,7 +626,7 @@
 
 .resultScore {
   margin: .8rem 0 0;
-  color: #ffd800;
+  color: var(--song);
   font-family: var(--font-display);
   font-size: clamp(5.5rem, 30vw, 9rem);
   line-height: .85;
@@ -633,7 +665,7 @@
 
 .breakdown dd {
   margin: .2rem 0 0;
-  color: #ffd800;
+  color: var(--song);
   font-family: var(--font-display);
   font-size: 1.35rem;
   line-height: 1;
@@ -668,7 +700,7 @@
   text-transform: uppercase;
 }
 
-.record strong { color: #ffd800; }
+.record strong { color: var(--song); }
 
 .actions { display: grid; gap: .65rem; }
 
@@ -751,6 +783,7 @@
 .error { color: #e99fd6; font-size: .8rem; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes breathe { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 
 @media (orientation: landscape) and (max-height: 540px) {
   .landscape { display: flex; }
@@ -767,4 +800,5 @@
 
 @media (prefers-reduced-motion: reduce) {
   .loader { animation-duration: 1.8s; }
+  .cue { animation: none; opacity: .8; }
 }

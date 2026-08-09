@@ -115,21 +115,21 @@ export const gameSongs: GameSong[] = [
     artist: "MRFY",
     title: "Prjatučki",
     file: "/media/game/mrfy-prjatucki.m4a",
-    accent: "#FFD800",
+    accent: "#F4510B",
   }),
   createSong({
     id: "kokosy",
     artist: "Kokosy",
     title: "Planeti se vrtijo",
     file: "/media/game/kokosy-planeti-se-vrtijo.m4a",
-    accent: "#E99FD6",
+    accent: "#E38DCE",
   }),
   createSong({
     id: "tabu",
     artist: "Tabu",
     title: "Poljubljena",
     file: "/media/game/tabu-poljubljena.m4a",
-    accent: "#E05110",
+    accent: "#FCDB27",
   }),
 ];
 
