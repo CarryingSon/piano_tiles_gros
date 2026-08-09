@@ -500,7 +500,7 @@
   pointer-events: none;
 }
 
-/* "+N" za pravkar zaključen hold, tik nad črto zadetka. */
+/* Živi "+N" števec holda; isti element ob zaključku odplava navzgor. */
 .floaters {
   position: absolute;
   z-index: 3;
@@ -511,13 +511,24 @@
   pointer-events: none;
 }
 
-.floater {
+.holdCounter {
   position: absolute;
+  min-width: 3.1rem;
+  padding: .24rem .42rem;
+  border: 1px solid color-mix(in srgb, var(--band-pastel) 58%, transparent);
+  border-radius: 999px;
+  background: rgb(5 7 8 / .78);
   color: var(--band-pastel);
   font: 400 1.65rem/1 var(--font-display);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
   text-shadow: 0 0 1.2rem var(--band-glow);
-  transform: translateX(-50%);
+  transform: translate(-50%, -100%);
   white-space: nowrap;
+}
+
+.holdCounter[data-state="active"] {
+  box-shadow: 0 0 1.2rem var(--band-glow);
 }
 
 /* The canvas cannot read a CSS variable, so it reads the resolved colours off
@@ -576,33 +587,6 @@
 .feedback[data-grade="miss"] { color: var(--miss-color); }
 .feedback[data-grade="misclick"] { color: var(--misclick-color); }
 .feedback[data-grade="hold"] { color: #f6f6f6; }
-
-.cue {
-  position: absolute;
-  z-index: 6;
-  top: 46%;
-  left: 50%;
-  display: grid;
-  justify-items: center;
-  gap: .35rem;
-  pointer-events: none;
-  text-align: center;
-  transform: translate(-50%, -50%);
-  animation: breathe 2.4s ease-in-out infinite;
-}
-
-.cue span {
-  color: #a8adb3;
-  font-size: .68rem;
-  letter-spacing: .3em;
-  text-transform: uppercase;
-}
-
-.cue i {
-  color: var(--band-color);
-  font: 400 2.4rem/1 var(--font-display);
-  font-style: normal;
-}
 
 .countdown {
   position: absolute;
@@ -1029,7 +1013,6 @@
 .error { color: #e99fd6; font-size: .8rem; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes breathe { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
 @keyframes chorusBreath { 0%, 100% { opacity: .84; } 50% { opacity: 1; } }
 @keyframes laneHold { 0%, 100% { opacity: .25; } 50% { opacity: .45; } }
 
@@ -1061,7 +1044,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .loader { animation-duration: 1.8s; }
-  .cue { animation: none; opacity: .8; }
   .recommendation { transition: none; }
 
   /* Barvni odziv ostane — utripanje, valovi in tresenje odpadejo. */

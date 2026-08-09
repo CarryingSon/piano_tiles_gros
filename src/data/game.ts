@@ -204,9 +204,11 @@ export const gameConfig = {
     /** Sekunde, ki jih ploščica potrebuje čez igrišče na začetku komada. */
     travel: 1.55,
     /** Ob koncu komada ploščice padajo toliko hitreje. */
-    endSpeed: 1.65,
-    /** Spodnji del steze, kjer tap šteje za Perfect. */
-    perfectZone: 0.34,
+    endSpeed: 2.3,
+    /** Čas pred/po noto, v katerem zadetek šteje za Perfect. */
+    perfectWindowMs: 530,
+    /** Koliko časa po črti je ploščica še igralna, ne glede na hitrost. */
+    lateWindowMs: 260,
     /** Dva tapa v isti stezi bližje kot toliko sta pomotoma sprožen dvojni tap. */
     doubleTapGuard: 0.08,
     /**

@@ -34,6 +34,140 @@ const LANE_IDLE = ["rgba(255,255,255,.02)", "rgba(255,255,255,.05)"] as const;
 const TAU = Math.PI * 2;
 /** How long the pastel afterimage of a tapped tile stays on the board. */
 const TAP_FLASH_MS = 150;
+/** Even at the speed cap, a new tile stays visible for at least this long. */
+const MIN_TILE_LEAD_SECONDS = 0.55;
+const SPEED_SAMPLE_SECONDS = 0.025;
+const SECTION_BLEND_SECONDS = 4;
+/** Ignore sub-micro-point drift after a hold's per-frame accrual settles. */
+const SCORE_ROUNDING_EPSILON = 1e-6;
+
+type SpeedMap = {
+  step: number;
+  speed: Float64Array;
+  position: Float64Array;
+};
+
+const speedMaps = new WeakMap<GameSong, SpeedMap>();
+
+function smoothstep(value: number) {
+  const x = Math.max(0, Math.min(1, value));
+  return x * x * (3 - 2 * x);
+}
+
+function sectionAcceleration(
+  song: GameSong,
+  sectionIndex: number,
+  lastChorusIndex: number,
+) {
+  const type = song.sections[sectionIndex]?.type ?? "verse";
+  if (type === "intro") return 0.28;
+  if (type === "verse") return 0.58;
+  if (type === "bridge") return 0.9;
+  if (type === "outro") return 1.8;
+  return sectionIndex === lastChorusIndex ? 1.65 : 1.2;
+}
+
+/**
+ * How strongly the song accelerates at this instant. Each section boundary is
+ * blended over four seconds; integrating this positive value below makes the
+ * resulting speed continuous and never lets it move backwards.
+ */
+function sectionAccelerationAt(song: GameSong, time: number, lastChorusIndex: number) {
+  if (song.sections.length === 0) return 0.58;
+  let value = sectionAcceleration(song, 0, lastChorusIndex);
+  for (let i = 1; i < song.sections.length; i += 1) {
+    const boundary = song.sections[i].startMs / 1000;
+    const blend = smoothstep(
+      (time - (boundary - SECTION_BLEND_SECONDS / 2)) / SECTION_BLEND_SECONDS,
+    );
+    value += (sectionAcceleration(song, i, lastChorusIndex) - value) * blend;
+  }
+  return value;
+}
+
+function buildSpeedMap(song: GameSong): SpeedMap {
+  const intervals = Math.max(1, Math.ceil(song.duration / SPEED_SAMPLE_SECONDS));
+  const step = song.duration / intervals;
+  const acceleration = new Float64Array(intervals + 1);
+  const speed = new Float64Array(intervals + 1);
+  const position = new Float64Array(intervals + 1);
+  let lastChorusIndex = -1;
+  for (let i = song.sections.length - 1; i >= 0; i -= 1) {
+    if (song.sections[i].type === "chorus") {
+      lastChorusIndex = i;
+      break;
+    }
+  }
+
+  const accelerationDensity = (time: number) => {
+    const progress = song.duration > 0 ? Math.max(0, Math.min(1, time / song.duration)) : 0;
+    // The small floor keeps the map strictly increasing while progress^1.65
+    // leaves roughly the first third calm and concentrates acceleration later.
+    return 0.035
+      + Math.pow(progress, 1.65) * sectionAccelerationAt(song, time, lastChorusIndex);
+  };
+
+  for (let i = 1; i <= intervals; i += 1) {
+    const before = (i - 1) * step;
+    const after = i * step;
+    acceleration[i] = acceleration[i - 1]
+      + ((accelerationDensity(before) + accelerationDensity(after)) / 2) * step;
+  }
+
+  const totalAcceleration = acceleration[intervals] || 1;
+  const configuredEndSpeed = Math.max(1, gameConfig.play.endSpeed);
+  const playableEndSpeed = Math.min(
+    configuredEndSpeed,
+    gameConfig.play.travel / MIN_TILE_LEAD_SECONDS,
+  );
+  for (let i = 0; i <= intervals; i += 1) {
+    speed[i] = 1
+      + (playableEndSpeed - 1) * (acceleration[i] / totalAcceleration);
+    if (i > 0) {
+      position[i] = position[i - 1] + ((speed[i - 1] + speed[i]) / 2) * step;
+    }
+  }
+
+  return { step, speed, position };
+}
+
+function speedMapFor(song: GameSong) {
+  const cached = speedMaps.get(song);
+  if (cached) return cached;
+  const map = buildSpeedMap(song);
+  speedMaps.set(song, map);
+  return map;
+}
+
+/** Continuous section-aware speed multiplier at an absolute song time. */
+export function speedAt(time: number, song: GameSong) {
+  const map = speedMapFor(song);
+  if (time <= 0) return map.speed[0];
+  if (time >= song.duration) return map.speed[map.speed.length - 1];
+  const index = Math.min(map.speed.length - 2, Math.floor(time / map.step));
+  const fraction = (time - index * map.step) / map.step;
+  return map.speed[index] + (map.speed[index + 1] - map.speed[index]) * fraction;
+}
+
+/**
+ * Integral of speedAt(). Drawing, hit tests, hold tails and overlap guards all
+ * use this one strictly increasing mapping, so a note is exactly on the hit
+ * line when `songTime === note.time`.
+ */
+export function positionAt(time: number, song: GameSong) {
+  const map = speedMapFor(song);
+  if (time <= 0) return time * map.speed[0];
+  if (time >= song.duration) {
+    return map.position[map.position.length - 1]
+      + (time - song.duration) * map.speed[map.speed.length - 1];
+  }
+  const index = Math.min(map.position.length - 2, Math.floor(time / map.step));
+  const elapsed = time - index * map.step;
+  const speedSlope = (map.speed[index + 1] - map.speed[index]) / map.step;
+  return map.position[index]
+    + map.speed[index] * elapsed
+    + (speedSlope * elapsed * elapsed) / 2;
+}
 
 /** The colour tokens the board paints with, read back off the stylesheet. */
 const TOKENS = ["color", "pastel", "deep", "glow"] as const;
@@ -131,6 +265,10 @@ type Run = {
   activeHold: Int32Array;
   holdHeldMs: Float64Array;
   holdEarned: Float64Array;
+  /** Combo multiplier captured when each hold head is hit. */
+  holdMultiplier: Float64Array;
+  /** Played fraction per note; RELEASED holds keep this frozen on the board. */
+  holdFill: Float64Array;
   lanePresses: Int32Array;
   laneFlash: Float64Array;
   laneTapAt: Float64Array;
@@ -166,6 +304,8 @@ function createRun(song: GameSong): Run {
     activeHold: Int32Array.from([-1, -1, -1, -1]),
     holdHeldMs: new Float64Array(4),
     holdEarned: new Float64Array(4),
+    holdMultiplier: Float64Array.from([1, 1, 1, 1]),
+    holdFill: new Float64Array(notes.length),
     lanePresses: new Int32Array(4),
     laneFlash: new Float64Array(4),
     laneTapAt: Float64Array.from([-1, -1, -1, -1]),
@@ -212,6 +352,8 @@ export default function RhythmGame() {
   const laneStateRef = useRef(["", "", "", ""]);
   const laneErrorTimersRef = useRef<number[]>([0, 0, 0, 0]);
   const floatersRef = useRef<HTMLDivElement>(null);
+  const holdCounterRefs = useRef<(HTMLSpanElement | null)[]>([null, null, null, null]);
+  const holdCounterAnimationsRef = useRef<(Animation | null)[]>([null, null, null, null]);
   const probesRef = useRef<HTMLDivElement>(null);
 
   const scoreElRef = useRef<HTMLElement>(null);
@@ -222,9 +364,7 @@ export default function RhythmGame() {
   const feedbackElRef = useRef<HTMLParagraphElement>(null);
   const feedbackAnimRef = useRef<Animation | null>(null);
   const countElRef = useRef<HTMLDivElement>(null);
-  const cueElRef = useRef<HTMLDivElement>(null);
-  const cueSecondsRef = useRef<HTMLElement>(null);
-  const hudCacheRef = useRef({ score: -1, combo: -1, misses: -1, progress: -1, count: -1, cue: -2 });
+  const hudCacheRef = useRef({ score: -1, combo: -1, misses: -1, progress: -1, count: -1 });
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -331,26 +471,53 @@ export default function RhythmGame() {
     animation.finished.then(() => ripple.remove()).catch(() => ripple.remove());
   }, []);
 
-  /** The "+N" a finished hold leaves behind, just above the hit line. */
-  const floatPoints = useCallback((lane: Lane, points: number) => {
-    const host = floatersRef.current;
+  const placeHoldCounter = useCallback((label: HTMLSpanElement, lane: Lane) => {
     const layout = layoutRef.current;
-    if (!host || !layout || points <= 0) return;
-    const label = document.createElement("span");
-    label.className = styles.floater;
-    label.textContent = `+${points}`;
+    if (!layout) return;
     label.style.left = `${(lane + 0.5) * layout.laneWidth}px`;
-    label.style.top = `${Math.max(0, layout.playHeight - layout.tileHeight - 12)}px`;
+    label.style.top = `${Math.max(0, layout.playHeight - 12)}px`;
+  }, []);
+
+  /** The live counter is the same DOM node that floats away on completion. */
+  const beginHoldCounter = useCallback((lane: Lane) => {
+    const host = floatersRef.current;
+    if (!host) return;
+    holdCounterAnimationsRef.current[lane]?.cancel();
+    holdCounterAnimationsRef.current[lane] = null;
+    holdCounterRefs.current[lane]?.remove();
+    const label = document.createElement("span");
+    label.className = styles.holdCounter;
+    label.dataset.state = "active";
+    label.textContent = "+0";
+    placeHoldCounter(label, lane);
     host.append(label);
+    holdCounterRefs.current[lane] = label;
+  }, [placeHoldCounter]);
+
+  const finishHoldCounter = useCallback((lane: Lane, points: number) => {
+    const label = holdCounterRefs.current[lane];
+    if (!label) return;
+    label.textContent = `+${Math.max(0, points)}`;
+    label.dataset.state = "complete";
+    const lessMotion = reducedMotion();
     const animation = label.animate(
-      [
-        { transform: "translate(-50%, 0)", opacity: 0 },
-        { opacity: 1, offset: 0.18 },
-        { transform: "translate(-50%, -40px)", opacity: 0 },
-      ],
-      { duration: 700, easing: "ease-out" },
+      lessMotion
+        ? [{ opacity: 1 }, { opacity: 0 }]
+        : [
+            { transform: "translate(-50%, -100%)", opacity: 1 },
+            { transform: "translate(-50%, calc(-100% - 40px))", opacity: 0 },
+          ],
+      { duration: lessMotion ? 280 : 700, easing: "ease-out" },
     );
-    animation.finished.then(() => label.remove()).catch(() => label.remove());
+    holdCounterAnimationsRef.current[lane] = animation;
+    const remove = () => {
+      if (holdCounterRefs.current[lane] === label) holdCounterRefs.current[lane] = null;
+      if (holdCounterAnimationsRef.current[lane] === animation) {
+        holdCounterAnimationsRef.current[lane] = null;
+      }
+      label.remove();
+    };
+    animation.finished.then(remove).catch(remove);
   }, []);
 
   const awardHit = useCallback((run: Run, perfect: boolean, lane: Lane, y: number, now: number) => {
@@ -450,16 +617,20 @@ export default function RhythmGame() {
     // so they need to know where the playfield starts and how tall it is.
     stage.style.setProperty("--board-top", `${top}px`);
     stage.style.setProperty("--board-height", `${playHeight}px`);
+    for (let lane = 0; lane < 4; lane += 1) {
+      const counter = holdCounterRefs.current[lane];
+      if (counter) placeHoldCounter(counter, lane as Lane);
+    }
 
     const palette = readPalette(runRef.current.song.baseColor);
     const radius = tileHeight * gameConfig.play.tileRadius;
 
-    // Glow is baked into a sprite once per size — drawing it per tile per frame
-    // is what made the old board stutter on phones. Two sprites per round: the
-    // band's colour for a waiting tile, its pastel for one under the finger.
+    // Glow is baked into the tap sprite once per size — drawing it per tap per
+    // frame is what made the old board stutter on phones. Variable-length hold
+    // shapes are painted directly below, since their geometry changes live.
     const pad = 18;
     const sprites: Record<string, Sprite> = {};
-    for (const color of [palette.color, palette.pastel]) {
+    for (const color of [palette.color]) {
       const sprite = document.createElement("canvas");
       const w = tileWidth + pad * 2;
       const h = tileHeight + pad * 2;
@@ -492,7 +663,7 @@ export default function RhythmGame() {
       flash.addColorStop(1, withAlpha(palette.color, 0.18));
     }
     paintersRef.current = { sprites, flash, palette };
-  }, [readPalette]);
+  }, [placeHoldCounter, readPalette]);
 
   useEffect(() => {
     if (phase !== "playing" && phase !== "paused") return;
@@ -501,15 +672,6 @@ export default function RhythmGame() {
     if (stageRef.current) observer.observe(stageRef.current);
     return () => observer.disconnect();
   }, [measure, phase]);
-
-  /* ------------------------------------------------------- scroll position */
-
-  // Tiles accelerate towards the end of the track, so screen position comes
-  // from the integral of the speed ramp rather than from plain elapsed time.
-  const positionAt = useCallback((time: number, song: GameSong) => {
-    const k = gameConfig.play.endSpeed - 1;
-    return time + (k * time * time) / (2 * song.duration);
-  }, []);
 
   /* ----------------------------------------------------------------- input */
 
@@ -531,13 +693,17 @@ export default function RhythmGame() {
     const travel = gameConfig.play.travel;
     const here = positionAt(songTime, song);
     const layout = layoutRef.current;
-    const expire = layout ? -(layout.tileHeight / layout.playHeight) * travel : -0.25;
 
     let target = -1;
     for (let i = run.cursor; i < notes.length; i += 1) {
       const lead = positionAt(notes[i].time, song) - here;
       if (lead > travel) break;
-      if (state[i] !== PENDING || notes[i].lane !== lane || lead < expire) continue;
+      const deltaMs = (notes[i].time - songTime) * 1000;
+      if (
+        state[i] !== PENDING
+        || notes[i].lane !== lane
+        || deltaMs < -gameConfig.play.lateWindowMs
+      ) continue;
       target = i;
       break;
     }
@@ -549,7 +715,8 @@ export default function RhythmGame() {
     }
 
     const lead = positionAt(notes[target].time, song) - here;
-    const perfect = lead / travel <= gameConfig.play.perfectZone;
+    const deltaMs = Math.abs((notes[target].time - songTime) * 1000);
+    const perfect = deltaMs <= gameConfig.play.perfectWindowMs;
     const hitY = layout ? layout.top + (1 - lead / travel) * layout.playHeight : 0;
     if (notes[target].hold > 0) {
       // The head counts as a hit right away; the points come in over the hold.
@@ -557,18 +724,27 @@ export default function RhythmGame() {
       run.activeHold[lane] = target;
       run.holdHeldMs[lane] = 0;
       run.holdEarned[lane] = 0;
+      run.holdFill[target] = 0;
       run.laneFlash[lane] = now + 400;
       run.combo += 1;
       if (run.combo > run.bestCombo) run.bestCombo = run.combo;
+      // A later cross-lane tap can be struck while this earlier note is still
+      // pending. Cap the snapshot at the hold's chart-order ceiling so input
+      // reordering can never exceed maxPossibleScore on the server.
+      run.holdMultiplier[lane] = Math.min(
+        comboMultiplier(run.combo),
+        comboMultiplier(target + 1),
+      );
       if (perfect) run.perfect += 1;
       else run.good += 1;
+      beginHoldCounter(lane);
       flashFeedback("Drži", "hold");
       navigator.vibrate?.(12);
       return;
     }
     state[target] = DONE;
     awardHit(run, perfect, lane, hitY, now);
-  }, [awardHit, flashFeedback, positionAt, registerMisclick, songTimeAt]);
+  }, [awardHit, beginHoldCounter, flashFeedback, registerMisclick, songTimeAt]);
 
   /**
    * Ends a hold and pays out what it earned. Letting go early is not a miss:
@@ -581,7 +757,7 @@ export default function RhythmGame() {
     if (held < 0) return;
     const note = run.song.notes[held];
     const { hold: holdPoints, holdGraceMs, holdGraceBonus } = gameConfig.scoring;
-    const multiplier = comboMultiplier(run.combo);
+    const multiplier = run.holdMultiplier[lane];
     // Two clocks describe the same moment: the frames the lane has been held
     // for, and how far the tail still is from the line. The first is what the
     // payout is built on, the second is what the player sees. Either one
@@ -590,22 +766,28 @@ export default function RhythmGame() {
     const heldOut = note.hold * 1000 - run.holdHeldMs[lane] <= holdGraceMs;
     const tailClose = (note.time + note.hold - songTime) * 1000 <= holdGraceMs;
     const full = holdPoints * multiplier;
+    const playedFraction = note.hold > 0
+      ? Math.min(1, run.holdHeldMs[lane] / (note.hold * 1000))
+      : 1;
 
     let earned = run.holdEarned[lane];
     if (!released || heldOut || tailClose) {
       earned += Math.max(0, full - earned);
       if (released) earned += holdPoints * holdGraceBonus * multiplier;
       run.state[held] = DONE;
+      run.holdFill[held] = 1;
     } else {
       run.state[held] = RELEASED;
+      run.holdFill[held] = playedFraction;
     }
 
     run.score += earned - run.holdEarned[lane];
     run.activeHold[lane] = -1;
     run.holdHeldMs[lane] = 0;
     run.holdEarned[lane] = 0;
-    floatPoints(lane, Math.round(earned));
-  }, [floatPoints]);
+    run.holdMultiplier[lane] = 1;
+    finishHoldCounter(lane, Math.round(earned));
+  }, [finishHoldCounter]);
 
   const releaseLane = useCallback((lane: Lane) => {
     const run = runRef.current;
@@ -679,8 +861,6 @@ export default function RhythmGame() {
     const sprites = painters.sprites;
     const { color, pastel } = painters.palette;
     const radius = tileHeight * gameConfig.play.tileRadius;
-    const trailWidth = tileWidth * 0.4;
-    const trailX = tileWidth * 0.3;
 
     context.save();
     context.beginPath();
@@ -724,64 +904,92 @@ export default function RhythmGame() {
       let height = tileHeight;
       const next = run.nextInLane[i];
       if (next >= 0) {
-        const gap = ((positionAt(notes[next].time, song) - positionAt(note.time, song)) / travel) * playHeight;
-        if (gap < tileHeight) height = Math.max(18, gap - gameConfig.play.tileMinGap);
+        const visualEnd = note.time + note.hold;
+        const gap = (
+          (positionAt(notes[next].time, song) - positionAt(visualEnd, song))
+          / travel
+        ) * playHeight;
+        if (gap < tileHeight) {
+          height = Math.max(1, gap - gameConfig.play.tileMinGap);
+        }
       }
 
       if (note.hold > 0) {
         const tailLead = positionAt(note.time + note.hold, song) - here;
-        const tailY = top + (1 - Math.min(tailLead, travel) / travel) * playHeight;
-        const trailTop = tailY - height / 2;
-        const trailBottom = Math.max(trailTop, y);
+        const tailY = top + (1 - tailLead / travel) * playHeight;
+        // Once its head reaches the line, a hold stays attached there while
+        // its tail shortens. The full-width outer path is one shape: only its
+        // remote top and head bottom are rounded, with no seam in between.
+        const shapeTop = tailY - height;
+        const shapeBottom = Math.min(y, bottom);
+        const shapeHeight = Math.max(1, shapeBottom - shapeTop);
+        const fillProgress = held || dropped ? run.holdFill[i] : 0;
 
+        context.save();
         context.globalAlpha = dropped ? 0.25 : 1;
-        context.fillStyle = dropped ? "#f6f6f6" : withAlpha(color, 0.45);
-        context.beginPath();
-        context.roundRect(x + trailX, trailTop, trailWidth, trailBottom - trailTop, 10);
-        context.fill();
-
-        // While the hold pays out, the banked part of the tail fills in pastel
-        // from the hit line upwards and meets the tail end as it completes.
-        if (held) {
-          const requiredMs = note.hold * 1000;
-          const progress = requiredMs > 0 ? Math.min(1, run.holdHeldMs[note.lane] / requiredMs) : 1;
-          const filled = (trailBottom - trailTop) * progress;
-          context.fillStyle = pastel;
-          context.beginPath();
-          context.roundRect(x + trailX, trailBottom - filled, trailWidth, filled, 10);
-          context.fill();
+        context.fillStyle = dropped ? "#f6f6f6" : held ? withAlpha(color, 0.45) : color;
+        if (!dropped) {
+          context.shadowColor = held ? pastel : color;
+          context.shadowBlur = 16;
         }
-        context.globalAlpha = 1;
+        context.beginPath();
+        context.roundRect(x, shapeTop, tileWidth, shapeHeight, radius);
+        context.fill();
+        context.restore();
+
+        // Clip the pastel fill to that same outer path. Its straight live edge
+        // is internal; only the two ends of the complete hold are rounded.
+        if (fillProgress > 0) {
+          context.save();
+          context.beginPath();
+          context.roundRect(x, shapeTop, tileWidth, shapeHeight, radius);
+          context.clip();
+          context.globalAlpha = dropped ? 0.78 : 1;
+          context.fillStyle = pastel;
+          context.fillRect(
+            x,
+            shapeBottom - shapeHeight * fillProgress,
+            tileWidth,
+            shapeHeight * fillProgress,
+          );
+          context.restore();
+        }
+
+        // Keep the original line, dot and HOLD/DRŽI label in the head area.
+        if (height > 24 && y - height < bottom) {
+          const headBottom = Math.min(y, bottom);
+          const headTop = headBottom - height;
+          context.save();
+          context.globalAlpha = dropped ? 0.42 : 1;
+          context.fillStyle = "#050708";
+          context.fillRect(x + 9, headTop + height / 2 - 1, tileWidth - 18, 2);
+          context.beginPath();
+          context.arc(x + tileWidth - 13, headTop + 13, 3, 0, TAU);
+          context.fill();
+          context.font = "800 9px system-ui";
+          context.textAlign = "center";
+          context.fillText(held ? "DRŽI" : "HOLD", x + tileWidth / 2, headTop + height / 2 + 3);
+          context.restore();
+        }
+        continue;
       }
 
-      const sprite = sprites[held ? pastel : color];
+      const sprite = sprites[color];
       if (sprite) {
-        // A held head sits pressed under the finger: pastel and a touch smaller.
-        const scale = held ? 0.96 : 1;
-        const w = tileWidth * scale;
-        const h = height * scale;
-        const padX = sprite.pad * (w / tileWidth);
-        const padY = sprite.pad * (h / tileHeight);
-        context.globalAlpha = dropped ? 0.25 : 1;
+        const padX = sprite.pad;
+        const padY = sprite.pad * (height / tileHeight);
         context.drawImage(
           sprite.canvas,
-          x - padX + (tileWidth - w) / 2,
-          y - height + (height - h) / 2 - padY,
-          w + padX * 2,
-          h + padY * 2,
+          x - padX,
+          y - height - padY,
+          tileWidth + padX * 2,
+          height + padY * 2,
         );
-        context.globalAlpha = 1;
-      }
-      if (note.hold > 0 && height > 24) {
-        context.fillStyle = "#050708";
-        context.font = "800 9px system-ui";
-        context.textAlign = "center";
-        context.fillText(held ? "DRŽI" : "HOLD", x + tileWidth / 2, y - height / 2 + 3);
       }
     }
 
     context.restore();
-  }, [positionAt]);
+  }, []);
 
   /* ------------------------------------------------------------------- hud */
 
@@ -794,6 +1002,13 @@ export default function RhythmGame() {
     if (cache.score !== score && scoreElRef.current) {
       cache.score = score;
       scoreElRef.current.textContent = score.toLocaleString("sl-SI");
+    }
+    for (let lane = 0; lane < 4; lane += 1) {
+      if (run.activeHold[lane] < 0) continue;
+      const counter = holdCounterRefs.current[lane];
+      if (!counter) continue;
+      const value = `+${Math.floor(run.holdEarned[lane])}`;
+      if (counter.textContent !== value) counter.textContent = value;
     }
     if (cache.combo !== run.combo) {
       cache.combo = run.combo;
@@ -825,17 +1040,6 @@ export default function RhythmGame() {
       countElRef.current.hidden = count === 0;
     }
 
-    // These songs open with long instrumental intros and leave gaps between
-    // verses. Without a sign there, an empty board reads as a broken game.
-    const notes = run.song.notes;
-    const nextAt = run.cursor < notes.length ? notes[run.cursor].time : Infinity;
-    const wait = count > 0 || nextAt === Infinity ? 0 : Math.ceil(nextAt - songTime);
-    const showCue = wait > 3 ? wait : 0;
-    if (cache.cue !== showCue) {
-      cache.cue = showCue;
-      if (cueElRef.current) cueElRef.current.hidden = showCue === 0;
-      if (cueSecondsRef.current && showCue > 0) cueSecondsRef.current.textContent = `${showCue} s`;
-    }
   }, []);
 
   /**
@@ -880,12 +1084,13 @@ export default function RhythmGame() {
     const run = runRef.current;
     stopAudio();
 
+    const finalScore = Math.floor(run.score + SCORE_ROUNDING_EPSILON);
     const stored = Number(window.localStorage.getItem(highScoreKey(run.song)) ?? 0);
-    const best = Math.max(Number.isFinite(stored) ? Math.floor(stored) : 0, Math.floor(run.score));
+    const best = Math.max(Number.isFinite(stored) ? Math.floor(stored) : 0, finalScore);
     window.localStorage.setItem(highScoreKey(run.song), String(best));
 
     setResult({
-      score: Math.floor(run.score),
+      score: finalScore,
       perfect: run.perfect,
       good: run.good,
       misses: run.misses,
@@ -906,9 +1111,6 @@ export default function RhythmGame() {
       const notes = song.notes;
       const songTime = songTimeAt(now);
       const here = positionAt(songTime, song);
-      const layout = layoutRef.current;
-      const travel = gameConfig.play.travel;
-      const expire = layout ? -(layout.tileHeight / layout.playHeight) * travel : -0.25;
       // A tab that was in the background can hand back a huge gap; a hold must
       // not be paid for time the player never spent holding it.
       const deltaMs = run.frameAt > 0 ? Math.min(64, now - run.frameAt) : 0;
@@ -926,9 +1128,10 @@ export default function RhythmGame() {
         if (after > before) {
           const earned = holdPointsPerSecond(note.hold)
             * ((after - before) / 1000)
-            * comboMultiplier(run.combo);
+            * run.holdMultiplier[lane];
           run.holdHeldMs[lane] = after;
           run.holdEarned[lane] += earned;
+          run.holdFill[held] = requiredMs > 0 ? after / requiredMs : 1;
           run.score += earned;
         }
         if (positionAt(note.time + note.hold, song) - here <= 0) {
@@ -937,13 +1140,14 @@ export default function RhythmGame() {
       }
 
       for (let i = run.cursor; i < notes.length && !run.over; i += 1) {
-        if (positionAt(notes[i].time, song) - here > expire) break;
+        const note = notes[i];
         // A tile nobody touched is the one and only miss.
         if (state[i] === PENDING) {
+          if ((songTime - note.time) * 1000 < gameConfig.play.lateWindowMs) break;
           state[i] = DONE;
-          registerMiss(run, notes[i].lane);
+          registerMiss(run, note.lane);
         } else if (state[i] === RELEASED
-          && positionAt(notes[i].time + notes[i].hold, song) - here <= 0) {
+          && positionAt(note.time + note.hold, song) - here <= 0) {
           // The grey stub of a hold that was let go has finished scrolling.
           state[i] = DONE;
         }
@@ -965,12 +1169,18 @@ export default function RhythmGame() {
     runRef.current.frameAt = 0;
     frameRef.current = window.requestAnimationFrame(tick);
     return () => window.cancelAnimationFrame(frameRef.current);
-  }, [draw, finishGame, finishHold, paintHud, paintLanes, phase, positionAt, registerMiss, songTimeAt]);
+  }, [draw, finishGame, finishHold, paintHud, paintLanes, phase, registerMiss, songTimeAt]);
 
   const startGame = useCallback(() => {
     const el = audioElRef.current;
     runRef.current = createRun(selectedSong);
-    hudCacheRef.current = { score: -1, combo: -1, misses: -1, progress: -1, count: -1, cue: -2 };
+    hudCacheRef.current = { score: -1, combo: -1, misses: -1, progress: -1, count: -1 };
+    for (let lane = 0; lane < 4; lane += 1) {
+      holdCounterAnimationsRef.current[lane]?.cancel();
+      holdCounterAnimationsRef.current[lane] = null;
+      holdCounterRefs.current[lane]?.remove();
+      holdCounterRefs.current[lane] = null;
+    }
     clockRef.current = { media: -1, anchor: 0, at: 0 };
     pointerLanesRef.current.clear();
     laneStateRef.current = ["", "", "", ""];
@@ -1322,10 +1532,6 @@ export default function RhythmGame() {
           </div>
           <p ref={feedbackElRef} className={styles.feedback} data-grade="perfect" aria-hidden="true" />
           <div ref={countElRef} className={styles.countdown} aria-hidden="true" />
-          <div ref={cueElRef} className={styles.cue} hidden aria-hidden="true">
-            <span>Poslušaj</span>
-            <i ref={cueSecondsRef} />
-          </div>
           <div className={styles.progress}><span ref={progressElRef} /></div>
 
           {phase === "paused" && (
