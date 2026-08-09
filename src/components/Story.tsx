@@ -42,8 +42,8 @@ export default function Story() {
             <figure className="reveal">
               <div className="relative aspect-[3/2] overflow-hidden">
                 <Image
-                  src="/media/2024/ekipa-prostovoljcev-2024.jpg"
-                  alt="Ekipa prostovoljk in prostovoljcev v puloverjih Glasbenega Atlasa za pultom dogodka leta 2024."
+                  src="/media/2024/glasbeni-atlas-ekipa-2024.jpg"
+                  alt="Ekipa Glasbenega Atlasa 2024 pred odrom dogodka."
                   fill
                   sizes="(min-width: 768px) 45vw, 100vw"
                   className="object-cover"
