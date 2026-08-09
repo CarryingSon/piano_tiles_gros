@@ -375,13 +375,24 @@
 .hudValue strong i { font-style: normal; }
 .hudValue strong small { font-size: .95rem; }
 
+.hudLeft,
 .hudRight {
   display: grid;
   gap: .4rem;
+}
+
+.hudLeft { justify-items: start; }
+
+.hudRight {
   justify-items: end;
 }
 
 .hudActions { display: flex; gap: .45rem; }
+
+.exitButton {
+  font-size: 1.3rem;
+  line-height: 1;
+}
 
 .lives {
   display: flex;

@@ -1502,12 +1502,21 @@ export default function RhythmGame() {
         >
           <div className={styles.backdrop} aria-hidden="true" />
           <div className={styles.gameHud} ref={hudRef}>
-            <div className={styles.hudValue}><span>Točke</span><strong ref={scoreElRef}>0</strong></div>
-            <div className={styles.hudValue}><span>Combo</span><strong><i ref={comboElRef}>0</i><small ref={multElRef}>×1</small></strong></div>
-            <div className={styles.hudRight}>
+            <div className={styles.hudLeft}>
               <div className={styles.lives} ref={livesElRef} aria-label={`Na voljo ${gameConfig.lives} zgrešenih`}>
                 {Array.from({ length: gameConfig.lives }, (_, index) => <i key={index} data-spent="0" />)}
               </div>
+              <div className={styles.hudValue}><span>Točke</span><strong ref={scoreElRef}>0</strong></div>
+            </div>
+            <div className={styles.hudValue}><span>Combo</span><strong><i ref={comboElRef}>0</i><small ref={multElRef}>×1</small></strong></div>
+            <div className={styles.hudRight}>
+              <Link
+                href="/"
+                className={`${styles.iconButton} ${styles.exitButton}`}
+                aria-label="Zapri igro in se vrni na Glasbeni Atlas"
+              >
+                X
+              </Link>
               <div className={styles.hudActions}>
                 <button className={styles.iconButton} type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? "Vklopi zvok" : "Utišaj zvok"}>{muted ? "○" : "◉"}</button>
                 <button className={styles.iconButton} type="button" onClick={() => pause("Igra je ustavljena.")} aria-label="Ustavi igro">Ⅱ</button>
