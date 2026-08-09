@@ -12,7 +12,7 @@ export default function Story() {
   return (
     <section
       aria-labelledby="projekt-naslov"
-      className="relative overflow-hidden py-16 sm:py-32"
+      className="relative isolate overflow-hidden py-16 sm:py-32"
     >
       <PhotoWall variant="story" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">

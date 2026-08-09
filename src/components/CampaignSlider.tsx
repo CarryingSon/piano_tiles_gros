@@ -22,7 +22,7 @@ export default function CampaignSlider() {
   return (
     <section
       aria-labelledby="kampanja-naslov"
-      className="relative overflow-hidden py-24 sm:py-32"
+      className="relative isolate overflow-hidden py-24 sm:py-32"
     >
       <PhotoWall />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">

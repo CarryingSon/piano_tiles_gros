@@ -10,7 +10,7 @@ export default function Experience() {
     <section
       id="dozivetje"
       aria-labelledby="dozivetje-naslov"
-      className="relative overflow-hidden py-16 sm:py-32"
+      className="relative isolate overflow-hidden py-16 sm:py-32"
     >
       <PhotoWall variant="experience" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">

@@ -12,7 +12,7 @@ export default function Timeline() {
     <section
       id="zgodba"
       aria-labelledby="zgodba-naslov"
-      className="relative overflow-hidden py-16 sm:py-32"
+      className="relative isolate overflow-hidden py-16 sm:py-32"
     >
       <PhotoWall variant="timeline" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">

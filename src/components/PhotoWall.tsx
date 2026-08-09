@@ -20,8 +20,14 @@ export default function PhotoWall({
   variant?: PhotoWallVariant;
 }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-clip">
-      <div className="sticky top-0 h-svh overflow-hidden sm:absolute sm:inset-0 sm:h-auto">
+    <div
+      aria-hidden
+      className="pointer-events-none absolute inset-0 z-0 isolate overflow-hidden"
+    >
+      {/* Mobilni `sticky` sloj lahko v iOS Safariju uide iz pričakovanega
+          vrstnega reda. Absolutno ozadje zato ostane v svojem izoliranem
+          kontekstu in se ne more narisati nad vsebino. */}
+      <div className="absolute inset-0 overflow-hidden">
         <Image
           src="/media/wall/kolaz-2026.jpg"
           alt=""
