@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { event, heroMedia, lineup, tickets } from "@/data/event";
-import Wordmark from "@/components/Wordmark";
 
 /**
  * Junaški del: celozaslonski, kinematografski. Utišan video izsek iz
@@ -79,11 +78,15 @@ export default function Hero() {
           {event.tagline}
         </p>
 
-        <h1>
-          <span className="sr-only">Glasbeni Atlas 2026</span>
-          <span aria-hidden className="flex items-end gap-3 sm:gap-5">
-            <Wordmark className="h-auto w-[54vw] drop-shadow-[0_10px_32px_rgb(0_0_0/0.3)] sm:w-[min(64vw,38rem)]" />
-            <span className="mb-1 block bg-atlas px-2 py-1 font-display text-[9vw] leading-none text-night sm:px-3 sm:text-[8vw] lg:text-[7rem]">
+        <h1 className="font-display uppercase leading-[0.9]">
+          <span className="block text-[17vw] text-white sm:text-[13vw] lg:text-[9.5rem]">
+            Glasbeni
+          </span>
+          <span className="flex items-center gap-4 sm:gap-6">
+            <span className="block text-[17vw] text-white sm:text-[13vw] lg:text-[9.5rem]">
+              Atlas
+            </span>
+            <span className="block bg-atlas px-3 py-1 text-[9vw] text-night sm:text-[7vw] lg:text-[5.5rem]">
               2026
             </span>
           </span>
