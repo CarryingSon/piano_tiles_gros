@@ -36,11 +36,11 @@ export default function Hero() {
           fill
           priority
           sizes="100vw"
-          className="object-cover grayscale-[35%]"
+          className="scale-[1.25] object-cover grayscale-[35%]"
         />
         {videoOn && (
           <video
-            className="absolute inset-0 h-full w-full object-cover grayscale-[35%]"
+            className="absolute inset-0 h-full w-full scale-[1.25] object-cover grayscale-[35%]"
             autoPlay
             muted
             loop

@@ -59,7 +59,7 @@ export default function Nav() {
       <header
         aria-hidden={!showNav}
         inert={!showNav}
-        className={`fixed left-1/2 top-3 z-50 w-[calc(100%-1.5rem)] max-w-5xl -translate-x-1/2 border border-line bg-night/90 shadow-[0_12px_40px_rgb(0_0_0/0.45)] backdrop-blur-xl transition-[opacity,transform,visibility] duration-300 sm:top-4 ${
+        className={`fixed left-1/2 top-3 z-50 w-[calc(100%-1.5rem)] max-w-4xl -translate-x-1/2 rounded-2xl border border-atlas/35 bg-coal/90 shadow-[0_16px_50px_rgb(0_0_0/0.55),0_0_24px_rgb(252_219_39/0.08)] ring-1 ring-white/10 backdrop-blur-xl transition-[opacity,transform,visibility] duration-300 sm:top-4 ${
           showNav
             ? "visible translate-y-0 opacity-100"
             : "invisible pointer-events-none -translate-y-4 opacity-0"
@@ -94,7 +94,7 @@ export default function Nav() {
               href={tickets.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden bg-atlas px-4 py-2 font-display text-xs uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5 sm:inline-block"
+              className="hidden rounded-xl border border-atlas bg-atlas px-4 py-2 font-display text-xs uppercase tracking-wide text-night shadow-[0_4px_18px_rgb(252_219_39/0.16)] transition-[transform,background-color] hover:-translate-y-0.5 hover:bg-white sm:inline-block"
             >
               Vstopnice
             </a>
@@ -103,7 +103,7 @@ export default function Nav() {
               onClick={() => setOpen(true)}
               aria-expanded={open}
               aria-controls="mobilni-meni"
-              className="flex h-9 w-9 flex-col items-center justify-center gap-1.5 border border-line md:hidden"
+              className="flex h-9 w-9 flex-col items-center justify-center gap-1.5 rounded-xl border border-atlas/35 bg-night/70 transition-colors hover:border-atlas md:hidden"
             >
               <span className="sr-only">Odpri meni</span>
               <span aria-hidden className="h-0.5 w-5 bg-atlas" />
