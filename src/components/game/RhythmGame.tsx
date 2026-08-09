@@ -582,11 +582,17 @@ export default function RhythmGame() {
     const note = run.song.notes[held];
     const { hold: holdPoints, holdGraceMs, holdGraceBonus } = gameConfig.scoring;
     const multiplier = comboMultiplier(run.combo);
-    const remainingMs = (note.time + note.hold - songTime) * 1000;
+    // Two clocks describe the same moment: the frames the lane has been held
+    // for, and how far the tail still is from the line. The first is what the
+    // payout is built on, the second is what the player sees. Either one
+    // landing inside the window counts, so the smoothing on the audio clock can
+    // never eat a release the player made on the beat.
+    const heldOut = note.hold * 1000 - run.holdHeldMs[lane] <= holdGraceMs;
+    const tailClose = (note.time + note.hold - songTime) * 1000 <= holdGraceMs;
     const full = holdPoints * multiplier;
 
     let earned = run.holdEarned[lane];
-    if (!released || remainingMs <= holdGraceMs) {
+    if (!released || heldOut || tailClose) {
       earned += Math.max(0, full - earned);
       if (released) earned += holdPoints * holdGraceBonus * multiplier;
       run.state[held] = DONE;

@@ -209,8 +209,16 @@ export const gameConfig = {
     perfectZone: 0.34,
     /** Dva tapa v isti stezi bližje kot toliko sta pomotoma sprožen dvojni tap. */
     doubleTapGuard: 0.08,
-    /** Višina ploščice glede na širino steze. Edini gumb za velikost ploščic. */
-    tileScale: 0.95,
+    /**
+     * Višina ploščice glede na širino steze. Edini gumb za velikost ploščic.
+     *
+     * Prej je bila višina omejena z `min(96px, 14 % igrišča)`, kar na telefonu
+     * (steza ~100 px) pomeni že ~0,95 širine steze — zato bi razmerje 0,95
+     * ploščice pomanjšalo. 1,28 = 0,95 × 1,35 in da dejansko 35 % višje
+     * ploščice. Najtesnejši razmik med notama v isti stezi je 193 px, tako da
+     * se ploščice tudi pri tej višini nikjer ne prekrivajo.
+     */
+    tileScale: 1.28,
     /** Zaobljenost ploščice glede na njeno višino. */
     tileRadius: 0.14,
     /** Najmanjši razmik med sosednjima ploščicama v isti stezi, v pikslih. */
