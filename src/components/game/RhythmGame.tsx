@@ -256,6 +256,32 @@ function reducedMotion() {
 
 const highScoreKey = (song: GameSong) => `glasbeni-atlas-ritem-high-score-${song.id}`;
 
+/** Speaker with waves, or the same cone with a cross once the round is muted. */
+function SpeakerIcon({ muted }: { muted: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false">
+      <path d="M4 9.5v5h3.6L12 18.6V5.4L7.6 9.5H4z" fill="currentColor" />
+      {muted ? (
+        <path
+          d="M16 9.5l4.5 5m0-5l-4.5 5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+        />
+      ) : (
+        <path
+          d="M15.4 8.9a4.2 4.2 0 0 1 0 6.2M18 6.6a7.6 7.6 0 0 1 0 10.8"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          strokeLinecap="round"
+        />
+      )}
+    </svg>
+  );
+}
+
 type Layout = {
   width: number;
   height: number;
@@ -1670,10 +1696,16 @@ export default function RhythmGame() {
                   <i key={index} data-spent="0" aria-hidden="true" />
                 ))}
               </div>
-              <div className={styles.hudValue}><span>Točke</span><strong ref={scoreElRef}>0</strong></div>
+              <div className={styles.hudValue}><span>Combo</span><strong><i ref={comboElRef}>0</i><small ref={multElRef}>×1</small></strong></div>
             </div>
-            <div className={styles.hudValue}><span>Combo</span><strong><i ref={comboElRef}>0</i><small ref={multElRef}>×1</small></strong></div>
-            <div className={styles.hudRight}>
+            <div className={`${styles.hudValue} ${styles.hudScore}`}>
+              <span>Točke</span><strong ref={scoreElRef}>0</strong>
+            </div>
+            <div className={styles.hudActions}>
+              <button className={styles.iconButton} type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? "Vklopi zvok" : "Utišaj zvok"}>
+                <SpeakerIcon muted={muted} />
+              </button>
+              <button className={styles.iconButton} type="button" onClick={() => pause("Igra je ustavljena.")} aria-label="Ustavi igro">Ⅱ</button>
               <Link
                 href="/"
                 className={`${styles.iconButton} ${styles.exitButton}`}
@@ -1681,10 +1713,6 @@ export default function RhythmGame() {
               >
                 X
               </Link>
-              <div className={styles.hudActions}>
-                <button className={styles.iconButton} type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? "Vklopi zvok" : "Utišaj zvok"}>{muted ? "○" : "◉"}</button>
-                <button className={styles.iconButton} type="button" onClick={() => pause("Igra je ustavljena.")} aria-label="Ustavi igro">Ⅱ</button>
-              </div>
             </div>
           </div>
 

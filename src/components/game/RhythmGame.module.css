@@ -7,12 +7,14 @@
   --band-pastel: color-mix(in srgb, var(--band-color) 45%, white);
   --band-deep: color-mix(in srgb, var(--band-color) 22%, #0a0a0a);
   --band-glow: color-mix(in srgb, var(--band-color) 40%, transparent);
-  /* Refren: bolj nasičeno ozadje in 60 % močnejši glow.
-     Ploščica v refrenu nosi polno --band-color, v kitici pa --band-tile, ki je
-     ista barva, potisnjena proti noči. Zatemnitev je edina pot, ki se prebere
-     pri vseh treh bendih — mešanje proti beli pri Tabu rumeni skoraj ne premakne
-     barve. Odstotek je edini gumb za to, kako močan je preskok. */
-  --band-deep-lit: color-mix(in srgb, var(--band-color) 52%, #0a0a0a);
+  /* Refren: barva zalije celo ozadje in glow je 60 % močnejši.
+     --band-deep-lit je spodnji rob refrenskega ozadja, --band-deep zgornji.
+     42 % je kompromis: dovolj, da se iz črne kitice zagori, in ne toliko, da bi
+     ozadje pojedlo ploščice, ki v refrenu nosijo polno --band-color.
+     Ploščica v kitici je --band-tile, ista barva, potisnjena proti noči.
+     Zatemnitev je edina pot, ki se prebere pri vseh treh bendih — mešanje proti
+     beli pri Tabu rumeni skoraj ne premakne barve. */
+  --band-deep-lit: color-mix(in srgb, var(--band-color) 42%, #0a0a0a);
   --band-glow-lit: color-mix(in srgb, var(--band-color) 64%, transparent);
   --band-tile: color-mix(in srgb, var(--band-color) 74%, #0a0a0a);
   --lane-glow: var(--band-glow);
@@ -20,6 +22,9 @@
      zadetkom: zgrešena ploščica je rdeča, napačen klik siv. */
   --miss-color: #ff4d3d;
   --misclick-color: #9aa0a6;
+  /* Oblika življenja. Maska, da srček podeduje barvo benda in sivino, ko je
+     porabljen — z barvo, zapečeno v SVG, bi rabili dve sliki. */
+  --heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z'/%3E%3C/svg%3E");
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -397,10 +402,16 @@
   touch-action: none;
 }
 
+/* Tri kolone namesto space-between: srednja je s `1fr auto 1fr` optično točno na
+   sredini zaslona, ne glede na to, koliko prostora zasedeta combo levo in gumbi
+   desno. Pri space-between bi se točke premikale, kadar combo zraste s trimestne
+   na štirimestno vrednost. */
 .gameHud {
   position: relative;
   z-index: 4;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
   padding: 0 .75rem;
 }
 
@@ -429,19 +440,33 @@
 .hudValue strong i { font-style: normal; }
 .hudValue strong small { font-size: .95rem; }
 
-.hudLeft,
-.hudRight {
+.hudLeft {
   display: grid;
   gap: .4rem;
+  justify-items: start;
 }
 
-.hudLeft { justify-items: start; }
-
-.hudRight {
-  justify-items: end;
+/* Točke so junak zaslona: na sredini in v barvi benda, ista kot ploščice. */
+.hudScore {
+  justify-self: center;
+  text-align: center;
 }
 
-.hudActions { display: flex; gap: .45rem; }
+.hudScore span { color: color-mix(in srgb, var(--band-color) 62%, #a8adb3); }
+
+.hudScore strong {
+  justify-content: center;
+  color: var(--band-color);
+  font-size: 2.05rem;
+}
+
+/* Zvok, pavza in izhod v eni vrsti, X čisto na desni. */
+.hudActions {
+  display: flex;
+  align-items: center;
+  justify-self: end;
+  gap: .45rem;
+}
 
 .exitButton {
   font-size: 1.3rem;
@@ -453,15 +478,18 @@
   gap: .22rem;
 }
 
+/* Srček je maska nad barvno ploskvijo, ne slika: barva ostane --band-color in
+   porabljeno življenje jo samo zamenja, tako kot prej pri krogcih. */
 .lives i {
-  width: .42rem;
-  height: .42rem;
-  border-radius: 50%;
+  width: .78rem;
+  height: .78rem;
   background: var(--band-color);
   transition: background .15s ease;
+  -webkit-mask: var(--heart) center / contain no-repeat;
+  mask: var(--heart) center / contain no-repeat;
 }
 
-.lives i[data-spent="1"] { background: rgb(255 255 255 / .18); }
+.lives i[data-spent="1"] { background: rgb(255 255 255 / .22); }
 
 .canvas {
   position: absolute;
@@ -475,34 +503,40 @@
 
 /* ---------------------------------------------------- ozadje glede na del pesmi */
 
-/* The verse colour is the band's own and never changes over a song; the chorus
-   only deepens it and breathes with the tempo, and the bridge is the one place
-   the board leaves the band's hue. */
+/* Kitica je črna, refren je barva benda. To je največji možen preskok, ki ga
+   igrišče premore, in edini razlog, da kitica nima niti kančka barve: če jo ima,
+   refren ni več prehod iz teme v barvo, ampak samo malo več iste barve.
+   Prehod teče 1,1 s, tako da se zgodi na glasbo in ne poči. */
 .backdrop {
   position: absolute;
   z-index: 0;
   inset: 0;
-  background: radial-gradient(ellipse at 50% 100%, var(--band-deep) 0%, #0a0a0a 70%);
-  transition: background 1.1s linear, filter 1.1s ease, opacity 1.1s ease;
+  background: #050708;
+  transition: background 1.1s linear, opacity 1.1s ease;
 }
 
-/* Drugi, zgornji radij je tisti, kar refren loči od kitice na prvi pogled: v
-   kitici ozadje sveti samo od spodaj, v refrenu je osvetljeno celo igrišče. */
+/* Refren zalije celo igrišče, ne samo spodnji rob: spodaj --band-deep-lit,
+   proti vrhu --band-deep. Oba sta barva benda, potisnjena proti noči — polna
+   --band-color bi bila presvetla in bi požrla ploščice, ki so prav v refrenu
+   pobarvane s polno barvo. Odstotka teh dveh žetonov na vrhu datoteke sta edina
+   gumba za to, kako močno refren zagori. */
 .game[data-section="chorus"] .backdrop {
-  background:
-    radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--band-color) 20%, transparent) 0%, transparent 58%),
-    radial-gradient(ellipse at 50% 100%, var(--band-deep-lit) 0%, #0a0a0a 78%);
+  background: linear-gradient(to top, var(--band-deep-lit) 0%, var(--band-deep) 100%);
   animation: chorusBreath var(--chorus-pulse, 8s) ease-in-out infinite;
 }
 
-/* Hladen odmik: proč od barve benda, manj nasičeno in temneje. */
+/* Bridge je nekoč dobil svoj značaj prek hue-rotate na obarvanem ozadju. Zdaj je
+   kitica črna in filter na črni ne naredi ničesar, zato hladen odtenek pobarva
+   naravnost. */
 .game[data-section="bridge"] .backdrop {
-  filter: hue-rotate(190deg) saturate(.5) brightness(.85);
+  background: linear-gradient(to top, #101a24 0%, #070a0d 100%);
 }
 
+/* Uvod in zaključek: komaj viden dih barve, da plošča med dolgim uvodom ni
+   popolnoma prazna, a še vedno daleč od refrena. */
 .game[data-section="intro"] .backdrop,
 .game[data-section="outro"] .backdrop {
-  opacity: .55;
+  background: radial-gradient(ellipse at 50% 100%, var(--band-deep) 0%, #050708 62%);
 }
 
 /* Refren posveti tudi steze in ploščice. */
