@@ -55,9 +55,14 @@ Uporaba glasbe mora biti pred javno objavo urejena z imetniki pravic.
 
 ## Supabase leaderboard
 
+> **Lestvica še ne deluje.** Migracija spodaj v projektu Supabase ni bila nikoli
+> zagnana, zato `/api/leaderboard` in `/api/leaderboard/session` vračata 503.
+> Dokler koraki iz »Prvi zagon baze« niso izvedeni, igra teče normalno, rezultata
+> pa ni mogoče oddati — tekmovanje za popust zato še ne more steči.
+
 Igra uporablja pravi skupni leaderboard brez prijave. Po koncu igralec vpiše
-ime, rezultat pa se lahko odda samo enkrat za veljavno 30–45-sekundno igralno
-sejo. Skupna lestvica rezultate različnih skladb primerja z normalizirano
+ime, rezultat pa se lahko odda samo enkrat za veljavno igralno sejo (med 10
+sekundami in 15 minutami). Skupna lestvica rezultate različnih skladb primerja z normalizirano
 oceno, zavihek izvajalca pa prikazuje surove točke za izbrano skladbo.
 Na skupni lestvici se posamezno ime pojavi samo enkrat z najboljšim rezultatom.
 Prva tri mesta so označena kot prejemniki 50-% popusta na vstopnico; pred javno
@@ -68,7 +73,10 @@ izenačenih rezultatov in način prevzema popusta.
 
 1. V projektu Supabase odprite **SQL Editor → New query**.
 2. Kopirajte in zaženite celotno datoteko
-   `supabase/migrations/20260808190000_leaderboard.sql`.
+   `supabase/migrations/20260808190000_leaderboard.sql`, nato še
+   `supabase/migrations/20260809120000_leaderboard_full_songs.sql`
+   (ta popravi zgornjo mejo rezultata na cele komade — brez nje strežnik
+   zavrne vsak nov rezultat).
 3. Lokalno ustvarite `.env.local` po vzoru `.env.example`.
 4. V Vercelu pod **Project Settings → Environment Variables** dodajte:
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in

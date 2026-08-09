@@ -69,7 +69,13 @@ function decodeChart(code: string): Note[] {
   return notes;
 }
 
-/** Every note hit as Perfect, with the combo multiplier climbing from the start. */
+/**
+ * Every note hit as Perfect, with the combo multiplier climbing from the start.
+ *
+ * `submit_leaderboard_score` in supabase/migrations mirrors this ceiling and the
+ * note count per song, and rejects anything above it. A new beat map means both
+ * sides have to move together — scripts/build-charts.py prints the SQL values.
+ */
 function maxPossibleScore(noteCount: number) {
   let total = 0;
   for (let i = 1; i <= noteCount; i += 1) {

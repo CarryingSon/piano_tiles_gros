@@ -271,6 +271,11 @@ def b32(n, width=0):
     return s.rjust(width, "0") if width else s
 
 
+def max_score(note_count):
+    """Mirror of maxPossibleScore() in src/data/game.ts."""
+    return sum(100 * min(4, 1 + combo // 10) for combo in range(1, note_count + 1))
+
+
 def encode(notes):
     """<delta base32><lane char>; holds add a fixed 2-char base32 duration."""
     out = []
@@ -337,3 +342,13 @@ if __name__ == "__main__":
         print(f'    chart: "{code}",')
         print("  },")
     print("} satisfies Record<string, ChartData>;")
+
+    # submit_leaderboard_score rejects anything above its own copy of these
+    # numbers, so a new chart is only half-deployed until the SQL moves too.
+    sys.stderr.write("\nUpdate submit_leaderboard_score in supabase/migrations with:\n")
+    sys.stderr.write("  v_max_score\n")
+    for song_id, count, *_ in rows:
+        sys.stderr.write(f"    WHEN '{song_id}' THEN {max_score(count)}\n")
+    sys.stderr.write("  v_note_count\n")
+    for song_id, count, *_ in rows:
+        sys.stderr.write(f"    WHEN '{song_id}' THEN {count}\n")
