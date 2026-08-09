@@ -1,23 +1,16 @@
 import Image from "next/image";
 
-type WallVariant = "a5" | "atlas";
-
-const VARIANTS: Record<WallVariant, string> = {
-  a5: "/media/wall/kolaz-a5.jpg",
-  atlas: "/media/wall/kolaz-atlas.jpg",
-};
-
 /**
- * Ozadje v slogu kampanjskih plakatov 2026: pravi kolaž s pravimi razmiki in
- * poševnimi paspartuji, kot sta ga sestavila naša editorja (A5 tisk in IG
- * objava) — ne generiran iz kode. Rahlo prosojen, saj gre za dokončano
- * kampanjsko grafiko, ne surovo fotografijo, nato potemnjen za berljivost.
+ * Ozadje v slogu kampanjskih plakatov 2026: pravi fotografski kolaž s
+ * pravimi razmiki in poševnimi paspartuji, kot ga je sestavil naš editor —
+ * ne generiran iz kode. Rahlo prosojen, saj gre za kampanjsko grafiko, ne
+ * surovo fotografijo, nato potemnjen za berljivost besedila.
  */
-export default function PhotoWall({ variant = "a5" }: { variant?: WallVariant }) {
+export default function PhotoWall() {
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
       <Image
-        src={VARIANTS[variant]}
+        src="/media/wall/kolaz-2026.jpg"
         alt=""
         fill
         sizes="100vw"

@@ -24,7 +24,7 @@ export default function CampaignSlider() {
       aria-labelledby="kampanja-naslov"
       className="relative overflow-hidden py-24 sm:py-32"
     >
-      <PhotoWall variant="a5" />
+      <PhotoWall />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>

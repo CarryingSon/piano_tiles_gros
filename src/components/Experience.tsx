@@ -12,7 +12,7 @@ export default function Experience() {
       aria-labelledby="dozivetje-naslov"
       className="relative overflow-hidden py-24 sm:py-32"
     >
-      <PhotoWall variant="a5" />
+      <PhotoWall />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
           Doživetje
