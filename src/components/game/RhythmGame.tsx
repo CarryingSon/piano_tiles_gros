@@ -1633,8 +1633,8 @@ export default function RhythmGame() {
               </div>
             </fieldset>
             {audioError && <p className={styles.error} role="alert">{audioError}</p>}
-            <button className={styles.primary} type="button" onClick={startGame}>Začni · {selectedSong.artist} <span aria-hidden>↗</span></button>
             <div className={styles.eventStrip}><span>Datum</span><strong>{gameConfig.event.date}</strong><span>Cilj</span><strong>Ivančna Gorica</strong></div>
+            <button className={styles.primary} type="button" onClick={startGame}>Začni · {selectedSong.artist} <span aria-hidden>↗</span></button>
           </div>
         </section>
       )}

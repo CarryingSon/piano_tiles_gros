@@ -70,14 +70,21 @@
 .intro {
   height: 100dvh;
   min-height: 0;
-  justify-content: space-between;
+  justify-content: flex-start;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   background:
-    linear-gradient(to bottom, rgb(5 7 8 / .2), #050708 88%),
-    url("/media/video/hero-poster.jpg") center 22% / cover no-repeat;
+    linear-gradient(
+      to bottom,
+      rgb(5 7 8 / .28) 0%,
+      rgb(5 7 8 / .58) 34%,
+      rgb(5 7 8 / .9) 74%,
+      #050708 100%
+    ),
+    url("/media/wall/kolaz-2026.jpg") center / cover no-repeat;
 }
 
 .topbar,
@@ -87,6 +94,19 @@
   justify-content: space-between;
   gap: .75rem;
   width: 100%;
+}
+
+.topbar {
+  flex: 0 0 auto;
+  padding-bottom: .8rem;
+  border-bottom: 1px solid rgb(255 255 255 / .13);
+}
+
+.intro .back,
+.intro .iconButton {
+  border-color: rgb(255 255 255 / .34);
+  background: rgb(5 7 8 / .68);
+  box-shadow: 0 .6rem 1.8rem rgb(0 0 0 / .22);
 }
 
 .back,
@@ -109,20 +129,21 @@
 
 .introContent {
   display: flex;
-  flex: 1;
+  flex: 0 0 auto;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: flex-start;
   width: min(100%, 34rem);
   margin: 0 auto;
-  padding: 1.25rem 0 1rem;
+  padding: 1.15rem 0 max(1.75rem, calc(1rem + env(safe-area-inset-bottom)));
 }
 
-/* Short phones scroll this screen, so the start button rides along the bottom
-   instead of hiding under the fold. */
+/* The CTA stays in document flow. A sticky CTA used to cover the prize and
+   song cards on short Safari viewports. */
 .introContent .primary {
-  position: sticky;
-  bottom: max(.5rem, env(safe-area-inset-bottom));
-  z-index: 2;
+  position: static;
+  margin-top: .35rem;
+  flex-shrink: 0;
+  box-shadow: 0 .35rem 0 #9a8200, 0 .9rem 2rem rgb(0 0 0 / .28);
 }
 
 .eyebrow,
@@ -138,10 +159,11 @@
 .title {
   margin: .55rem 0 .7rem;
   font-family: var(--font-display);
-  font-size: clamp(4.7rem, 24vw, 8rem);
+  font-size: clamp(4.35rem, 22vw, 7.25rem);
   font-weight: 400;
   line-height: .79;
   letter-spacing: -.035em;
+  text-shadow: 0 .5rem 2.2rem rgb(0 0 0 / .52);
   text-transform: uppercase;
 }
 
@@ -151,60 +173,68 @@
 }
 
 .lead {
-  max-width: 26rem;
+  max-width: 24rem;
   margin: 0;
   color: #d4d4d0;
-  font-size: clamp(1rem, 4.6vw, 1.25rem);
+  font-size: clamp(.95rem, 4.2vw, 1.15rem);
   line-height: 1.35;
+  text-shadow: 0 .2rem .8rem rgb(0 0 0 / .72);
 }
 
 .instruction {
   display: flex;
   align-items: center;
   gap: .75rem;
-  margin: 1.25rem 0 .6rem;
-  padding: .85rem 0;
-  border-block: 1px solid rgb(255 255 255 / .16);
+  margin: 1.15rem 0 .65rem;
+  padding: .85rem;
+  border: 1px solid rgb(255 255 255 / .2);
+  background: rgb(5 7 8 / .66);
+  box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
   color: #f6f6f6;
   font-size: .86rem;
+  line-height: 1.4;
+  backdrop-filter: blur(8px);
 }
 
 .rules {
-  margin: 0 0 1.1rem;
-  color: #a8adb3;
+  margin: 0 0 1rem;
+  padding: 0 .15rem;
+  color: #c3c6c9;
   font-size: .72rem;
-  line-height: 1.4;
+  line-height: 1.48;
 }
 
 .competitionCallout {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: .1rem .7rem;
-  margin: -.35rem 0 1rem;
-  padding: .65rem .75rem;
-  border: 1px solid rgb(255 216 0 / .5);
-  background: rgb(5 7 8 / .72);
+  gap: .15rem .8rem;
+  margin: 0 0 1.1rem;
+  padding: .8rem .85rem;
+  border: 1px solid rgb(255 216 0 / .64);
+  background: linear-gradient(110deg, rgb(255 216 0 / .11), rgb(5 7 8 / .78) 46%);
+  box-shadow: 0 .8rem 2rem rgb(0 0 0 / .2);
+  backdrop-filter: blur(8px);
 }
 
 .competitionCallout > span {
   grid-row: span 2;
   align-self: center;
   color: #ffd800;
-  font: 400 1.45rem var(--font-display);
+  font: 400 1.6rem var(--font-display);
 }
 
-.competitionCallout strong { font-size: .74rem; text-transform: uppercase; }
-.competitionCallout small { color: #a8adb3; font-size: .56rem; }
+.competitionCallout strong { font-size: .76rem; text-transform: uppercase; }
+.competitionCallout small { color: #b5b9bd; font-size: .58rem; line-height: 1.35; }
 
 .songPicker {
   min-width: 0;
-  margin: 0 0 1rem;
+  margin: 0 0 .75rem;
   padding: 0;
   border: 0;
 }
 
 .songPicker legend {
-  margin-bottom: .55rem;
+  margin-bottom: .65rem;
   color: #ffd800;
   font-size: .63rem;
   font-weight: 700;
@@ -215,18 +245,20 @@
 .songGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: .45rem;
+  gap: .5rem;
 }
 
 .songButton {
   min-width: 0;
-  min-height: 5rem;
-  padding: .65rem .5rem;
+  min-height: 5.25rem;
+  padding: .72rem .58rem;
   border: 1px solid rgb(255 255 255 / .24);
-  background: rgb(5 7 8 / .68);
+  background: linear-gradient(145deg, rgb(18 20 21 / .9), rgb(5 7 8 / .78));
+  box-shadow: 0 .55rem 1.4rem rgb(0 0 0 / .18);
   color: #f6f6f6;
   text-align: left;
   cursor: pointer;
+  transition: border-color .18s ease, background-color .18s ease, transform .18s ease;
 }
 
 .songButton strong,
@@ -262,7 +294,15 @@
 
 .songButton[aria-pressed="true"] {
   border-color: var(--band-color);
-  box-shadow: inset 0 -4px 0 var(--band-color), 0 0 1.1rem color-mix(in srgb, var(--band-color) 25%, transparent);
+  background: linear-gradient(
+    145deg,
+    color-mix(in srgb, var(--band-color) 17%, #121415),
+    rgb(5 7 8 / .9)
+  );
+  box-shadow:
+    inset 0 -4px 0 var(--band-color),
+    0 .65rem 1.5rem color-mix(in srgb, var(--band-color) 17%, transparent);
+  transform: translateY(-2px);
 }
 
 .tapIcon {
@@ -313,6 +353,15 @@
   font-size: .72rem;
   letter-spacing: .06em;
   text-transform: uppercase;
+}
+
+.intro .eventStrip {
+  gap: .35rem 1rem;
+  margin: 0 0 .35rem;
+  padding: .7rem .8rem;
+  border: 1px solid rgb(255 255 255 / .15);
+  background: rgb(5 7 8 / .58);
+  backdrop-filter: blur(8px);
 }
 
 .eventStrip span:nth-child(odd) { color: #ffd800; }
