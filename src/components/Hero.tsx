@@ -26,7 +26,7 @@ export default function Hero() {
   return (
     <section
       id="vrh"
-      className="grain relative flex min-h-svh flex-col justify-end overflow-hidden"
+      className="grain relative flex min-h-svh flex-col justify-center overflow-hidden"
     >
       {/* Ozadje: poster (LCP) + utišan video, ko je smiselno */}
       <div className="absolute inset-0" aria-hidden>
@@ -60,14 +60,16 @@ export default function Hero() {
       {/* Koordinatni okvir — atlas motiv */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-4 top-20 hidden justify-between text-[11px] uppercase tracking-[0.25em] text-fog/70 sm:flex md:inset-x-8"
+        className="pointer-events-none absolute inset-x-0 top-6 hidden text-[11px] uppercase tracking-[0.25em] text-fog/70 sm:block"
       >
-        <span>{event.coords.lat}</span>
-        <span>Naslednja postaja</span>
-        <span>{event.coords.lng}</span>
+        <div className="mx-auto flex w-full max-w-6xl justify-between px-4 sm:px-6">
+          <span>{event.coords.lat}</span>
+          <span>Naslednja postaja</span>
+          <span>{event.coords.lng}</span>
+        </div>
       </div>
 
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-36 sm:px-6 sm:pb-20">
+      <div className="relative mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 sm:py-28">
         <p className="mb-4 inline-flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-atlas sm:text-sm">
           <span aria-hidden className="relative flex h-2 w-2">
             <span className="motion-pulse absolute inline-flex h-full w-full rounded-full bg-atlas" />
