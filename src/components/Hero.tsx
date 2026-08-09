@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { event, heroMedia, lineup, tickets } from "@/data/event";
 
 /**
@@ -12,6 +12,21 @@ import { event, heroMedia, lineup, tickets } from "@/data/event";
  */
 export default function Hero() {
   const [videoOn, setVideoOn] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const playVideo = useCallback(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // iOS Safari checks the DOM properties in addition to the JSX attributes.
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute("muted", "");
+    void video.play().catch(() => {
+      // Safari may defer autoplay until the first touch. The poster stays visible
+      // underneath and the interaction listeners below try again immediately.
+    });
+  }, []);
 
   useEffect(() => {
     const previousScrollRestoration = window.history.scrollRestoration;
@@ -41,9 +56,35 @@ export default function Hero() {
     const connection = (navigator as Navigator & { connection?: NetInfo })
       .connection;
     if (reduced.matches || connection?.saveData) return;
-    const id = window.setTimeout(() => setVideoOn(true), 600);
-    return () => window.clearTimeout(id);
+    const id = window.requestAnimationFrame(() => setVideoOn(true));
+    return () => window.cancelAnimationFrame(id);
   }, []);
+
+  useEffect(() => {
+    if (!videoOn) return;
+
+    const video = videoRef.current;
+    if (!video) return;
+
+    const resumeWhenVisible = () => {
+      if (!document.hidden) playVideo();
+    };
+
+    playVideo();
+    video.addEventListener("canplay", playVideo);
+    window.addEventListener("pageshow", playVideo);
+    window.addEventListener("pointerdown", playVideo, { once: true, passive: true });
+    window.addEventListener("touchstart", playVideo, { once: true, passive: true });
+    document.addEventListener("visibilitychange", resumeWhenVisible);
+
+    return () => {
+      video.removeEventListener("canplay", playVideo);
+      window.removeEventListener("pageshow", playVideo);
+      window.removeEventListener("pointerdown", playVideo);
+      window.removeEventListener("touchstart", playVideo);
+      document.removeEventListener("visibilitychange", resumeWhenVisible);
+    };
+  }, [playVideo, videoOn]);
 
   return (
     <section
@@ -62,6 +103,7 @@ export default function Hero() {
         />
         {videoOn && (
           <video
+            ref={videoRef}
             className="absolute inset-0 h-full w-full scale-y-[1.24] object-cover object-center grayscale-[35%] sm:scale-[1.25]"
             autoPlay
             muted
@@ -70,8 +112,8 @@ export default function Hero() {
             preload="auto"
             poster={heroMedia.poster}
           >
-            <source src={heroMedia.videoWebm} type="video/webm" />
             <source src={heroMedia.videoMp4} type="video/mp4" />
+            <source src={heroMedia.videoWebm} type="video/webm" />
           </video>
         )}
         {/* Temnitev za berljivost */}

@@ -9,7 +9,10 @@ import { useEffect } from "react";
 export default function Reveal() {
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (reduced.matches) return;
+    const mobile = window.matchMedia("(max-width: 639px)");
+    if (reduced.matches || mobile.matches || !("IntersectionObserver" in window)) {
+      return;
+    }
 
     document.documentElement.classList.add("reveal-armed");
     const observer = new IntersectionObserver(

@@ -102,6 +102,17 @@ html.reveal-armed .reveal.reveal-shown {
   transform: none;
 }
 
+/* Mobilni Safari lahko med hitrim pomikom odloži IntersectionObserver in bi
+   vsebino pustil v začetnem skritem stanju. Na telefonu ima prednost vedno
+   vidna vsebina; animacijo obdržimo na večjih zaslonih. */
+@media (max-width: 639px) {
+  html.reveal-armed .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
