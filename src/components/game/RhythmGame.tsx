@@ -50,6 +50,8 @@ export default function RhythmGame() {
   const lastUiUpdateRef = useRef(0);
   const statsRef = useRef({ perfect: 0, good: 0, misses: 0 });
   const activeHoldsRef = useRef(new Map<string, ActiveHold>());
+  const pressedLanesRef = useRef(new Map<string, Lane>());
+  const lanePulseUntilRef = useRef([0, 0, 0, 0]);
 
   useEffect(() => {
     phaseRef.current = phase;
@@ -102,6 +104,8 @@ export default function RhythmGame() {
     setSessionId(null);
     statsRef.current = { perfect: 0, good: 0, misses: 0 };
     activeHoldsRef.current.clear();
+    pressedLanesRef.current.clear();
+    lanePulseUntilRef.current = [0, 0, 0, 0];
     setBreakdown({ perfect: 0, good: 0, misses: 0 });
   }, []);
 
@@ -173,6 +177,8 @@ export default function RhythmGame() {
     const hitY = height * 0.82;
     const laneWidth = width / 4;
     const energy = Math.min(comboRef.current / 40, 1);
+    const inputPulseNow = window.performance.now();
+    const pressedLaneSet = new Set(pressedLanesRef.current.values());
 
     const glow = context.createRadialGradient(width / 2, hitY, 0, width / 2, hitY, width * .7);
     glow.addColorStop(0, `rgba(224,81,16,${0.08 + energy * .2})`);
@@ -182,7 +188,11 @@ export default function RhythmGame() {
 
     for (let lane = 0; lane < 4; lane += 1) {
       const x = lane * laneWidth;
-      context.fillStyle = lane % 2 === 0 ? "rgba(255,255,255,.018)" : "rgba(255,255,255,.045)";
+      const isPressed = pressedLaneSet.has(lane as Lane);
+      const pulse = Math.max(0, Math.min(1, (lanePulseUntilRef.current[lane] - inputPulseNow) / 160));
+      context.fillStyle = isPressed || pulse > 0
+        ? `rgba(255,216,0,${.08 + Math.max(pulse, isPressed ? .75 : 0) * .18})`
+        : lane % 2 === 0 ? "rgba(255,255,255,.018)" : "rgba(255,255,255,.045)";
       context.fillRect(x, top, laneWidth, bottom - top);
       if (lane > 0) {
         context.strokeStyle = "rgba(246,246,246,.13)";
@@ -193,6 +203,15 @@ export default function RhythmGame() {
         context.stroke();
       }
     }
+
+    const tapZoneTop = hitY - (gameConfig.timing.early / gameConfig.timing.approach) * (hitY - top);
+    const tapZoneBottom = Math.min(bottom, hitY + (gameConfig.timing.late / gameConfig.timing.approach) * (hitY - top));
+    const tapZone = context.createLinearGradient(0, tapZoneTop, 0, tapZoneBottom);
+    tapZone.addColorStop(0, "rgba(255,216,0,0)");
+    tapZone.addColorStop(.55, "rgba(255,216,0,.08)");
+    tapZone.addColorStop(1, "rgba(255,216,0,0)");
+    context.fillStyle = tapZone;
+    context.fillRect(0, tapZoneTop, width, tapZoneBottom - tapZoneTop);
 
     context.setLineDash([5, 9]);
     context.strokeStyle = `rgba(255,216,0,${.32 + energy * .45})`;
@@ -207,13 +226,13 @@ export default function RhythmGame() {
     context.fillStyle = "#ffd800";
     context.font = "700 9px system-ui";
     context.textAlign = "center";
-    context.fillText("CILJNA ČRTA  ·  D   F   J   K", width / 2, hitY + 21);
+    context.fillText("TAPNI KJERKOLI  ·  SLEDI RITMU", width / 2, hitY + 21);
 
     selectedSong.notes.forEach((note, index) => {
       if (judgedRef.current.has(index)) return;
       const isActiveHold = [...activeHoldsRef.current.values()].some((hold) => hold.noteIndex === index);
       const relative = note.time - time;
-      if (!isActiveHold && (relative > gameConfig.timing.approach || relative < -gameConfig.timing.good)) return;
+      if (!isActiveHold && (relative > gameConfig.timing.approach || relative < -gameConfig.timing.late)) return;
       const p = 1 - relative / gameConfig.timing.approach;
       const y = isActiveHold ? hitY : top + p * (hitY - top);
       const x = note.lane * laneWidth + 6;
@@ -268,38 +287,42 @@ export default function RhythmGame() {
     if (!active) return;
     const note = selectedSong.notes[active.noteIndex];
     const holdEnd = note.time + (note.duration ?? 0);
-    const completed = automatic || songTime >= holdEnd - gameConfig.timing.good;
+    const completed = automatic || songTime >= holdEnd - gameConfig.timing.holdRelease;
     activeHoldsRef.current.delete(inputId);
     judgedRef.current.add(active.noteIndex);
     if (completed) awardHit(active.isPerfect);
     else registerMiss();
   }, [awardHit, registerMiss, selectedSong]);
 
-  const beginLane = useCallback((lane: Lane, inputId: string) => {
+  const beginInput = useCallback((tappedLane: Lane, inputId: string) => {
     if (phaseRef.current !== "playing" || activeHoldsRef.current.has(inputId)) return;
     const audio = audioRef.current;
     if (!audio) return;
     const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
     const heldIndexes = new Set([...activeHoldsRef.current.values()].map((hold) => hold.noteIndex));
     let nearestIndex = -1;
-    let nearestDelta = Number.POSITIVE_INFINITY;
+    let nearestDistance = Number.POSITIVE_INFINITY;
 
     selectedSong.notes.forEach((note, index) => {
-      if (note.lane !== lane || judgedRef.current.has(index) || heldIndexes.has(index)) return;
-      const delta = Math.abs(songTime - note.time);
-      if (delta < nearestDelta) {
-        nearestDelta = delta;
+      if (judgedRef.current.has(index) || heldIndexes.has(index)) return;
+      const delta = songTime - note.time;
+      if (delta < -gameConfig.timing.early || delta > gameConfig.timing.late) return;
+      const distance = Math.abs(delta);
+      if (distance < nearestDistance) {
+        nearestDistance = distance;
         nearestIndex = index;
       }
     });
 
-    if (nearestIndex < 0 || nearestDelta > gameConfig.timing.good) {
+    if (nearestIndex < 0) {
+      lanePulseUntilRef.current[tappedLane] = window.performance.now() + 90;
       registerMiss();
       return;
     }
 
     const note = selectedSong.notes[nearestIndex];
-    const isPerfect = nearestDelta <= gameConfig.timing.perfect;
+    const isPerfect = nearestDistance <= gameConfig.timing.perfect;
+    lanePulseUntilRef.current[note.lane] = window.performance.now() + 160;
     if (note.type === "hold" && note.duration) {
       activeHoldsRef.current.set(inputId, { noteIndex: nearestIndex, isPerfect });
       showFeedback("Drži");
@@ -328,7 +351,7 @@ export default function RhythmGame() {
       let missed = 0;
       const heldIndexes = new Set([...activeHoldsRef.current.values()].map((hold) => hold.noteIndex));
       selectedSong.notes.forEach((note, index) => {
-        if (!judgedRef.current.has(index) && !heldIndexes.has(index) && songTime - note.time > gameConfig.timing.good) {
+        if (!judgedRef.current.has(index) && !heldIndexes.has(index) && songTime - note.time > gameConfig.timing.late) {
           judgedRef.current.add(index);
           missed += 1;
         }
@@ -418,20 +441,26 @@ export default function RhythmGame() {
     );
   }, [muted, resetRound, selectedSong, stopAudio]);
 
-  const onPointerDown = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+  const onPointerDown = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    if (phaseRef.current !== "playing" || (event.target as Element).closest("button, a")) return;
     event.preventDefault();
     event.currentTarget.setPointerCapture(event.pointerId);
     const rect = event.currentTarget.getBoundingClientRect();
     const lane = Math.max(0, Math.min(3, Math.floor(((event.clientX - rect.left) / rect.width) * 4))) as Lane;
-    beginLane(lane, `pointer-${event.pointerId}`);
-  }, [beginLane]);
+    const inputId = `pointer-${event.pointerId}`;
+    pressedLanesRef.current.set(inputId, lane);
+    beginInput(lane, inputId);
+  }, [beginInput]);
 
-  const onPointerEnd = useCallback((event: React.PointerEvent<HTMLCanvasElement>) => {
+  const onPointerEnd = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    const inputId = `pointer-${event.pointerId}`;
+    if (!pressedLanesRef.current.has(inputId) && !activeHoldsRef.current.has(inputId)) return;
     event.preventDefault();
+    pressedLanesRef.current.delete(inputId);
     const audio = audioRef.current;
     if (audio) {
       const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
-      resolveHold(`pointer-${event.pointerId}`, songTime);
+      resolveHold(inputId, songTime);
     }
     if (event.currentTarget.hasPointerCapture(event.pointerId)) {
       event.currentTarget.releasePointerCapture(event.pointerId);
@@ -445,7 +474,9 @@ export default function RhythmGame() {
       const lane = lanes[event.key.toLowerCase()];
       if (lane !== undefined) {
         event.preventDefault();
-        beginLane(lane, `key-${event.key.toLowerCase()}`);
+        const inputId = `key-${event.key.toLowerCase()}`;
+        pressedLanesRef.current.set(inputId, lane);
+        beginInput(lane, inputId);
       }
       if (event.key === "Escape" && phaseRef.current === "playing") {
         setPauseReason("Igra je ustavljena.");
@@ -456,6 +487,7 @@ export default function RhythmGame() {
     const onKeyUp = (event: KeyboardEvent) => {
       const key = event.key.toLowerCase();
       if (!(key in { d: 1, f: 1, j: 1, k: 1 })) return;
+      pressedLanesRef.current.delete(`key-${key}`);
       const audio = audioRef.current;
       if (!audio) return;
       const songTime = audio.context.currentTime - audio.startAt + selectedSong.offset;
@@ -467,7 +499,7 @@ export default function RhythmGame() {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [beginLane, resolveHold, selectedSong]);
+  }, [beginInput, resolveHold, selectedSong]);
 
   useEffect(() => {
     const pauseForInterruption = () => {
@@ -601,7 +633,7 @@ export default function RhythmGame() {
             <p className={styles.eyebrow}>Ritmična igra · 36 sekund</p>
             <h1 className={styles.title}>Ujemi <span>ritem</span></h1>
             <p className={styles.lead}>{gameConfig.supportingText}</p>
-            <div className={styles.instruction}><span className={styles.tapIcon}>↓</span><span>Tapni kratke note. Dolge drži do konca svetleče poti.</span></div>
+            <div className={styles.instruction}><span className={styles.tapIcon}>↓</span><span>Tapni kjerkoli na igralnem zaslonu v ritmu glasbe. Dolgo noto drži.</span></div>
             <div className={styles.competitionCallout}>
               <span>TOP 3</span>
               <strong>{gameConfig.competition.discountPercent} % cenejša vstopnica</strong>
@@ -643,13 +675,19 @@ export default function RhythmGame() {
         <section className={`${styles.screen} ${styles.centerScreen}`} aria-live="assertive">
           <div key={countdown} className={styles.countdown}>{countdown}</div>
           <p className={styles.nowPlaying}>{selectedSong.artist} · {selectedSong.title}</p>
-          <p className={styles.countHint}>Ciljna črta je spodaj</p>
+          <p className={styles.countHint}>Tapni kjerkoli · sledi ritmu</p>
           {audioError && <p className={styles.error}>{audioError}</p>}
         </section>
       )}
 
       {(phase === "playing" || phase === "paused") && (
-        <section className={styles.game} aria-label="Igralno polje">
+        <section
+          className={styles.game}
+          onPointerDown={onPointerDown}
+          onPointerUp={onPointerEnd}
+          onPointerCancel={onPointerEnd}
+          aria-label="Igralno polje. Tapni kjerkoli v ritmu glasbe; dolgo noto drži."
+        >
           <div className={styles.gameHud}>
             <div className={styles.hudValue}><span>Točke</span><strong>{score}</strong></div>
             <div className={styles.hudValue}><span>Combo</span><strong>{combo}<small>×{Math.min(4, 1 + Math.floor(combo / 10))}</small></strong></div>
@@ -658,7 +696,7 @@ export default function RhythmGame() {
               <button className={styles.iconButton} type="button" onClick={pause} aria-label="Ustavi igro">Ⅱ</button>
             </div>
           </div>
-          <canvas ref={canvasRef} className={styles.canvas} onPointerDown={onPointerDown} onPointerUp={onPointerEnd} onPointerCancel={onPointerEnd} aria-label="Štiri igralne steze. Kratke note tapni, dolge note drži. Na tipkovnici uporabi D, F, J in K." />
+          <canvas ref={canvasRef} className={styles.canvas} aria-hidden="true" />
           {feedback && <p key={feedback.id} className={`${styles.feedback} ${feedback.label === "Drži" ? styles.hold : styles[feedback.label.toLowerCase() as "perfect" | "good" | "miss"]}`} aria-live="polite">{feedback.label}</p>}
           <div className={styles.progress} aria-label={`Napredek ${Math.round(progress * 100)} %`}><span style={{ "--progress": progress } as React.CSSProperties} /></div>
           {phase === "paused" && (
