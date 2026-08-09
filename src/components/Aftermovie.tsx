@@ -5,17 +5,17 @@ import { useEffect, useRef, useState } from "react";
 import { aftermovies } from "@/data/event";
 
 /**
- * Ena video kartica. Poster se zamenja z YouTube (nocookie) iframom, ko
- * uporabnik klikne gumb ALI ko kartica pripotuje vsaj do polovice v
- * viewport — takrat se predvajanje sproži samodejno, vedno utišano (ker ga
- * brskalniki drugače blokirajo). Zvok se vklopi z lastnim gumbom, ki
- * YouTubovemu predvajalniku prek postMessage pošlje ukaz mute/unMute.
+ * Ena video kartica. Lokalno gostovan <video> (brez YouTube vdelave in
+ * njenega vmesnika) se zamenja za poster, ko uporabnik klikne gumb ALI ko
+ * kartica pripotuje vsaj do polovice v viewport — takrat se predvajanje
+ * sproži samodejno, vedno utišano (ker ga brskalniki drugače blokirajo).
+ * Zvok vklopi lasten gumb.
  */
 function AftermovieCard({ video }: { video: (typeof aftermovies)[number] }) {
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -35,10 +35,7 @@ function AftermovieCard({ video }: { video: (typeof aftermovies)[number] }) {
 
   const toggleSound = () => {
     const next = !muted;
-    iframeRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: "command", func: next ? "mute" : "unMute", args: [] }),
-      "*",
-    );
+    if (videoRef.current) videoRef.current.muted = next;
     setMuted(next);
   };
 
@@ -49,13 +46,15 @@ function AftermovieCard({ video }: { video: (typeof aftermovies)[number] }) {
     >
       {playing ? (
         <>
-          <iframe
-            ref={iframeRef}
-            className="absolute inset-0 h-full w-full"
-            src={`https://www.youtube-nocookie.com/embed/${video.youtubeId}?rel=0&autoplay=1&mute=1&playsinline=1&enablejsapi=1`}
-            title={video.title}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
+          <video
+            ref={videoRef}
+            src={video.src}
+            poster={video.poster}
+            className="absolute inset-0 h-full w-full object-cover"
+            autoPlay
+            muted
+            playsInline
+            controls={false}
           />
           <button
             type="button"
@@ -157,7 +156,7 @@ export default function Aftermovie() {
 
         <div className="mt-10 grid gap-8 md:grid-cols-2">
           {aftermovies.map((video) => (
-            <AftermovieCard key={video.youtubeId} video={video} />
+            <AftermovieCard key={video.src} video={video} />
           ))}
         </div>
       </div>
