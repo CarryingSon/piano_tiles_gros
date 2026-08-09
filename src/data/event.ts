@@ -175,12 +175,24 @@ export const stats = {
   ],
 } as const;
 
-export const aftermovie = {
-  /** Uradni aftermovie 2024 — YouTube kanal ŠK GROŠ. */
-  youtubeId: "9kNuCqe3xeQ",
-  title: "Glasbeni Atlas 2024 — uradni aftermovie",
-  poster: "/media/video/aftermovie-poster.jpg",
-} as const;
+export const aftermovies = [
+  {
+    year: "2024",
+    /** Uradni aftermovie 2024 — YouTube kanal ŠK GROŠ. */
+    youtubeId: "9kNuCqe3xeQ",
+    title: "Glasbeni Atlas 2024 — uradni aftermovie",
+    poster: "/media/video/aftermovie-poster.jpg",
+    duration: "1:03",
+  },
+  {
+    year: "2022",
+    /** Uradni aftermovie 2022 — YouTube kanal ŠK GROŠ. */
+    youtubeId: "X0VkxCPy0r8",
+    title: "Glasbeni Atlas 2022 — uradni aftermovie",
+    poster: "/media/video/aftermovie-2022-poster.jpg",
+    duration: "1:35",
+  },
+] as const;
 
 export const heroMedia = {
   /** Kratek, utišan izsek iz uradnega aftermovia 2024 (last ŠK GROŠ). */
