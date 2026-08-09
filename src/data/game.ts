@@ -1,16 +1,15 @@
+import { songCharts } from "@/data/charts";
 import { event, site, tickets } from "@/data/event";
 
 export type Lane = 0 | 1 | 2 | 3;
 
 export type Note = {
+  /** Absolute position in the audio file, in seconds. */
   time: number;
   lane: Lane;
-  type?: "tap" | "hold";
-  /** Dolžina držanja v sekundah; obvezna pri hold noti. */
-  duration?: number;
+  /** Seconds the lane has to stay pressed; 0 for a plain tap. */
+  hold: number;
 };
-
-const lanePattern: Lane[] = [0, 1, 2, 3, 1, 3, 0, 2, 0, 3, 2, 1, 3, 0, 1, 2];
 
 export type SongId = "mrfy" | "kokosy" | "tabu";
 
@@ -20,55 +19,88 @@ export type GameSong = {
   title: string;
   file: string;
   bpm: number;
-  offset: number;
+  /** Length of the audio file including the silent countdown head. */
   duration: number;
   accent: string;
   notes: Note[];
   maxScore: number;
 };
 
+/** Silent head encoded into every track so the countdown runs before bar one. */
+export const countdownLead = 3;
+
+const BASE32 = "0123456789abcdefghijklmnopqrstuv";
+const TAP_LANES = "wxyz";
+const HOLD_LANES = "WXYZ";
+const TICK = 0.01;
+
 /**
- * Zemljevid se prilagodi tempu izbranega komada. Prvi štirje udarci so
- * namenoma prosti, nato pa se ritem stopnjuje z vmesnimi osminkami. Čase
- * lahko organizator zamenja z ročno pripravljenim seznamom za nov izsek.
+ * Expands a chart string written by scripts/build-charts.py. Each note is a
+ * base32 tick delta followed by a lane character — w–z for taps, W–Z for holds,
+ * where a hold adds two more base32 digits for its length.
  */
-function createBeatMap(bpm: number, patternShift: number): Note[] {
-  const beat = 60 / bpm;
+function decodeChart(code: string): Note[] {
   const notes: Note[] = [];
-  const firstNote = beat * 4;
+  let tick = 0;
+  let delta = 0;
 
-  for (let i = 0; firstNote + i * beat < 35.2; i += 1) {
-    const time = firstNote + i * beat;
-    const isHold = i >= 10 && i % 14 === 8;
-    notes.push({
-      time,
-      lane: lanePattern[(i + patternShift) % lanePattern.length],
-      type: isHold ? "hold" : "tap",
-      duration: isHold ? beat * 1.25 : undefined,
-    });
-
-    if (i >= 24 && i % 4 === 1) {
-      notes.push({
-        time: time + beat / 2,
-        lane: lanePattern[(i + patternShift + 5) % lanePattern.length],
-      });
+  for (let i = 0; i < code.length; i += 1) {
+    const char = code[i];
+    const digit = BASE32.indexOf(char);
+    if (digit >= 0) {
+      delta = delta * 32 + digit;
+      continue;
     }
+
+    const tap = TAP_LANES.indexOf(char);
+    const held = HOLD_LANES.indexOf(char);
+    const lane = (tap >= 0 ? tap : held) as Lane;
+    tick += delta;
+    delta = 0;
+
+    let hold = 0;
+    if (held >= 0) {
+      hold = (BASE32.indexOf(code[i + 1]) * 32 + BASE32.indexOf(code[i + 2])) * TICK;
+      i += 2;
+    }
+    notes.push({ time: tick * TICK, lane, hold });
   }
 
-  return notes.sort((a, b) => a.time - b.time);
+  return notes;
 }
 
-function maxPossibleScore(notes: Note[]) {
-  return notes.reduce((total, _note, index) => {
-    const combo = index + 1;
-    const multiplier = Math.min(4, 1 + Math.floor(combo / 10));
-    return total + 100 * multiplier;
-  }, 0);
+/** Every note hit as Perfect, with the combo multiplier climbing from the start. */
+function maxPossibleScore(noteCount: number) {
+  let total = 0;
+  for (let i = 1; i <= noteCount; i += 1) {
+    total += scoring.perfect * comboMultiplier(i);
+  }
+  return total;
 }
 
-function createSong(song: Omit<GameSong, "notes" | "maxScore">, patternShift: number): GameSong {
-  const notes = createBeatMap(song.bpm, patternShift);
-  return { ...song, notes, maxScore: maxPossibleScore(notes) };
+export function comboMultiplier(combo: number) {
+  return Math.min(scoring.maxMultiplier, 1 + Math.floor(combo / scoring.multiplierEvery));
+}
+
+const scoring = {
+  perfect: 100,
+  good: 55,
+  multiplierEvery: 10,
+  maxMultiplier: 4,
+} as const;
+
+type SongMeta = Pick<GameSong, "id" | "artist" | "title" | "file" | "accent">;
+
+function createSong(meta: SongMeta): GameSong {
+  const chart = songCharts[meta.id];
+  const notes = decodeChart(chart.chart);
+  return {
+    ...meta,
+    bpm: chart.bpm,
+    duration: chart.duration,
+    notes,
+    maxScore: maxPossibleScore(notes.length),
+  };
 }
 
 export const gameSongs: GameSong[] = [
@@ -76,33 +108,23 @@ export const gameSongs: GameSong[] = [
     id: "mrfy",
     artist: "MRFY",
     title: "Prjatučki",
-    file: "/media/game/mrfy-prjatucki.mp3",
-    bpm: 117.95,
-    // Fazni zamik prvega izrazitega udarca v 36-sekundnem izseku.
-    offset: -0.135,
-    duration: 36.5,
+    file: "/media/game/mrfy-prjatucki.m4a",
     accent: "#FFD800",
-  }, 0),
+  }),
   createSong({
     id: "kokosy",
     artist: "Kokosy",
     title: "Planeti se vrtijo",
-    file: "/media/game/kokosy-planeti-se-vrtijo.mp3",
-    bpm: 95.5,
-    offset: -0.309,
-    duration: 36.5,
+    file: "/media/game/kokosy-planeti-se-vrtijo.m4a",
     accent: "#E99FD6",
-  }, 3),
+  }),
   createSong({
     id: "tabu",
     artist: "Tabu",
     title: "Poljubljena",
-    file: "/media/game/tabu-poljubljena.mp3",
-    bpm: 133.65,
-    offset: -0.237,
-    duration: 36.5,
+    file: "/media/game/tabu-poljubljena.m4a",
     accent: "#E05110",
-  }, 7),
+  }),
 ];
 
 export const gameConfig = {
@@ -124,27 +146,24 @@ export const gameConfig = {
     note: "Pri izenačenju odloča prej oddan rezultat. Velja po potrditvi rezultata in skladno s pravili organizatorja.",
   },
   siteUrl: `${site.url}/igra`,
-  audio: {
-    duration: 36.5,
+  /** Zgrešene ploščice, ki jih igra dovoli, preden je konec. */
+  lives: 7,
+  play: {
+    /** Sekunde, ki jih ploščica potrebuje čez igrišče na začetku komada. */
+    travel: 1.55,
+    /** Ob koncu komada ploščice padajo toliko hitreje. */
+    endSpeed: 1.65,
+    /** Spodnji del steze, kjer tap šteje za Perfect. */
+    perfectZone: 0.34,
+    /** Dva tapa v isti stezi bližje kot toliko sta pomotoma sprožen dvojni tap. */
+    doubleTapGuard: 0.08,
   },
-  timing: {
-    perfect: 0.1,
-    early: 0.27,
-    late: 0.17,
-    holdRelease: 0.12,
-    approach: 1.65,
-  },
-  scoring: {
-    perfect: 100,
-    good: 60,
-    multiplierEvery: 10,
-    maxMultiplier: 4,
-  },
+  scoring,
   titles: [
-    { minScore: 0, title: "Izgubljeni turist" },
-    { minScore: 4000, title: "Lovec refrenov" },
-    { minScore: 10000, title: "Navigator ritma" },
-    { minScore: 16000, title: "Legenda Glasbenega Atlasa" },
+    { minRatio: 0, title: "Izgubljeni turist" },
+    { minRatio: 0.3, title: "Lovec refrenov" },
+    { minRatio: 0.6, title: "Navigator ritma" },
+    { minRatio: 0.85, title: "Legenda Glasbenega Atlasa" },
   ],
   colors: {
     yellow: "#FFD800",
@@ -158,8 +177,15 @@ export const gameConfig = {
     `Dosegel/-la sem ${score} točk in postal/-a ${title}. Premagaj moj rezultat na Glasbenem Atlasu!`,
 } as const;
 
-export function getPerformance(score: number) {
+export function getPerformance(score: number, maxScore: number) {
+  const ratio = maxScore > 0 ? score / maxScore : 0;
   return [...gameConfig.titles]
     .reverse()
-    .find((item) => score >= item.minScore) ?? gameConfig.titles[0];
+    .find((item) => ratio >= item.minRatio) ?? gameConfig.titles[0];
+}
+
+/** "3:39" — playable length, countdown head excluded. */
+export function songLength(song: GameSong) {
+  const seconds = Math.round(song.duration - countdownLead);
+  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 }

@@ -13,7 +13,7 @@ export default function GameTeaser() {
     <section className={styles.section} aria-labelledby="igra-naslov">
       <div className={styles.inner}>
         <div>
-          <p className={styles.kicker}>Nova postaja · 36 sekund</p>
+          <p className={styles.kicker}>Nova postaja · cel komad</p>
           <h2 id="igra-naslov" className={styles.title}>Misliš, da imaš ritem?</h2>
           <p className={styles.copy}>Štiri steze. En beat. Pot do Ivančne Gorice se začne s prvim tapom.</p>
           <Link href="/igra" className={styles.cta}>Zaigraj <span aria-hidden>↗</span></Link>

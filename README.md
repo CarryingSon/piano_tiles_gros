@@ -18,23 +18,40 @@ npm run lint     # ESLint
 Samostojna mobilna igra je na poti [`/igra`](http://localhost:3000/igra),
 na domači strani pa jo napoveduje sekcija »Misliš, da imaš ritem?«. Na
 namiznem računalniku se namesto igralne površine pokaže QR-koda za odprtje
-igre na telefonu. Kratke note igralec tapne, dolge note pa drži do njihovega
-konca.
+igre na telefonu.
 
-Vse nastavitve igre so v `src/data/game.ts`: podatki dogodka, Eventim URL,
-BPM, zvočni zamik, timing okna, točkovanje, pragovi naslovov, barve, besedilo
-za deljenje in beat mapi. Trije 36-sekundni izseki so v `public/media/game/`:
-MRFY — »Prjatučki«, Kokosy — »Planeti se vrtijo« in Tabu — »Poljubljena«.
+Igra teče po vzoru Piano Tiles: ploščico tapneš v njeni stezi kadar koli,
+odkar se prikaže — ciljne črte ni. Nižje ko je ploščica ob tapu, več točk
+(Perfect proti Good). Dolgo ploščico držiš, dokler njen rep ne zapusti
+igrišča. Sedem zgrešenih ploščic konča igro, proti koncu komada pa ploščice
+padajo do 1,65-krat hitreje. Na koncu se poleg rezultata izpiše največje
+možno število točk.
+
+En krog traja cel komad. Zvok je v `public/media/game/` kot mono AAC
+(≈ 64 kbit/s, 1,8–2,0 MB na komad) in se pretaka, ne nalaga v pomnilnik.
+Vsaka datoteka ima na začetku 3 sekunde tišine, čez katere teče odštevanje.
+
+Note so v `src/data/charts.ts` — generirana datoteka, ki jo napiše
+`scripts/build-charts.py` (potrebuje ffmpeg in numpy). Skripta iz mastra
+zazna tempo, sledi udarcem in gostoto not prilagodi energiji komada:
+
+```bash
+python3 scripts/build-charts.py mrfy=master/prjatucki.mp3 ... > src/data/charts.ts
+```
 
 Za zamenjavo glasbe:
 
-1. novo, za uporabo potrjeno datoteko skopirajte v `public/media/game/`;
-2. v `gameConfig.audio` popravite `file`, `bpm`, `offset` in `duration`;
-3. note v `gameConfig.notes` oziroma funkciji `createBeatMap` časovno prilagodite
-   novemu posnetku;
+1. iz potrjenega mastra kodirajte predvajalno datoteko (ukaz je v glavi skripte)
+   in jo shranite v `public/media/game/`;
+2. z isto skripto in istim mastrom na novo zgenerirajte `src/data/charts.ts`;
+3. v `gameSongs` v `src/data/game.ts` popravite `file`, izvajalca in naslov;
 4. na telefonu preverite prvih in zadnjih deset sekund igre.
 
-Uporaba glasbenih izsekov mora biti pred javno objavo urejena z imetniki pravic.
+Ostale nastavitve igre so v `src/data/game.ts`: podatki dogodka, Eventim URL,
+hitrost padanja, število življenj, točkovanje, pragovi naslovov, barve in
+besedilo za deljenje.
+
+Uporaba glasbe mora biti pred javno objavo urejena z imetniki pravic.
 
 ## Supabase leaderboard
 

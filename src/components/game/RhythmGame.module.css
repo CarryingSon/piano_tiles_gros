@@ -1,5 +1,4 @@
 .shell {
-  --energy: 0;
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -19,10 +18,9 @@
   inset: -20%;
   z-index: -2;
   background:
-    radial-gradient(circle at 50% 76%, rgb(224 81 16 / calc(.12 + var(--energy) * .3)), transparent 31%),
-    radial-gradient(circle at 12% 8%, rgb(233 159 214 / calc(.08 + var(--energy) * .2)), transparent 28%),
+    radial-gradient(circle at 50% 76%, rgb(224 81 16 / .16), transparent 31%),
+    radial-gradient(circle at 12% 8%, rgb(233 159 214 / .1), transparent 28%),
     #050708;
-  transition: background .25s ease;
 }
 
 .shell::after {
@@ -91,7 +89,15 @@
   justify-content: flex-end;
   width: min(100%, 34rem);
   margin: 0 auto;
-  padding: 2rem 0 1rem;
+  padding: 1.25rem 0 1rem;
+}
+
+/* Short phones scroll this screen, so the start button rides along the bottom
+   instead of hiding under the fold. */
+.introContent .primary {
+  position: sticky;
+  bottom: max(.5rem, env(safe-area-inset-bottom));
+  z-index: 2;
 }
 
 .eyebrow,
@@ -131,11 +137,18 @@
   display: flex;
   align-items: center;
   gap: .75rem;
-  margin: 1.25rem 0;
+  margin: 1.25rem 0 .6rem;
   padding: .85rem 0;
   border-block: 1px solid rgb(255 255 255 / .16);
   color: #f6f6f6;
   font-size: .86rem;
+}
+
+.rules {
+  margin: 0 0 1.1rem;
+  color: #a8adb3;
+  font-size: .72rem;
+  line-height: 1.4;
 }
 
 .competitionCallout {
@@ -182,7 +195,7 @@
 
 .songButton {
   min-width: 0;
-  min-height: 4.25rem;
+  min-height: 5rem;
   padding: .65rem .5rem;
   border: 1px solid rgb(255 255 255 / .24);
   background: rgb(5 7 8 / .68);
@@ -192,11 +205,20 @@
 }
 
 .songButton strong,
-.songButton span {
+.songButton span,
+.songButton em {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.songButton em {
+  margin-top: .2rem;
+  color: #a8adb3;
+  font-size: .56rem;
+  font-style: normal;
+  letter-spacing: .1em;
 }
 
 .songButton strong {
@@ -285,21 +307,6 @@
   animation: spin .8s linear infinite;
 }
 
-.countdown {
-  font-family: var(--font-display);
-  font-size: min(48vw, 13rem);
-  line-height: 1;
-  color: #ffd800;
-  animation: count .75s ease both;
-}
-
-.countHint {
-  margin-top: 1rem;
-  font-size: .72rem;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-}
-
 .nowPlaying {
   margin: 1rem 0 -.35rem;
   color: #ffd800;
@@ -318,7 +325,7 @@
 .gameHud {
   position: relative;
   z-index: 4;
-  height: 4rem;
+  align-items: flex-start;
   padding: 0 .75rem;
 }
 
@@ -335,13 +342,40 @@
 }
 
 .hudValue strong {
+  display: flex;
+  align-items: baseline;
+  gap: .15rem;
   font-family: var(--font-display);
   font-size: 1.65rem;
   font-weight: 400;
   line-height: 1;
 }
 
+.hudValue strong i { font-style: normal; }
+.hudValue strong small { font-size: .95rem; }
+
+.hudRight {
+  display: grid;
+  gap: .4rem;
+  justify-items: end;
+}
+
 .hudActions { display: flex; gap: .45rem; }
+
+.lives {
+  display: flex;
+  gap: .22rem;
+}
+
+.lives i {
+  width: .42rem;
+  height: .42rem;
+  border-radius: 50%;
+  background: #ffd800;
+  transition: background .15s ease;
+}
+
+.lives i[data-spent="1"] { background: rgb(255 255 255 / .18); }
 
 .canvas {
   position: absolute;
@@ -375,21 +409,36 @@
 .feedback {
   position: absolute;
   z-index: 5;
-  top: 25%;
+  bottom: 18%;
   left: 50%;
   margin: 0;
+  opacity: 0;
   font-family: var(--font-display);
-  font-size: clamp(2.5rem, 13vw, 4.5rem);
+  font-size: clamp(2rem, 10vw, 3.4rem);
   line-height: 1;
+  pointer-events: none;
   text-transform: uppercase;
   transform: translateX(-50%) rotate(-3deg);
-  animation: feedback .42s ease both;
 }
 
-.perfect { color: #ffd800; }
-.good { color: #e99fd6; }
-.miss { color: #f6f6f6; }
-.hold { color: #ffd800; }
+.feedback[data-grade="perfect"] { color: #ffd800; }
+.feedback[data-grade="good"] { color: #e99fd6; }
+.feedback[data-grade="miss"] { color: #e05110; }
+.feedback[data-grade="hold"] { color: #f6f6f6; }
+
+.countdown {
+  position: absolute;
+  z-index: 6;
+  top: 50%;
+  left: 50%;
+  color: #ffd800;
+  font-family: var(--font-display);
+  font-size: min(42vw, 11rem);
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 0 3rem rgb(5 7 8 / .9);
+  transform: translate(-50%, -50%);
+}
 
 .overlay {
   position: absolute;
@@ -552,10 +601,42 @@
 }
 
 .resultScoreLabel {
+  margin: .15rem 0 0;
   color: #a8adb3;
   font-size: .65rem;
-  letter-spacing: .22em;
+  letter-spacing: .18em;
   text-transform: uppercase;
+}
+
+.breakdown {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: .5rem;
+  margin: 0 0 1.35rem;
+  padding: .8rem 0;
+  border-block: 1px solid rgb(255 255 255 / .16);
+}
+
+.breakdown div { min-width: 0; }
+
+.breakdown dt {
+  display: flex;
+  min-height: 2.2em;
+  align-items: flex-start;
+  justify-content: center;
+  color: #a8adb3;
+  font-size: .52rem;
+  letter-spacing: .12em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.breakdown dd {
+  margin: .2rem 0 0;
+  color: #ffd800;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  line-height: 1;
 }
 
 .resultTitle {
@@ -670,8 +751,6 @@
 .error { color: #e99fd6; font-size: .8rem; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes count { from { opacity: 0; transform: scale(1.35); } to { opacity: 1; transform: scale(1); } }
-@keyframes feedback { from { opacity: 0; transform: translateX(-50%) scale(.7) rotate(-3deg); } 45% { opacity: 1; } to { opacity: 0; transform: translateX(-50%) scale(1.15) rotate(-3deg); } }
 
 @media (orientation: landscape) and (max-height: 540px) {
   .landscape { display: flex; }
@@ -688,6 +767,4 @@
 
 @media (prefers-reduced-motion: reduce) {
   .loader { animation-duration: 1.8s; }
-  .countdown, .feedback { animation: none; }
-  .shell::before { transition: none; }
 }
