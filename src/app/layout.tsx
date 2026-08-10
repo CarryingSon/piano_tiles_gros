@@ -83,8 +83,15 @@ const jsonLd = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
+    // `data-scroll-behavior="smooth"` je od Next 16 obvezen dodatek k
+    // `scroll-behavior: smooth` iz globals.css: brez njega router med
+    // navigacijo te nastavitve ne prepiše več, zato se skok na vrh animira
+    // namesto da bi bil trenuten — in vrnitev iz /igre pristane na sredini
+    // oziroma na dnu strani. Z atributom router med prehodom začasno vklopi
+    // `auto`, skoči na vrh in nato vrne mehko drsenje za sidra v navigaciji.
     <html
       lang="sl"
+      data-scroll-behavior="smooth"
       className={`${anton.variable} ${grotesk.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
