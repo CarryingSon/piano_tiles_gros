@@ -98,10 +98,19 @@ Uporaba glasbe mora biti pred javno objavo urejena z imetniki pravic.
 
 ## Supabase leaderboard
 
-> **Lestvica še ne deluje.** Migracija spodaj v projektu Supabase ni bila nikoli
-> zagnana, zato `/api/leaderboard` in `/api/leaderboard/session` vračata 503.
-> Dokler koraki iz »Prvi zagon baze« niso izvedeni, igra teče normalno, rezultata
-> pa ni mogoče oddati — tekmovanje za popust zato še ne more steči.
+> **Branje lestvice deluje, oddaja pa je bila pokvarjena do 10. 8. 2026.** V
+> bazi je ostala funkcija iz `20260809120000_leaderboard_full_songs.sql`
+> (strop mrfy 173500), koda pa je bila že pri 215110. Funkcija oceno preračuna
+> in zahteva natančno ujemanje, zato je padel *vsak* rezultat razen 0 — z
+> `invalid score`. Popravek je
+> `20260810100000_leaderboard_resync_and_reset.sql`; **dokler ni pognan v
+> Supabase, oddaja ne deluje.** Ista datoteka počisti tudi stare vnose, ker so
+> imeli oceno računano proti staremu stropu in bi bili na skupni lestvici
+> napihnjeni.
+>
+> Vsaka nadaljnja sprememba točkovanja zahteva novo migracijo po istem vzorcu.
+> Vse migracije za prvo samo zamenjajo `submit_leaderboard_score`, zato je ob
+> zaostanku dovolj pognati zadnjo, ne vseh po vrsti.
 
 Igra uporablja pravi skupni leaderboard brez prijave. Po koncu igralec vpiše
 ime, rezultat pa se lahko odda samo enkrat za veljavno igralno sejo (med 10

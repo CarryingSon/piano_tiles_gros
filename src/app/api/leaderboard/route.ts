@@ -37,6 +37,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  // Zunaj `try`, da ju lahko izpiše tudi lovilec napak spodaj.
+  const submitted: { songId?: string; score?: number | null; rating?: number } = {};
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const name = cleanName(body.name);
@@ -44,6 +46,8 @@ export async function POST(request: Request) {
     const songId = typeof body.songId === "string" ? body.songId : "";
     const song = gameConfig.songs.find((item) => item.id === songId);
     const score = integer(body.score);
+    submitted.songId = songId;
+    submitted.score = score;
     const perfect = integer(body.perfect);
     const good = integer(body.good);
     const misses = integer(body.misses);
@@ -59,6 +63,7 @@ export async function POST(request: Request) {
     }
 
     const rating = Math.min(10000, Math.round((score / song.maxScore) * 10000));
+    submitted.rating = rating;
     const entry = await submitLeaderboardScore({
       sessionId, name, songId, score, rating, perfect, good, misses,
     });
@@ -67,7 +72,14 @@ export async function POST(request: Request) {
     }
     return Response.json({ entry }, { status: 201 });
   } catch (error) {
-    console.error("Leaderboard submit error", error);
-    return Response.json({ error: "Rezultata trenutno ni mogoče shraniti." }, { status: 503 });
+    // `invalid score` pomeni, da meje v bazi zaostajajo za `src/data/game.ts`:
+    // funkcija preračuna oceno s svojim stropom in zavrne vsako neujemanje.
+    // Brez teh podatkov v dnevniku je videti kot izpad baze, čeprav manjka
+    // samo zagnana migracija — zato jih izpišemo in vrnemo 422, ne 503.
+    const stale = (error as { message?: string } | null)?.message === "invalid score";
+    console.error("Leaderboard submit error", error, { ...submitted, staleBounds: stale });
+    return stale
+      ? Response.json({ error: "Rezultata ni bilo mogoče potrditi." }, { status: 422 })
+      : Response.json({ error: "Rezultata trenutno ni mogoče shraniti." }, { status: 503 });
   }
 }
