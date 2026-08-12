@@ -170,7 +170,7 @@ export default function Hero() {
             href={tickets.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-atlas px-6 py-3 text-center font-display text-base uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5 sm:px-8 sm:py-4 sm:text-lg"
+            className="rounded-xl bg-atlas px-6 py-3 text-center font-display text-base uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5 sm:px-8 sm:py-4 sm:text-lg"
           >
             {tickets.ctaLabel}
           </a>
@@ -189,7 +189,7 @@ export default function Hero() {
                 block: "start",
               });
             }}
-            className="border border-white/40 px-6 py-3 text-center font-display text-base uppercase tracking-wide text-white transition-colors hover:border-atlas hover:text-atlas sm:px-8 sm:py-4 sm:text-lg"
+            className="rounded-xl border border-white/40 px-6 py-3 text-center font-display text-base uppercase tracking-wide text-white transition-colors hover:border-atlas hover:text-atlas sm:px-8 sm:py-4 sm:text-lg"
           >
             Oglej si aftermovie
           </a>
