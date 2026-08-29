@@ -31,6 +31,22 @@ const accentBorder: Record<TicketTierAccent, string> = {
   mrfy: "border-mrfy/60",
 };
 
+/* Barvna podlaga v barvi serije. Aktivna je izrazitejša, da izstopa iz
+   seznama; zaklenjene in razprodane so komaj nakazane. */
+const accentWashActive: Record<TicketTierAccent, string> = {
+  white: "from-white/20",
+  kokosy: "from-kokosy/25",
+  atlas: "from-atlas/25",
+  mrfy: "from-mrfy/25",
+};
+
+const accentWashMuted: Record<TicketTierAccent, string> = {
+  white: "from-white/8",
+  kokosy: "from-kokosy/10",
+  atlas: "from-atlas/10",
+  mrfy: "from-mrfy/10",
+};
+
 function TicketIcon({ className }: { className?: string }) {
   return (
     <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden className={className}>
@@ -53,16 +69,30 @@ function LockIcon() {
   );
 }
 
+/** Poševen žig čez razprodano serijo — kot odtisnjen na natisnjen cenik. */
+function SoldOutStamp() {
+  return (
+    /* Na telefonu žig sedi v spodnji desni kot — tam, kjer bi bil pri
+       dostopni seriji gumb — sicer bi prekril opis serije. Na širši kartici
+       je sredina prazna in žig lahko stoji čeznjo. */
+    <span className="pointer-events-none absolute inset-0 flex items-end justify-end p-4 sm:items-center sm:justify-center sm:p-0">
+      <span className="-rotate-[7deg] border-[3px] border-[#e2483d]/70 px-4 py-1 font-display text-lg uppercase tracking-[0.12em] text-[#e2483d]/85 sm:px-6 sm:py-1.5 sm:text-3xl">
+        Razprodano
+      </span>
+    </span>
+  );
+}
+
 function TierCard({ tier }: { tier: TicketTier }) {
   const available = tier.status === "onSale";
   const soldOut = tier.status === "soldOut";
 
   return (
     <li
-      className={`flex flex-col gap-4 border p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-5 ${
+      className={`relative flex flex-col gap-4 overflow-hidden border bg-gradient-to-r to-transparent p-4 sm:flex-row sm:items-center sm:gap-6 sm:p-5 ${
         available
-          ? `${accentBorder[tier.accent]} bg-coal`
-          : "border-line bg-coal/40"
+          ? `${accentBorder[tier.accent]} ${accentWashActive[tier.accent]}`
+          : `border-line ${accentWashMuted[tier.accent]}`
       }`}
     >
       {/* Na telefonu ime in cena ne moreta v isto vrstico: ime serije bi se
@@ -99,7 +129,7 @@ function TierCard({ tier }: { tier: TicketTier }) {
           {tier.priceHuman}
         </span>
 
-        {available ? (
+        {soldOut ? null : available ? (
           <a
             href={tickets.eventUrl}
             target="_blank"
@@ -110,17 +140,13 @@ function TierCard({ tier }: { tier: TicketTier }) {
           </a>
         ) : (
           <span className="inline-flex items-center gap-2 border border-line px-4 py-2.5 text-[0.65rem] uppercase tracking-[0.2em] text-fog sm:py-3">
-            {soldOut ? (
-              "Razprodano"
-            ) : (
-              <>
-                <LockIcon />
-                Zaklenjeno
-              </>
-            )}
+            <LockIcon />
+            Zaklenjeno
           </span>
         )}
       </div>
+
+      {soldOut && <SoldOutStamp />}
     </li>
   );
 }
@@ -133,14 +159,13 @@ export default function Tickets() {
       className="relative border-y border-line bg-night py-16 sm:py-20"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
-          Vstopnice
-        </p>
+        {/* Brez rumene nadpisne vrstice: naslov je zdaj ista beseda in bi se
+            ponovila drugo pod drugo. */}
         <h2
           id="vstopnice-naslov"
           className="reveal font-display text-3xl uppercase leading-tight text-white sm:text-4xl"
         >
-          Kje smo s prodajo.
+          Vstopnice
         </h2>
 
         <ul className="reveal mt-8 grid gap-3">
