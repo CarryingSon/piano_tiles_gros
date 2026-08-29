@@ -86,7 +86,7 @@ export default function AddToCalendar({
       <a
         href={icsPath}
         aria-label={ariaLabel}
-        className="inline-flex items-center gap-2.5 border border-white/40 px-8 py-4 font-display text-lg uppercase tracking-wide text-white transition-colors hover:border-atlas hover:text-atlas"
+        className="inline-flex items-center gap-2.5 rounded-xl border border-white/40 px-8 py-4 font-display text-lg uppercase tracking-wide text-white transition-colors hover:border-atlas hover:text-atlas"
       >
         <CalendarIcon />
         {label}

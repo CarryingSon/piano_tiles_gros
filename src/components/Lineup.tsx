@@ -34,21 +34,8 @@ export default function Lineup() {
           {lineup.map((performer) => (
             <li key={performer.name} className="reveal group py-10 sm:py-12">
               <div className="grid items-center gap-8 md:grid-cols-12">
-                <span
-                  aria-hidden
-                  className="hidden font-display text-xl text-atlas md:col-span-1 md:block"
-                >
-                  {performer.index}
-                </span>
-
-                <div className="md:col-span-7">
+                <div className="md:col-span-8">
                   <h3 className="font-display uppercase leading-none">
-                    <span
-                      aria-hidden
-                      className="mr-3 align-super font-display text-base text-atlas md:hidden"
-                    >
-                      {performer.index}
-                    </span>
                     <span
                       className={`text-6xl transition-[filter] group-hover:brightness-125 sm:text-7xl lg:text-8xl ${performerTitleColors[performer.name] ?? "text-white"}`}
                     >
@@ -62,15 +49,17 @@ export default function Lineup() {
 
                 <div className="md:col-span-4">
                   {performer.image ? (
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <Image
-                        src={performer.image}
-                        alt={`Uradna fotografija skupine ${performer.name}.`}
-                        fill
-                        sizes="(min-width: 768px) 32vw, 100vw"
-                        className="object-cover"
-                      />
-                    </div>
+                    /* Uradne fotografije so uokvirjene in rahlo zavrtene, z
+                       naravnim razmerjem in prosojnimi vogali. Vsiljen izrez
+                       (`aspect` + `object-cover`) bi jim odrezal okvir. */
+                    <Image
+                      src={performer.image}
+                      alt={`Uradna fotografija skupine ${performer.name}.`}
+                      width={performer.imageWidth}
+                      height={performer.imageHeight}
+                      sizes="(min-width: 768px) 32vw, 100vw"
+                      className="h-auto w-full"
+                    />
                   ) : (
                     /* Nadomestni okvir — zamenjajte z uradno fotografijo (data/event.ts) */
                     <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden border border-dashed border-atlas/30 bg-night">

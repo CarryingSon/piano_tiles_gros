@@ -2,6 +2,7 @@ import {
   tickets,
   ticketTiers,
   ticketTiersNote,
+  ticketsMemberNote,
   type TicketTier,
   type TicketTierAccent,
 } from "@/data/event";
@@ -38,6 +39,14 @@ const accentWashActive: Record<TicketTierAccent, string> = {
   kokosy: "from-kokosy/25",
   atlas: "from-atlas/25",
   mrfy: "from-mrfy/25",
+};
+
+/* Gumb nosi barvo svoje serije, da je povezava med kartico in dejanjem očitna. */
+const accentButton: Record<TicketTierAccent, string> = {
+  white: "bg-white",
+  kokosy: "bg-kokosy",
+  atlas: "bg-atlas",
+  mrfy: "bg-mrfy",
 };
 
 const accentWashMuted: Record<TicketTierAccent, string> = {
@@ -117,16 +126,23 @@ function TierCard({ tier }: { tier: TicketTier }) {
       </div>
 
       <div className="flex items-center justify-between gap-4 border-t border-line pt-4 sm:shrink-0 sm:justify-end sm:gap-6 sm:border-0 sm:pt-0">
-        <span
-          className={`font-display text-2xl uppercase sm:text-3xl ${
-            soldOut
-              ? "text-fog line-through"
-              : available
-                ? "text-white"
-                : "text-fog"
-          }`}
-        >
-          {tier.priceHuman}
+        <span className="flex flex-col items-start sm:items-end">
+          <span
+            className={`font-display text-2xl uppercase leading-none sm:text-3xl ${
+              soldOut
+                ? "text-fog line-through"
+                : available
+                  ? "text-white"
+                  : "text-fog"
+            }`}
+          >
+            {tier.priceHuman}
+          </span>
+          {tier.memberPriceHuman && (
+            <span className="mt-1 whitespace-nowrap text-[0.7rem] uppercase tracking-[0.15em] text-fog">
+              Člani {tier.memberPriceHuman}
+            </span>
+          )}
         </span>
 
         {soldOut ? null : available ? (
@@ -134,12 +150,12 @@ function TierCard({ tier }: { tier: TicketTier }) {
             href={tickets.eventUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-atlas px-5 py-2.5 font-display text-sm uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5 sm:px-6 sm:py-3 sm:text-base"
+            className={`rounded-xl px-5 py-2.5 font-display text-sm uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5 sm:px-6 sm:py-3 sm:text-base ${accentButton[tier.accent]}`}
           >
             Kupi karto
           </a>
         ) : (
-          <span className="inline-flex items-center gap-2 border border-line px-4 py-2.5 text-[0.65rem] uppercase tracking-[0.2em] text-fog sm:py-3">
+          <span className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 text-[0.65rem] uppercase tracking-[0.2em] text-fog sm:py-3">
             <LockIcon />
             Zaklenjeno
           </span>
@@ -174,8 +190,13 @@ export default function Tickets() {
           ))}
         </ul>
 
-        {ticketTiersNote && (
-          <p className="reveal mt-4 text-sm text-fog">{ticketTiersNote}</p>
+        {(ticketTiersNote || ticketsMemberNote) && (
+          <div className="reveal mt-4 space-y-1 text-sm text-fog">
+            {ticketsMemberNote && (
+              <p className="text-white">{ticketsMemberNote}</p>
+            )}
+            {ticketTiersNote && <p>{ticketTiersNote}</p>}
+          </div>
         )}
       </div>
     </section>

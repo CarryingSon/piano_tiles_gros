@@ -168,6 +168,7 @@ Vsaka sekcija strani je svoja komponenta v `src/components/`:
 | `Experience` | Doživetje — fotografski kolaž |
 | `Countdown` | Odštevanje do začetka |
 | `Lineup` | Zasedba 2026 |
+| `Tickets` | Serije vstopnic in stanje prodaje |
 | `GameTeaser` | Napoved igre in povezava na `/igra` |
 | `Aftermovie` | Uradni aftermovie 2024 |
 | `Timeline` | Postaje skozi leta (2022 → 2024 → 2026) |
@@ -175,8 +176,7 @@ Vsaka sekcija strani je svoja komponenta v `src/components/`:
 | `Story` | Zgodba projekta |
 | `Partners` | Trak partnerjev z mirujočim osrednjim logotipom |
 | `PracticalInfo` | Praktične informacije |
-| `FinalCta` | Zaključni konverzijski del |
-| `AddToCalendar` | Gumb »Dodaj v koledar« (v `PracticalInfo` in `FinalCta`) |
+| `AddToCalendar` | Gumb »Dodaj v koledar« (v `PracticalInfo`) |
 | `Footer` | Kontakt, družbena omrežja |
 
 Vrstni red v tabeli ustreza vrstnemu redu sekcij v `src/app/page.tsx`.

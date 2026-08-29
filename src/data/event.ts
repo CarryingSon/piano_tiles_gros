@@ -90,6 +90,11 @@ export type TicketTierAccent = "white" | "kokosy" | "atlas" | "mrfy";
 export type TicketTier = {
   name: string;
   priceHuman: string;
+  /**
+   * Članska cena ŠK GROŠ s plakata "Cene vstopnic — člani ŠK GROŠ".
+   * null = ni potrjena in se ne prikaže.
+   */
+  memberPriceHuman: string | null;
   status: TicketTierStatus;
   accent: TicketTierAccent;
   /** Kratko pojasnilo pod imenom; null = se ne prikaže. */
@@ -111,6 +116,7 @@ export type TicketTier = {
 export const ticketTiers: TicketTier[] = [
   {
     name: "Super Early Bird",
+    memberPriceHuman: "8 €",
     priceHuman: "15 €",
     status: "soldOut",
     accent: "white",
@@ -118,6 +124,7 @@ export const ticketTiers: TicketTier[] = [
   },
   {
     name: "Early Bird",
+    memberPriceHuman: "15 €",
     priceHuman: "20 €",
     status: "onSale",
     accent: "kokosy",
@@ -125,6 +132,7 @@ export const ticketTiers: TicketTier[] = [
   },
   {
     name: "Redna prodaja",
+    memberPriceHuman: "20 €",
     priceHuman: "27 €",
     status: "locked",
     accent: "atlas",
@@ -132,6 +140,7 @@ export const ticketTiers: TicketTier[] = [
   },
   {
     name: "Dan dogodka",
+    memberPriceHuman: "35 €",
     priceHuman: "35 €",
     status: "locked",
     accent: "mrfy",
@@ -143,37 +152,48 @@ export const ticketTiers: TicketTier[] = [
 export const ticketTiersNote: string | null =
   "Prikazane so cene organizatorja; Eventim ob nakupu prišteje 1 € stroška vstopnice.";
 
+/**
+ * Pripis o članskih vstopnicah. Članske cene se vpišejo v `memberPriceHuman`
+ * posamezne serije; dokler so `null`, se pokaže samo ta pripis.
+ */
+export const ticketsMemberNote: string | null =
+  "Člani ŠK GROŠ vstopnice po članski ceni kupijo na uradnih urah kluba.";
+
 export type Performer = {
   name: string;
   /** Kratek, preverjen opis — brez izmišljenih biografij. */
   description: string;
   /** Pot do uradne fotografije v /public. null → označen nadomestni okvir. */
   image: string | null;
-  /** Oznaka na "legendi zemljevida". */
-  index: string;
+  /** Mere uokvirjene datoteke — potrebne za `next/image` brez CLS. */
+  imageWidth: number;
+  imageHeight: number;
 };
 
 /** Zasedba 2026 — potrjena na Eventimu in družbenih omrežjih ŠK GROŠ. */
 export const lineup: Performer[] = [
   {
-    index: "01",
     name: "Kokosy",
     description:
       "Ena najbolj prepoznavnih zasedb nove slovenske scene — koncerti, ki jih publika poje na pamet.",
-    image: "/media/lineup/kokosy.jpg",
+    image: "/media/lineup/kokosy.webp",
+    imageWidth: 925,
+    imageHeight: 560,
   },
   {
-    index: "02",
     name: "MRFY",
     description: "Indie rock iz Novega mesta. Kitare, ki napolnijo šotor.",
-    image: "/media/lineup/mrfy.jpg",
+    image: "/media/lineup/mrfy.webp",
+    imageWidth: 687,
+    imageHeight: 687,
   },
   {
-    index: "03",
     name: "Tabu",
     description:
       "Ena najbolj priljubljenih slovenskih pop-rock zasedb z več kot 25 leti uspešnic.",
-    image: "/media/lineup/tabu.jpg",
+    image: "/media/lineup/tabu.webp",
+    imageWidth: 943,
+    imageHeight: 599,
   },
 ];
 
@@ -232,13 +252,13 @@ export const editions: Edition[] = [
     performers: ["Kokosy", "MRFY", "Tabu"],
     note: "Atlas se prvič seli v Ivančno Gorico. Zgodba se piše naprej — tokrat s tabo.",
     image: {
-      /* Uradni kampanjski pas 2026, izrisan iz organizatorjevega PDF-ja
-         (Atlas 5040 × 2380). */
-      src: "/media/campaign/glasbeni-atlas-2026-banner.jpg",
-      alt: "Uradni vizual Glasbenega Atlasa 2026: logotip ŠK GROŠ, datum 10. 10. 2026, imena Kokosy, MRFY in Tabu ter napis Ivančna Gorica na črno-belem kolažu koncertnih fotografij.",
+      /* Uradni plakat 2026, izrisan iz organizatorjevega PDF-ja
+         (Atlas 4000 × 3000). */
+      src: "/media/campaign/glasbeni-atlas-2026-plakat.jpg",
+      alt: "Uradni plakat Glasbenega Atlasa 2026: logotip ŠK GROŠ, datum 10. 10. 2026, imena Kokosy, MRFY in Tabu, napis Ivančna Gorica in logotipi partnerjev na črno-belem kolažu koncertnih fotografij.",
       width: 1800,
-      height: 850,
-      caption: "Uradni vizual · Glasbeni Atlas 2026",
+      height: 1350,
+      caption: "Uradni plakat · Glasbeni Atlas 2026",
     },
   },
 ];
@@ -333,20 +353,16 @@ export type Partner = {
 /**
  * Partnerji in pokrovitelji 2026 — logotipi so obrezani in pomanjšani izvirniki
  * organizatorjevih datotek (mapa "GLATLAS 2026"). Vsi so beli na prosojnem
- * ozadju, zato delujejo na temni podlagi.
- *
- * `featuredPartner` v traku miruje na sredini, `partners` pa se samodejno
- * pomikajo za njim. Če se nabor spremeni, je dovolj urediti ta seznam.
+ * ozadju, zato delujejo na temni podlagi. Vsi se enakovredno pomikajo v traku.
  */
-export const featuredPartner: Partner = {
-  name: "Vita življenjska",
-  url: "https://www.zav-vita.si",
-  src: "/media/partners/vita.png",
-  width: 435,
-  height: 160,
-};
-
 export const partners: Partner[] = [
+  {
+    name: "Vita življenjska",
+    url: "https://www.zav-vita.si",
+    src: "/media/partners/vita.png",
+    width: 435,
+    height: 160,
+  },
   {
     name: "Akrapovič",
     url: "https://www.akrapovic.com",

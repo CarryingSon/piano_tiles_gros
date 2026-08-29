@@ -1,7 +1,6 @@
 import Aftermovie from "@/components/Aftermovie";
 import Countdown from "@/components/Countdown";
 import Experience from "@/components/Experience";
-import FinalCta from "@/components/FinalCta";
 import GameTeaser from "@/components/GameTeaser";
 import Footer from "@/components/Footer";
 import Hero from "@/components/Hero";
@@ -35,7 +34,6 @@ export default function Home() {
         <Story />
         <Partners />
         <PracticalInfo />
-        <FinalCta />
       </main>
       <Footer />
     </>

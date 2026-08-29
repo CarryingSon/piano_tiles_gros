@@ -68,7 +68,7 @@ export default function PracticalInfo() {
                 href={event.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-block w-fit bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night transition-transform hover:-translate-y-0.5"
+                className="inline-block w-fit rounded-xl bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night transition-transform hover:-translate-y-0.5"
               >
                 Navodila do prizorišča
               </a>

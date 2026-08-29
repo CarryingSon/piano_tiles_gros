@@ -76,7 +76,7 @@ export default function Timeline() {
                         href={tickets.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-6 inline-block bg-atlas px-6 py-3 font-display uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5"
+                        className="mt-6 inline-block rounded-xl bg-atlas px-6 py-3 font-display uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5"
                       >
                         {tickets.ctaLabelLong}
                       </a>

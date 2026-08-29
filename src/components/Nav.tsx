@@ -162,7 +162,7 @@ export default function Nav() {
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => setOpen(false)}
-              className="block bg-atlas px-6 py-4 text-center font-display text-xl uppercase text-night"
+              className="block rounded-xl bg-atlas px-6 py-4 text-center font-display text-xl uppercase text-night"
             >
               {tickets.ctaLabelLong}
             </a>
@@ -189,7 +189,7 @@ export default function Nav() {
             target="_blank"
             rel="noopener noreferrer"
             tabIndex={showBar ? 0 : -1}
-            className="shrink-0 bg-atlas px-5 py-3 font-display text-sm uppercase text-night"
+            className="shrink-0 rounded-xl bg-atlas px-5 py-3 font-display text-sm uppercase text-night"
           >
             Vstopnice
           </a>

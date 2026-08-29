@@ -1,14 +1,12 @@
 import Image from "next/image";
-import { featuredPartner, type Partner, partners } from "@/data/event";
+import { type Partner, partners } from "@/data/event";
 
 /**
- * Partnerji dogodka. Osrednji logotip miruje, ostali se v neskončni zanki
- * pomikajo za njim; vsak vodi na uradno stran partnerja.
+ * Partnerji dogodka: vsi logotipi se enakovredno pomikajo v neskončni zanki,
+ * vsak vodi na uradno stran partnerja.
  *
  * Trak je čisti CSS (`globals.css`, razred `marquee-track`) — brez
  * JavaScripta, zato deluje takoj ob prvem izrisu in nima stroška hidracije.
- * Sredinska ploščica ima polno ozadje `bg-night`, da logotipi pod njo res
- * izginejo, namesto da bi se prekrivali z mirujočim logotipom.
  *
  * Kdor ima izklopljene animacije, dobi mirno prelomljeno vrsto vseh logotipov
  * (`partners-static`); trak se v tem primeru sploh ne izriše.
@@ -112,33 +110,11 @@ export default function Partners() {
           className="pointer-events-none absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-night to-transparent sm:w-32"
         />
 
-        {/* Mirujoči osrednji logotip. Ovoj ne sme loviti klikov, sicer bi
-            zabrisa ob straneh prestregla logotipe, ki drsijo pod njima —
-            klikljiva je samo povezava v sredini. */}
-        <div className="pointer-events-none absolute inset-y-0 left-1/2 flex -translate-x-1/2 items-center">
-          {/* Zabris mora biti bistveno širši od reže med logotipi, sicer se ob
-              robu ploščice vidijo odrezani koščki mimoidočega logotipa. */}
-          <span
-            aria-hidden
-            className="h-full w-14 bg-gradient-to-r from-transparent to-night sm:w-28"
-          />
-          <span className="flex h-full items-center bg-night px-3 sm:px-6">
-            <PartnerLink
-              partner={featuredPartner}
-              className="pointer-events-auto flex items-center"
-              imageClassName="h-10 w-auto object-contain transition-transform duration-300 hover:scale-[1.04] sm:h-16"
-            />
-          </span>
-          <span
-            aria-hidden
-            className="h-full w-14 bg-gradient-to-l from-transparent to-night sm:w-28"
-          />
-        </div>
       </div>
 
       {/* Različica brez gibanja */}
       <ul className="partners-static mx-auto mt-10 max-w-4xl flex-wrap items-center justify-center gap-x-10 gap-y-8 px-4 sm:px-6">
-        {[featuredPartner, ...partners].map((partner) => (
+        {partners.map((partner) => (
           <li key={partner.name} className="flex items-center justify-center">
             <PartnerLink
               partner={partner}
