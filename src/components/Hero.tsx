@@ -91,20 +91,39 @@ export default function Hero() {
       id="vrh"
       className="grain relative flex min-h-svh flex-col justify-center overflow-hidden"
     >
-      {/* Ozadje: poster (LCP) + utišan video, ko je smiselno */}
-      <div className="absolute inset-0" aria-hidden>
+      {/*
+        Ozadje: poster (LCP) + utišan video, ko je smiselno.
+
+        Vir je kinematografski (2,34 : 1). Prej je imel vpečene črne pasove in
+        skril jih je `scale-y-[1.24]` — navpični razteg, ki je sliko popačil in
+        jo po nepotrebnem še povečal. Pasovi so zdaj odrezani iz samih datotek,
+        zato tu ne potrebujemo nobenega raztega ne povečave.
+
+        Na telefonu posnetek namenoma ne pokriva celotnega zaslona: pri
+        `object-cover` čez pokončen zaslon bi od tako širokega vira ostala
+        vidna komaj petina širine — iz množice pod odrom bi nastal en sam
+        obraz. Nižji pas povečavo skoraj prepolovi, spodnji preliv `from-night`
+        pa ga brez šiva spelje v ozadje strani. Od `sm:` navzgor je okvir
+        dovolj širok in ozadje ostane celozaslonsko.
+      */}
+      <div
+        className="absolute inset-x-0 top-0 h-[58svh] sm:inset-0 sm:h-auto"
+        aria-hidden
+      >
         <Image
           src={heroMedia.poster}
           alt=""
           fill
           priority
-          sizes="100vw"
-          className="scale-y-[1.24] object-cover object-center grayscale-[35%] sm:scale-[1.25]"
+          /* Izrez je precej širši od zaslona, zato `100vw` ne zadošča —
+             brskalnik bi naložil premajhno sliko in jo raztegnil. */
+          sizes="(max-width: 640px) 300vw, 100vw"
+          className="object-cover object-center grayscale-[35%]"
         />
         {videoOn && (
           <video
             ref={videoRef}
-            className="absolute inset-0 h-full w-full scale-y-[1.24] object-cover object-center grayscale-[35%] sm:scale-[1.25]"
+            className="absolute inset-0 h-full w-full object-cover object-center grayscale-[35%]"
             autoPlay
             muted
             loop

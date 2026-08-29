@@ -11,6 +11,7 @@ import Partners from "@/components/Partners";
 import PracticalInfo from "@/components/PracticalInfo";
 import Reveal from "@/components/Reveal";
 import Story from "@/components/Story";
+import Tickets from "@/components/Tickets";
 import Timeline from "@/components/Timeline";
 
 export default function Home() {
@@ -25,6 +26,9 @@ export default function Home() {
             nato konkreten datum, šele potem imena na plakatu. */}
         <Countdown />
         <Lineup />
+        {/* Stanje prodaje takoj za zasedbo: šele ko obiskovalec ve, kdo igra,
+            ga zanima, koliko stane. */}
+        <Tickets />
         <GameTeaser />
         <Aftermovie />
         <Timeline />

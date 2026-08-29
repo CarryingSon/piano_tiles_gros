@@ -9,7 +9,9 @@
  * TODO za organizatorje — pred objavo potrdite:
  *  1. Začetek ob 19.00 je naveden po Eventimu; odštevalnik na klub-gros.com
  *     cilja na 18.00. Če se vrata odprejo ob 18.00, vpišite `doorsTime`.
- *  2. Cena "od 16 €" je bila prevzeta z Eventima 8. 8. 2026 — preverite ob objavi.
+ *  2. Cene se z vsako serijo dvignejo. Ob prehodu na naslednjo serijo
+ *     popravite `tickets.priceFrom(Human)` in `ticketTiers` — vsi izpisi
+ *     cene na strani in v schema.org berejo od tam.
  *  3. Statistika (obiskovalci, prostovoljci …) na klub-gros.com ni bila berljiva
  *     (animirani števci kažejo 0) — sekcija je zato izklopljena, glej `stats`.
  *  4. `siteUrl` nastavite na končno domeno pred objavo.
@@ -59,15 +61,69 @@ export const event = {
 export const tickets = {
   /** Vsi CTA-ji za vstopnice vodijo SEM. */
   url: "https://www.eventim.si/en/artist/glasbeni-atlas/",
-  /** Stanje prodaje, preverjeno na Eventimu 8. 8. 2026 (dogodek izpisan s ceno "od 16,00 €"). */
+  /**
+   * Neposredna povezava na dogodek 2026 — en klik manj kot izvajalska stran.
+   * Uporablja jo sekcija Vstopnice.
+   */
+  eventUrl:
+    "https://www.eventim.si/en/event/glasbeni-atlas-sk-gros-parkirisce-ivancna-gorica-21882400/",
+  /**
+   * Stanje prodaje, preverjeno na Eventimu 29. 8. 2026: Super Early Bird
+   * razprodan, v prodaji Early Bird (stojišče) po 21,00 €. Cena je končna —
+   * po Eventimovem zapisu vključuje DDV in 1 € stroška vstopnice.
+   */
   onSale: true,
-  priceFromHuman: "od 16 €",
-  priceFrom: 16,
+  priceFromHuman: "od 21 €",
+  priceFrom: 21,
   currency: "EUR",
   provider: "Eventim SI",
   ctaLabel: "Kupi vstopnice",
   ctaLabelLong: "Kupi vstopnice na Eventimu",
 } as const;
+
+export type TicketTierStatus = "soldOut" | "onSale" | "upcoming";
+
+export type TicketTier = {
+  name: string;
+  /** null = cena ni potrjena in se ne prikaže. */
+  priceHuman: string | null;
+  status: TicketTierStatus;
+  /** Kratko pojasnilo pod imenom; null = se ne prikaže. */
+  note: string | null;
+};
+
+/**
+ * Stanje prodaje po kategorijah.
+ *
+ * ZAKAJ ROČNO: Eventim nima javnega API-ja, njegove strani pa zavračajo
+ * strežniške zahtevke (HTTP/2 jih prekine še pred odgovorom — enako iz
+ * ukazne vrstice in iz pravega brskalnika). Samodejnega branja stanja zato
+ * ni mogoče izvesti zanesljivo; dokler organizator ne dobi dostopa do
+ * podatkov, se stanje ureja tukaj.
+ *
+ * Ob vsaki spremembi prodaje popravite `status` in dodajte novo serijo. Ko se
+ * kategorija razproda, jo pustite na seznamu s `soldOut` — obiskovalcu pove,
+ * da se cene višajo in da se splača pohiteti. Če se spremeni najnižja cena v
+ * prodaji, popravite še `tickets.priceFrom(Human)`.
+ */
+export const ticketTiers: TicketTier[] = [
+  {
+    name: "Super Early Bird",
+    priceHuman: null,
+    status: "soldOut",
+    note: "Prva serija po najnižji ceni.",
+  },
+  {
+    name: "Early Bird",
+    priceHuman: "21 €",
+    status: "onSale",
+    note: "Stojišče · končna cena z DDV in 1 € stroška vstopnice.",
+  },
+];
+
+/** Pripis pod seznamom serij. null = se ne prikaže. */
+export const ticketTiersNote: string | null =
+  "Naslednje serije dodajamo sproti — cena z vsako naraste.";
 
 export type Performer = {
   name: string;
@@ -110,7 +166,14 @@ export type Edition = {
   dateHuman: string;
   performers: string[];
   note?: string;
-  image: { src: string; alt: string; width: number; height: number } | null;
+  image: {
+    src: string;
+    alt: string;
+    width: number;
+    height: number;
+    /** Pripis pod sliko; brez njega se izpiše "Arhiv · Glasbeni Atlas <leto>". */
+    caption?: string;
+  } | null;
 };
 
 /** Pretekli izdaji — potrjeni na klub-gros.com in Eventimu. */
@@ -150,7 +213,15 @@ export const editions: Edition[] = [
     dateHuman: "10. oktober 2026",
     performers: ["Kokosy", "MRFY", "Tabu"],
     note: "Atlas se prvič seli v Ivančno Gorico. Zgodba se piše naprej — tokrat s tabo.",
-    image: null,
+    image: {
+      /* Uradni kampanjski pas 2026, izrisan iz organizatorjevega PDF-ja
+         (Atlas 5040 × 2380). */
+      src: "/media/campaign/glasbeni-atlas-2026-banner.jpg",
+      alt: "Uradni vizual Glasbenega Atlasa 2026: logotip ŠK GROŠ, datum 10. 10. 2026, imena Kokosy, MRFY in Tabu ter napis Ivančna Gorica na črno-belem kolažu koncertnih fotografij.",
+      width: 1800,
+      height: 850,
+      caption: "Uradni vizual · Glasbeni Atlas 2026",
+    },
   },
 ];
 

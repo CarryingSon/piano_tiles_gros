@@ -85,17 +85,22 @@ export default function Timeline() {
 
                   {edition.image ? (
                     <figure>
-                      <div className="relative aspect-[3/2] overflow-hidden">
+                      {/* Brez vsiljenega razmerja: arhivske fotografije so 3 : 2,
+                          kampanjski pas 2026 pa je bistveno širši in bi mu
+                          `object-cover` v okvirju 3 : 2 odrezal logotipe ob robu. */}
+                      <div className="overflow-hidden">
                         <Image
                           src={edition.image.src}
                           alt={edition.image.alt}
-                          fill
+                          width={edition.image.width}
+                          height={edition.image.height}
                           sizes="(min-width: 768px) 45vw, 100vw"
-                          className="object-cover"
+                          className="h-auto w-full"
                         />
                       </div>
                       <figcaption className="mt-2 text-xs uppercase tracking-widest text-fog">
-                        Arhiv · Glasbeni Atlas {edition.year}
+                        {edition.image.caption ??
+                          `Arhiv · Glasbeni Atlas ${edition.year}`}
                       </figcaption>
                     </figure>
                   ) : (

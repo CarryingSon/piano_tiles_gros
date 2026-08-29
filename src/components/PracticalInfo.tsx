@@ -1,3 +1,4 @@
+import Image from "next/image";
 import AddToCalendar from "@/components/AddToCalendar";
 import { event, organizer, tickets } from "@/data/event";
 
@@ -74,30 +75,46 @@ export default function PracticalInfo() {
             </div>
           </div>
 
-          {/* Koordinatna kartica namesto vdelanega zemljevida — brez zunanjih skriptov */}
-          <div className="reveal contours relative flex min-h-[320px] flex-col justify-between border border-line bg-night p-8">
-            <div className="flex justify-between text-xs uppercase tracking-[0.25em] text-fog">
-              <span>{event.coords.lat}</span>
-              <span>{event.coords.lng}</span>
-            </div>
-            <div>
-              <p className="text-xs uppercase tracking-[0.3em] text-atlas">
-                Cilj
-              </p>
-              <p className="mt-2 font-display text-4xl uppercase leading-[1.05] text-white sm:text-5xl">
-                {event.venue}
+          {/* Uradni načrt prizorišča. Naslov »Načrt prizorišča« je odrezan iz
+              same slike, ker ga nosi že okvir okoli nje. */}
+          <div className="reveal flex flex-col border border-line bg-night">
+            <div className="flex items-start justify-between gap-4 border-b border-line p-6 sm:p-8">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-atlas">
+                  Načrt prizorišča
+                </p>
+                {/* Samo prizorišče: `event.venue` že vsebuje ime kraja, zato bi
+                    ga vrstica s `city` le podvojila. */}
+                <p className="mt-2 font-display text-3xl uppercase leading-[1.05] text-white sm:text-4xl">
+                  {event.venue}
+                </p>
+              </div>
+              <p className="shrink-0 text-right text-[11px] uppercase leading-relaxed tracking-[0.2em] text-fog">
+                {event.coords.lat}
                 <br />
-                {event.city}
+                {event.coords.lng}
               </p>
             </div>
-            <a
-              href={event.mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-block w-fit bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night"
-            >
-              Navodila do prizorišča
-            </a>
+
+            <Image
+              src="/media/nacrt-prizorisca.jpg"
+              alt="Načrt prizorišča: oder je na severnem koncu parkirišča, pred njim stojišče, ob levem robu VIP-cona s sedišči in dva šanka, sanitarije ob parkirišču, vhod za obiskovalce pa na jugovzhodni strani ob cesti."
+              width={941}
+              height={1430}
+              sizes="(min-width: 768px) 45vw, 100vw"
+              className="h-auto w-full"
+            />
+
+            <div className="p-6 sm:p-8">
+              <a
+                href={event.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block w-fit bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night"
+              >
+                Navodila do prizorišča
+              </a>
+            </div>
           </div>
         </div>
       </div>
