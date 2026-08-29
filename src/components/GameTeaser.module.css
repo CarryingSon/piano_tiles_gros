@@ -19,6 +19,16 @@
   opacity: .09;
 }
 
+/* Na telefonu je vodni znak s koordinatami segal čez desni rob in zadnja
+   črka je bila odrezana — brez konteksta je bilo videti kot napaka, ne kot
+   namerno iztekanje. Pri tej velikosti se napis v celoti prilega. */
+@media (max-width: 639px) {
+  .section::before {
+    right: .75rem;
+    font-size: 7vw;
+  }
+}
+
 .inner {
   position: relative;
   display: grid;

@@ -68,62 +68,80 @@ export const tickets = {
   eventUrl:
     "https://www.eventim.si/en/event/glasbeni-atlas-sk-gros-parkirisce-ivancna-gorica-21882400/",
   /**
-   * Stanje prodaje, preverjeno na Eventimu 29. 8. 2026: Super Early Bird
-   * razprodan, v prodaji Early Bird (stojišče) po 21,00 €. Cena je končna —
-   * po Eventimovem zapisu vključuje DDV in 1 € stroška vstopnice.
+   * Cene so organizatorjeve s plakata "Cene vstopnic". Eventim ob nakupu
+   * prišteje 1 € stroška vstopnice — od tod 21,00 € za Early Bird, ki ga
+   * kaže njegova stran. Povsod izpisujemo ceno organizatorja, strošek pa
+   * pove pripis v sekciji Vstopnice, da kupca pri blagajni nič ne preseneti.
    */
   onSale: true,
-  priceFromHuman: "od 21 €",
-  priceFrom: 21,
+  priceFromHuman: "od 20 €",
+  priceFrom: 20,
   currency: "EUR",
   provider: "Eventim SI",
   ctaLabel: "Kupi vstopnice",
   ctaLabelLong: "Kupi vstopnice na Eventimu",
 } as const;
 
-export type TicketTierStatus = "soldOut" | "onSale" | "upcoming";
+export type TicketTierStatus = "soldOut" | "onSale" | "locked";
+
+/** Barva serije s plakata; preslikava v razrede je v `Tickets.tsx`. */
+export type TicketTierAccent = "white" | "kokosy" | "atlas" | "mrfy";
 
 export type TicketTier = {
   name: string;
-  /** null = cena ni potrjena in se ne prikaže. */
-  priceHuman: string | null;
+  priceHuman: string;
   status: TicketTierStatus;
+  accent: TicketTierAccent;
   /** Kratko pojasnilo pod imenom; null = se ne prikaže. */
   note: string | null;
 };
 
 /**
- * Stanje prodaje po kategorijah.
+ * Serije vstopnic in stanje prodaje — vrstni red in barve so z organizatorjevega
+ * plakata "Cene vstopnic".
  *
  * ZAKAJ ROČNO: Eventim nima javnega API-ja, njegove strani pa zavračajo
  * strežniške zahtevke (HTTP/2 jih prekine še pred odgovorom — enako iz
  * ukazne vrstice in iz pravega brskalnika). Samodejnega branja stanja zato
- * ni mogoče izvesti zanesljivo; dokler organizator ne dobi dostopa do
- * podatkov, se stanje ureja tukaj.
+ * ni mogoče izvesti zanesljivo.
  *
- * Ob vsaki spremembi prodaje popravite `status` in dodajte novo serijo. Ko se
- * kategorija razproda, jo pustite na seznamu s `soldOut` — obiskovalcu pove,
- * da se cene višajo in da se splača pohiteti. Če se spremeni najnižja cena v
- * prodaji, popravite še `tickets.priceFrom(Human)`.
+ * Ob prehodu na naslednjo serijo prestavite prejšnjo na `soldOut`, naslednjo
+ * na `onSale` in popravite `tickets.priceFrom(Human)`.
  */
 export const ticketTiers: TicketTier[] = [
   {
     name: "Super Early Bird",
-    priceHuman: null,
+    priceHuman: "15 €",
     status: "soldOut",
+    accent: "white",
     note: "Prva serija po najnižji ceni.",
   },
   {
     name: "Early Bird",
-    priceHuman: "21 €",
+    priceHuman: "20 €",
     status: "onSale",
-    note: "Stojišče · končna cena z DDV in 1 € stroška vstopnice.",
+    accent: "kokosy",
+    note: "Stojišče · na Eventimu 21 € z 1 € stroška vstopnice.",
+  },
+  {
+    name: "Redna prodaja",
+    priceHuman: "27 €",
+    status: "locked",
+    accent: "atlas",
+    note: "Odpremo, ko poide Early Bird.",
+  },
+  {
+    name: "Dan dogodka",
+    priceHuman: "35 €",
+    status: "locked",
+    accent: "mrfy",
+    note: "Na blagajni pred prizoriščem, 10. oktobra.",
   },
 ];
 
 /** Pripis pod seznamom serij. null = se ne prikaže. */
 export const ticketTiersNote: string | null =
-  "Naslednje serije dodajamo sproti — cena z vsako naraste.";
+  "Prikazane so cene organizatorja; Eventim ob nakupu prišteje 1 € stroška vstopnice.";
 
 export type Performer = {
   name: string;

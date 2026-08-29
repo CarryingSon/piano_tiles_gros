@@ -127,6 +127,48 @@ html.reveal-armed .reveal.reveal-shown {
   }
 }
 
+/* ── Fotografski kolaž v ozadju sekcij ────────────────────────────────────
+   Kolaž je ležeč (1,90 : 1), sekcije na telefonu pa so visoke tudi 1800 px.
+   Z `object-cover` čez tak okvir bi ostalo vidnih komaj 11 % njegove širine,
+   štirikratno povečanih — iz zidu fotografij bi nastala temna packa. Na
+   telefonu se zato pas ponavlja navpično in kolaž ostane berljiv kot kolaž.
+   Od `sm:` navzgor je razmerje okvira blizu razmerju vira in velja `cover`.
+
+   Namenoma CSS in ne `next/image`: skrita slika (`display: none`) bi se na
+   telefonu vseeno prenesla, ozadje pod `display: none` pa se ne — tako vsaka
+   naprava naloži natanko eno datoteko. */
+.photo-wall {
+  background-image: url("/media/wall/kolaz-2026-mobile.jpg");
+  background-repeat: repeat-y;
+  background-size: 180% auto;
+}
+.photo-wall-experience {
+  background-position: 14% top;
+}
+.photo-wall-timeline {
+  background-position: 50% top;
+}
+.photo-wall-story {
+  background-position: 86% top;
+}
+
+@media (min-width: 640px) {
+  .photo-wall {
+    background-image: url("/media/wall/kolaz-2026.jpg");
+    background-repeat: no-repeat;
+    background-size: cover;
+  }
+  .photo-wall-experience {
+    background-position: 18% center;
+  }
+  .photo-wall-timeline {
+    background-position: center 18%;
+  }
+  .photo-wall-story {
+    background-position: 82% 82%;
+  }
+}
+
 /* ── Trak partnerjev ──────────────────────────────────────────────────────
    Sled vsebuje seznam logotipov dvakrat, animacija pa jo premakne za natanko
    polovico širine — zato je vrnitev na začetek neopazna. Ob prekrivu z miško

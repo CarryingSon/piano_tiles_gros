@@ -62,14 +62,15 @@ export default function PracticalInfo() {
             {/* Navpično, ne v vrsti: stolpec je na namizju širok le pol mreže in
                 pri dveh povezavah drug ob drugem se dolgi napis prelomi. */}
             <div className="mt-8 flex flex-col gap-6">
+              {/* Ena sama povezava na zemljevid: prej sta bili dve — tale in
+                  gumb pod načrtom — obe na isti naslov. */}
               <a
                 href={event.mapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex w-fit items-center gap-2 text-sm uppercase tracking-widest text-atlas underline underline-offset-4 transition-opacity hover:opacity-80"
+                className="inline-block w-fit bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night transition-transform hover:-translate-y-0.5"
               >
-                Odpri v Google Zemljevidih
-                <span aria-hidden>↗</span>
+                Navodila do prizorišča
               </a>
               <AddToCalendar variant="quiet" />
             </div>
@@ -78,21 +79,13 @@ export default function PracticalInfo() {
           {/* Uradni načrt prizorišča. Naslov »Načrt prizorišča« je odrezan iz
               same slike, ker ga nosi že okvir okoli nje. */}
           <div className="reveal flex flex-col border border-line bg-night">
-            <div className="flex items-start justify-between gap-4 border-b border-line p-6 sm:p-8">
-              <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-atlas">
-                  Načrt prizorišča
-                </p>
-                {/* Samo prizorišče: `event.venue` že vsebuje ime kraja, zato bi
-                    ga vrstica s `city` le podvojila. */}
-                <p className="mt-2 font-display text-3xl uppercase leading-[1.05] text-white sm:text-4xl">
-                  {event.venue}
-                </p>
-              </div>
-              <p className="shrink-0 text-right text-[11px] uppercase leading-relaxed tracking-[0.2em] text-fog">
-                {event.coords.lat}
-                <br />
-                {event.coords.lng}
+            {/* Brez imena prizorišča: stoji že v tabeli levo, tik ob tem okvirju. */}
+            <div className="flex items-center justify-between gap-4 border-b border-line px-6 py-4 sm:px-8">
+              <p className="text-xs uppercase tracking-[0.3em] text-atlas">
+                Načrt prizorišča
+              </p>
+              <p className="shrink-0 text-right text-[11px] uppercase tracking-[0.2em] text-fog">
+                {event.coords.lat} · {event.coords.lng}
               </p>
             </div>
 
@@ -104,17 +97,6 @@ export default function PracticalInfo() {
               sizes="(min-width: 768px) 45vw, 100vw"
               className="h-auto w-full"
             />
-
-            <div className="p-6 sm:p-8">
-              <a
-                href={event.mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block w-fit bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night"
-              >
-                Navodila do prizorišča
-              </a>
-            </div>
           </div>
         </div>
       </div>

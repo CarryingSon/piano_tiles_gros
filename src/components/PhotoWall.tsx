@@ -1,11 +1,9 @@
-import Image from "next/image";
-
 type PhotoWallVariant = "experience" | "timeline" | "story";
 
-const frameClasses: Record<PhotoWallVariant, string> = {
-  experience: "object-[14%_center] sm:scale-[1.08] sm:object-[18%_center]",
-  timeline: "object-[50%_24%] sm:scale-[1.16] sm:object-[center_18%]",
-  story: "object-[86%_76%] sm:scale-[1.12] sm:object-[82%_82%]",
+const variantClasses: Record<PhotoWallVariant, string> = {
+  experience: "photo-wall-experience",
+  timeline: "photo-wall-timeline",
+  story: "photo-wall-story",
 };
 
 /**
@@ -13,6 +11,9 @@ const frameClasses: Record<PhotoWallVariant, string> = {
  * pravimi razmiki in poševnimi paspartuji, kot ga je sestavil naš editor —
  * ne generiran iz kode. Rahlo prosojen, saj gre za kampanjsko grafiko, ne
  * surovo fotografijo, nato potemnjen za berljivost besedila.
+ *
+ * Postavitev kolaža je v `globals.css` (`photo-wall`): na telefonu se pas
+ * ponavlja navpično, na širših zaslonih velja `cover`.
  */
 export default function PhotoWall({
   variant = "experience",
@@ -28,12 +29,8 @@ export default function PhotoWall({
           vrstnega reda. Absolutno ozadje zato ostane v svojem izoliranem
           kontekstu in se ne more narisati nad vsebino. */}
       <div className="absolute inset-0 overflow-hidden">
-        <Image
-          src="/media/wall/kolaz-2026.jpg"
-          alt=""
-          fill
-          sizes="100vw"
-          className={`object-cover opacity-70 ${frameClasses[variant]}`}
+        <div
+          className={`photo-wall absolute inset-0 opacity-70 ${variantClasses[variant]}`}
         />
         <div className="absolute inset-0 bg-night/20" />
         <div className="absolute inset-0 bg-gradient-to-b from-night/80 via-night/68 to-night/86" />
