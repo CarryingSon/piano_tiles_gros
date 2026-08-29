@@ -72,55 +72,59 @@ export default function Countdown() {
     <section
       id="odstevanje"
       aria-labelledby="odstevanje-naslov"
-      className="contours relative border-y border-line bg-night py-20 sm:py-28"
+      className="contours relative border-y border-line bg-night py-10 sm:py-14"
     >
-      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
-        <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
-          Odštevanje
-        </p>
-        <h2
-          id="odstevanje-naslov"
-          className="reveal max-w-3xl font-display text-4xl uppercase leading-[1.1] text-white sm:text-6xl"
-        >
-          {started ? (
-            <>
-              Atlas je <span className="text-atlas">tukaj.</span>
-            </>
-          ) : (
-            <>
-              Do Glasbenega Atlasa{" "}
-              <span className="text-atlas">je še tole.</span>
-            </>
-          )}
-        </h2>
+      <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 px-4 sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-6">
+        <div className="reveal">
+          <p className="mb-2 text-xs uppercase tracking-[0.3em] text-atlas">
+            Odštevanje
+          </p>
+          <h2
+            id="odstevanje-naslov"
+            className="font-display text-2xl uppercase leading-tight text-white sm:text-3xl"
+          >
+            {started ? (
+              <>
+                Atlas je <span className="text-atlas">tukaj.</span>
+              </>
+            ) : (
+              <>
+                Do Glasbenega <span className="text-atlas">Atlasa</span>
+              </>
+            )}
+          </h2>
+          <p className="mt-2 text-sm text-fog">
+            {event.dateLong} · {event.startTimeHuman} · {event.city}
+          </p>
+        </div>
 
         {/* Povzetek za bralnike zaslona. Namenoma NI živo področje (aria-live):
             vsebina se osvežuje vsako sekundo in bi jo bralnik brez konca bral. */}
         <p className="sr-only">{screenReaderText}</p>
 
         {started ? (
-          <p className="reveal mt-10 max-w-xl text-lg leading-relaxed text-fog">
+          <p className="reveal text-lg text-fog">
             Odštevanja je konec —{" "}
             <span className="text-white">se vidimo pod odrom.</span>
           </p>
         ) : (
           <ol
             aria-hidden
-            className="reveal mt-10 grid grid-cols-2 gap-px border border-line bg-line sm:mt-14 sm:grid-cols-4"
+            className="reveal flex shrink-0 divide-x divide-line border-y border-line"
           >
             {units.map((unit) => {
               const value = remaining?.[unit.key];
               return (
                 <li
                   key={unit.key}
-                  className="flex flex-col items-center gap-1 bg-coal px-4 py-8 sm:py-12"
+                  className="flex w-[4.5rem] flex-col items-center gap-0.5 py-3 sm:w-24 sm:py-4"
                 >
-                  <span className="font-display text-6xl leading-none text-white tabular-nums sm:text-7xl lg:text-8xl">
+                  <span className="font-display text-3xl leading-none text-white tabular-nums sm:text-4xl">
                     {value === undefined
                       ? "––"
                       : String(value).padStart(2, "0")}
                   </span>
-                  <span className="text-xs uppercase tracking-[0.25em] text-fog">
+                  <span className="text-[0.6rem] uppercase tracking-[0.2em] text-fog">
                     {value === undefined
                       ? unit.forms[3]
                       : plural(value, unit.forms)}
@@ -130,13 +134,6 @@ export default function Countdown() {
             })}
           </ol>
         )}
-
-        <p className="reveal mt-8 text-sm text-fog">
-          {event.dateLong} · {event.startTimeHuman} ·{" "}
-          <span className="text-white">
-            {event.venue}, {event.city}
-          </span>
-        </p>
       </div>
     </section>
   );
