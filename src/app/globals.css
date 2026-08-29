@@ -127,6 +127,42 @@ html.reveal-armed .reveal.reveal-shown {
   }
 }
 
+/* ── Trak partnerjev ──────────────────────────────────────────────────────
+   Sled vsebuje seznam logotipov dvakrat, animacija pa jo premakne za natanko
+   polovico širine — zato je vrnitev na začetek neopazna. Ob prekrivu z miško
+   se pomik ustavi, da si lahko obiskovalec logotip ogleda. */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll var(--marquee-duration, 42s) linear infinite;
+}
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* Brez gibanja se trak v celoti umakne mirni, prelomljeni vrsti logotipov.
+   Ustaviti zgolj animacijo ne bi bilo dovolj: mirujoči osrednji logotip je
+   absolutno postavljen čez trak in bi v statični postavitvi prekril sosede. */
+.partners-static {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .partners-motion {
+    display: none;
+  }
+  .partners-static {
+    display: flex;
+  }
+}
+
 /* Utrip lokacijske pike */
 @keyframes ping-soft {
   0% {

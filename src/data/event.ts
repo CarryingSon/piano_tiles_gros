@@ -13,6 +13,9 @@
  *  3. Statistika (obiskovalci, prostovoljci …) na klub-gros.com ni bila berljiva
  *     (animirani števci kažejo 0) — sekcija je zato izklopljena, glej `stats`.
  *  4. `siteUrl` nastavite na končno domeno pred objavo.
+ *  5. `endIso` (predviden konec) je OCENA za koledarski vnos — uradnega konca
+ *     viri ne navajajo. Ko ga potrdite, ga popravite; vpliva samo na dolžino
+ *     dogodka v uporabnikovem koledarju.
  *
  * Uradne fotografije skupin (lineup) in kampanjski plakati (campaign) so
  * izrezani/pretvorjeni iz organizatorjevih Instagram-grafik "GLATLAS 2026".
@@ -36,6 +39,11 @@ export const event = {
   dateLong: "sobota, 10. oktober 2026",
   /** ISO za schema.org — začetek po Eventimu (19.00, CEST). */
   startIso: "2026-10-10T19:00:00+02:00",
+  /**
+   * Predviden konec. Viri uradnega konca ne navajajo, zato je to ocena in se
+   * uporablja izključno za dolžino vnosa v koledarju (glej TODO 5 zgoraj).
+   */
+  endIso: "2026-10-11T00:00:00+02:00",
   /** Začetek koncerta po Eventimu. Odštevalnik na klub-gros.com cilja 18.00 — verjetno vrata. */
   startTimeHuman: "ob 19.00",
   /** TODO: potrdite uro odprtja vrat (null = se ne prikaže). */
@@ -223,9 +231,81 @@ export const organizer = {
   ],
 } as const;
 
+export type Partner = {
+  name: string;
+  /** Uradna spletna stran — vsaka je bila ob vpisu preverjena. */
+  url: string;
+  src: string;
+  /** Izvirne mere obrezanega logotipa — potrebne za `next/image` brez CLS. */
+  width: number;
+  height: number;
+};
+
+/**
+ * Partnerji in pokrovitelji 2026 — logotipi so obrezani in pomanjšani izvirniki
+ * organizatorjevih datotek (mapa "GLATLAS 2026"). Vsi so beli na prosojnem
+ * ozadju, zato delujejo na temni podlagi.
+ *
+ * `featuredPartner` v traku miruje na sredini, `partners` pa se samodejno
+ * pomikajo za njim. Če se nabor spremeni, je dovolj urediti ta seznam.
+ */
+export const featuredPartner: Partner = {
+  name: "Vita življenjska",
+  url: "https://www.zav-vita.si",
+  src: "/media/partners/vita.png",
+  width: 435,
+  height: 160,
+};
+
+export const partners: Partner[] = [
+  {
+    name: "Akrapovič",
+    url: "https://www.akrapovic.com",
+    src: "/media/partners/akrapovic.png",
+    width: 560,
+    height: 126,
+  },
+  {
+    name: "Občina Ivančna Gorica",
+    url: "https://www.ivancna-gorica.si",
+    src: "/media/partners/obcina-ivancna-gorica.png",
+    width: 416,
+    height: 160,
+  },
+  {
+    name: "Ekozarček.si",
+    url: "https://ekozarcek.si",
+    src: "/media/partners/ekozarcek.png",
+    width: 560,
+    height: 69,
+  },
+  {
+    name: "European Youth Card Association",
+    url: "https://eyca.org",
+    src: "/media/partners/eyca.png",
+    width: 560,
+    height: 144,
+  },
+  {
+    name: "Magma Media",
+    url: "https://magmamedia.si",
+    src: "/media/partners/magma-media.png",
+    width: 457,
+    height: 160,
+  },
+  {
+    name: "NORD",
+    url: "https://nordhardseltzer.com",
+    src: "/media/partners/nord.png",
+    width: 477,
+    height: 160,
+  },
+];
+
 /** Sidra navigacije. */
 export const navLinks = [
   { href: "#dozivetje", label: "Doživetje" },
+  { href: "#odstevanje", label: "Odštevanje" },
   { href: "#izvajalci", label: "Izvajalci" },
   { href: "#zgodba", label: "Zgodba" },
   { href: "#informacije", label: "Informacije" },

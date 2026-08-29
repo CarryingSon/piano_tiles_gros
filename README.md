@@ -166,15 +166,48 @@ Vsaka sekcija strani je svoja komponenta v `src/components/`:
 | `Nav` | Lepljiva navigacija + mobilni CTA |
 | `Hero` | Junaški del s posterjem/videom |
 | `Experience` | Doživetje — fotografski kolaž |
+| `Countdown` | Odštevanje do začetka |
+| `Lineup` | Zasedba 2026 |
 | `GameTeaser` | Napoved igre in povezava na `/igra` |
 | `Aftermovie` | Uradni aftermovie 2024 |
 | `Timeline` | Postaje skozi leta (2022 → 2024 → 2026) |
-| `Lineup` | Zasedba 2026 |
 | `CampaignSlider` | Uradne kampanjske objave 2026 |
 | `Story` | Zgodba projekta |
+| `Partners` | Trak partnerjev z mirujočim osrednjim logotipom |
 | `PracticalInfo` | Praktične informacije |
 | `FinalCta` | Zaključni konverzijski del |
+| `AddToCalendar` | Gumb »Dodaj v koledar« (v `PracticalInfo` in `FinalCta`) |
 | `Footer` | Kontakt, družbena omrežja |
+
+Vrstni red v tabeli ustreza vrstnemu redu sekcij v `src/app/page.tsx`.
+
+### Partnerji
+
+Logotipe ureja seznam `partners` v `src/data/event.ts`, osrednji mirujoči
+logotip pa `featuredPartner`. Vsak vnos ima `url` — uradno stran partnerja,
+na katero logotip vodi v novem zavihku. Datoteke so v `public/media/partners/` —
+obrezani in pomanjšani izvirniki iz organizatorjeve mape »GLATLAS 2026«,
+vsi beli na prosojnem ozadju. Nov logotip pripravite enako: odrežite prosojni
+rob, pomanjšajte na največ 560 × 160 in v `event.ts` vpišite **dejanske** mere
+obrezane datoteke, sicer `next/image` rezervira napačen prostor.
+
+Trak teče na čistem CSS-u (`marquee-track` v `globals.css`). Seznam se v
+oznakah izriše dvakrat, animacija pa ga premakne za polovico širine — od tod
+neopazna zanka. Kdor ima izklopljene animacije, dobi mirno prelomljeno vrsto
+vseh logotipov (`partners-static`).
+
+### Dodaj v koledar
+
+`AddToCalendar` ne uporablja JavaScripta ne zunanjih skriptov. Glavna povezava
+vodi na `/koledar.ics` — datoteko sestavi `src/lib/calendar.ts` iz podatkov v
+`src/data/event.ts`, zato sprememba datuma ali prizorišča samodejno velja tudi
+za koledarske vnose. Zraven je povezava na že izpolnjen obrazec Google
+Koledarja za tiste, ki koledar vodijo v brskalniku.
+
+Ob **vsebinski** spremembi dogodka (datum, ura, prizorišče) povišajte
+`SEQUENCE` v `src/lib/calendar.ts`, sicer koledarji pri obstoječih vnosih
+posodobitve ne prevzamejo — `UID` je namenoma stalen, da ponoven prenos ne
+ustvari podvojenega dogodka.
 
 ## Pred objavo preverite
 
@@ -193,6 +226,7 @@ Produkcijske poti:
 - `/` — landing page;
 - `/igra` — mobilna ritmična igra;
 - `/api/leaderboard` — strežniški Supabase API;
+- `/koledar.ics` — koledarski vnos za gumb »Dodaj v koledar«;
 - `/sitemap.xml` in `/robots.txt` — iskalniki.
 
 Pred produkcijskim deploymentom:

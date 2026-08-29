@@ -1,3 +1,4 @@
+import AddToCalendar from "@/components/AddToCalendar";
 import { event, organizer, tickets } from "@/data/event";
 
 /**
@@ -57,15 +58,20 @@ export default function PracticalInfo() {
               ))}
             </dl>
 
-            <a
-              href={event.mapsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-8 inline-flex items-center gap-2 text-sm uppercase tracking-widest text-atlas underline underline-offset-4 transition-opacity hover:opacity-80"
-            >
-              Odpri v Google Zemljevidih
-              <span aria-hidden>↗</span>
-            </a>
+            {/* Navpično, ne v vrsti: stolpec je na namizju širok le pol mreže in
+                pri dveh povezavah drug ob drugem se dolgi napis prelomi. */}
+            <div className="mt-8 flex flex-col gap-6">
+              <a
+                href={event.mapsUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex w-fit items-center gap-2 text-sm uppercase tracking-widest text-atlas underline underline-offset-4 transition-opacity hover:opacity-80"
+              >
+                Odpri v Google Zemljevidih
+                <span aria-hidden>↗</span>
+              </a>
+              <AddToCalendar variant="quiet" />
+            </div>
           </div>
 
           {/* Koordinatna kartica namesto vdelanega zemljevida — brez zunanjih skriptov */}

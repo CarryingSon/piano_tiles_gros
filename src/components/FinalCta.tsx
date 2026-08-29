@@ -1,4 +1,5 @@
 import Image from "next/image";
+import AddToCalendar from "@/components/AddToCalendar";
 import { event, lineup, tickets } from "@/data/event";
 
 /**
@@ -42,18 +43,22 @@ export default function FinalCta() {
           {lineup.map((p) => p.name).join(" · ")}
         </p>
 
-        <div className="reveal mt-8 flex flex-wrap items-center gap-4">
-          <a
-            href={tickets.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-atlas px-8 py-4 font-display text-lg uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5"
-          >
-            {tickets.ctaLabelLong}
-          </a>
-          <span className="text-sm text-fog">
-            {tickets.priceFromHuman} · {tickets.provider}
-          </span>
+        <div className="reveal mt-8 flex flex-wrap items-start gap-4">
+          <div>
+            <a
+              href={tickets.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block bg-atlas px-8 py-4 font-display text-lg uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5"
+            >
+              {tickets.ctaLabelLong}
+            </a>
+            <p className="mt-2 text-sm text-fog">
+              {tickets.priceFromHuman} · {tickets.provider}
+            </p>
+          </div>
+          {/* Sekundarna akcija: kdor vstopnice še odlaša, si vsaj rezervira večer. */}
+          <AddToCalendar />
         </div>
       </div>
     </section>
