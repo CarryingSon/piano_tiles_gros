@@ -19,6 +19,9 @@ type Props = {
   breakdown: { perfect: number; good: number; misses: number };
 };
 
+/** Zlato, srebro in bron za prve tri po skupnem seštevku. */
+const medalClass = [styles.gold, styles.silver, styles.bronze];
+
 export default function Leaderboard({ song, score, sessionId, breakdown }: Props) {
   const [scope, setScope] = useState<"overall" | "song">("overall");
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -130,10 +133,10 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
           {entries.map((entry, index) => {
             const entrySong = gameConfig.songs.find((item) => item.id === entry.songId);
             return (
-              <li key={entry.id} className={scope === "overall" && index < gameConfig.competition.winnerCount ? styles.podium : undefined}>
+              <li key={entry.id} className={[scope === "overall" && index < gameConfig.competition.winnerCount ? styles.podium : "", scope === "overall" ? (medalClass[index] ?? "") : ""].filter(Boolean).join(" ") || undefined}>
                 <span className={styles.rank}>{String(index + 1).padStart(2, "0")}</span>
                 <span className={styles.player}><strong>{entry.name}</strong><small>{entrySong?.artist ?? entry.songId}</small></span>
-                <span className={styles.boardScore}><strong>{entry.score}</strong>{scope === "overall" && <small>{index < 3 ? "50 % popust" : `${Math.round(entry.rating / 100)} %`}</small>}</span>
+                <span className={styles.boardScore}><strong>{entry.score}</strong>{scope === "overall" && <small>{index < gameConfig.competition.winnerCount ? gameConfig.competition.prizeLabel : `${Math.round(entry.rating / 100)} %`}</small>}</span>
               </li>
             );
           })}

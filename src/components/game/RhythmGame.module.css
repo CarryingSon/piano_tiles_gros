@@ -903,6 +903,17 @@
 .boardList li { display: grid; grid-template-columns: 2.2rem 1fr auto; align-items: center; gap: .6rem; min-height: 3.7rem; border-bottom: 1px solid rgb(255 255 255 / .12); }
 .boardList li.podium { margin-inline: -.4rem; padding-inline: .4rem; background: linear-gradient(90deg, rgb(255 216 0 / .13), transparent); }
 .podium .rank { font-size: 1.55rem; }
+
+/* Kolajne za prve tri po skupnem seštevku — prejemnike brezplačne vstopnice. */
+.boardList li.gold { background: linear-gradient(90deg, rgb(255 216 0 / .16), transparent); }
+.boardList li.silver { background: linear-gradient(90deg, rgb(226 231 237 / .12), transparent); }
+.boardList li.bronze { background: linear-gradient(90deg, rgb(205 127 50 / .14), transparent); }
+.gold .rank { color: #ffd800; }
+.silver .rank { color: #dfe4ea; }
+.bronze .rank { color: #d9a06a; }
+.gold .boardScore small { color: #ffd800; }
+.silver .boardScore small { color: #dfe4ea; }
+.bronze .boardScore small { color: #d9a06a; }
 .rank { color: #ffd800; font: 400 1.2rem var(--font-display); }
 .player strong, .player small, .boardScore strong, .boardScore small { display: block; }
 .player strong { overflow: hidden; font-size: .85rem; text-overflow: ellipsis; white-space: nowrap; }

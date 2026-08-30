@@ -229,8 +229,9 @@ export const gameConfig = {
   competition: {
     enabled: true,
     winnerCount: 3,
-    discountPercent: 50,
-    headline: "Prvi trije dobijo vstopnico 50 % ceneje",
+    /** Nagrada za prve tri po skupnem seštevku. */
+    prizeLabel: "Zastonj karta",
+    headline: "Prvi trije dobijo zastonj karto",
     note: "Pri izenačenju odloča prej oddan rezultat. Velja po potrditvi rezultata in skladno s pravili organizatorja.",
   },
   siteUrl: `${site.url}/igra`,

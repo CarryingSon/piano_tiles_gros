@@ -1636,7 +1636,7 @@ export default function RhythmGame() {
             </p>
             <div className={styles.competitionCallout}>
               <span>TOP 3</span>
-              <strong>{gameConfig.competition.discountPercent} % cenejša vstopnica</strong>
+              <strong>{gameConfig.competition.headline}</strong>
               <small>{gameConfig.competition.note}</small>
             </div>
             <fieldset className={styles.songPicker}>

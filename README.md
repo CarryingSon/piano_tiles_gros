@@ -117,9 +117,11 @@ ime, rezultat pa se lahko odda samo enkrat za veljavno igralno sejo (med 10
 sekundami in 15 minutami). Skupna lestvica rezultate različnih skladb primerja z normalizirano
 oceno, zavihek izvajalca pa prikazuje surove točke za izbrano skladbo.
 Na skupni lestvici se posamezno ime pojavi samo enkrat z najboljšim rezultatom.
-Prva tri mesta so označena kot prejemniki 50-% popusta na vstopnico; pred javno
-objavo mora organizator dopolniti uradna pravila, rok tekmovanja, reševanje
-izenačenih rezultatov in način prevzema popusta.
+Prva tri mesta po skupnem seštevku so označena z zlato, srebrno in bronasto
+kolajno in dobijo **zastonj karto**; pred javno objavo mora organizator
+dopolniti uradna pravila, rok tekmovanja, reševanje izenačenih rezultatov in
+način prevzema vstopnice. Nagrado se ureja v `competition` v
+[`src/data/game.ts`](src/data/game.ts).
 
 ### Prvi zagon baze
 
