@@ -57,9 +57,17 @@
   text-transform: uppercase;
 }
 
+.subtitle {
+  max-width: 24rem;
+  margin: 1.1rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .copy {
   max-width: 30rem;
-  margin: 1.4rem 0 0;
+  margin: .6rem 0 0;
   font-size: 1rem;
   line-height: 1.55;
 }

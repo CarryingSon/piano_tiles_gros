@@ -410,8 +410,8 @@ export const partners: Partner[] = [
 /** Sidra navigacije. */
 export const navLinks = [
   { href: "#dozivetje", label: "Doživetje" },
-  { href: "#odstevanje", label: "Odštevanje" },
   { href: "#izvajalci", label: "Izvajalci" },
+  { href: "#vstopnice", label: "Vstopnice" },
   { href: "#zgodba", label: "Zgodba" },
   { href: "#informacije", label: "Informacije" },
 ] as const;

@@ -66,12 +66,13 @@ export default function GameTeaser() {
         <div className={styles.intro}>
           <p className={styles.kicker}>Skupni leaderboard · v živo</p>
           <h2 id="igra-naslov" className={styles.title}>
-            Kdo vodi ritem?
+            Glatlas Game
           </h2>
+          <p className={styles.subtitle}>
+            Zastonj karte za najboljše tri igralce
+          </p>
           <p className={styles.copy}>
-            <strong>Zastonj karte za najboljše tri igralce.</strong> Ena
-            skupna lestvica za vse tri komade — vsak rezultat je preračunan na
-            največ 10.000 skupnih točk.
+            Ena skupna lestvica za vse tri komade.
           </p>
         </div>
 
