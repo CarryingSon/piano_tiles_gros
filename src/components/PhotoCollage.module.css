@@ -10,12 +10,15 @@
   column-gap: 0.75rem;
 }
 
+/* Bel paspartu kot pri natisnjenih fotografijah v ozadnjem kolažu: širina je
+   odstotek širine slike (torej se z njo skalira), pri nekaterih je spodnji rob
+   širši — tako kot pri polaroidu. Vrednosti nastavi `PhotoCollage`. */
 .item {
   position: relative;
   margin: 0 0 0.75rem;
   break-inside: avoid;
-  border: 1px solid var(--color-line);
-  background: var(--color-coal);
+  padding: var(--p, 3%) var(--p, 3%) var(--pb, 3%);
+  background: #f6f4ef;
   box-shadow: 0 18px 40px rgb(0 0 0 / 55%);
   transform: rotate(var(--r, 0deg));
   transition:
@@ -27,8 +30,9 @@
   display: block;
   width: 100%;
   height: auto;
-  /* Siv filter čez vse kadre — enak videz kot pri črno-belih fotografijah 2024. */
-  filter: grayscale(1) contrast(1.08) brightness(1.04);
+  /* Nežna sivina čez vse kadre: dovolj, da kolaž drži skupaj, ne toliko, da
+     bi kadri postali ploski — kanček barve ostane. */
+  filter: grayscale(0.8) contrast(1.01) brightness(1.03);
 }
 
 @media (min-width: 768px) {
