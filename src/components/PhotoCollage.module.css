@@ -38,7 +38,7 @@
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(rgb(206 176 128 / 14%), rgb(206 176 128 / 14%)),
+    linear-gradient(rgb(198 190 176 / 9%), rgb(198 190 176 / 9%)),
     radial-gradient(
       118% 92% at 50% 45%,
       rgb(255 244 224 / 8%) 40%,
@@ -50,9 +50,10 @@
   display: block;
   width: 100%;
   height: auto;
-  /* Vintage namesto čiste sivine: barva ostane le v sledeh, kontrast je mehak,
-     ton pa topel — kot fotografija, ki je nekaj let ležala v škatli. */
-  filter: sepia(0.42) saturate(0.62) contrast(0.92) brightness(1.06);
+  /* Obledel črno-bel odtis: barva gre skoraj v celoti ven, ostane le kanček
+     toplega tona in mehak kontrast — kot fotografija, ki je nekaj let ležala
+     v škatli. */
+  filter: grayscale(0.9) sepia(0.16) saturate(0.8) contrast(0.93) brightness(1.05);
 }
 
 @media (min-width: 768px) {
