@@ -1,4 +1,5 @@
 import Image from "next/image";
+import PhotoCollage from "@/components/PhotoCollage";
 import PhotoWall from "@/components/PhotoWall";
 
 /**
@@ -98,6 +99,16 @@ export default function Experience() {
               Nastopajoči · 2024
             </figcaption>
           </figure>
+        </div>
+
+        {/* Razmetan kolaž utrinkov — zaključi sekcijo z vzdušjem, ne s podatki. */}
+        <div className="mt-16 sm:mt-24">
+          <p className="reveal mb-6 text-xs uppercase tracking-[0.3em] text-atlas">
+            Utrinki · Glasbeni Atlas 2024
+          </p>
+          <div className="reveal">
+            <PhotoCollage />
+          </div>
         </div>
       </div>
     </section>

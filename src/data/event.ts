@@ -314,6 +314,74 @@ export const story = {
 } as const;
 
 /**
+ * Kolaž utrinkov z Glasbenega Atlasa 2024 (sekcija Doživetje). Vrstni red je
+ * hkrati vrstni red razmetane postavitve — koordinate so v `PhotoCollage`.
+ * Vse fotografije so na strani prevlečene s sivim filtrom.
+ */
+export const collage = [
+  {
+    src: "/media/2024/publika-z-dvignjenimi-rokami-2024.jpg",
+    alt: "Publika z dvignjenimi rokami poje pred odrom Glasbenega Atlasa 2024.",
+    width: 1200,
+    height: 800,
+  },
+  {
+    src: "/media/2024/sotor-med-nastopom-2024.jpg",
+    alt: "Poln šotor pred osvetljenim odrom med nastopom skupine Dan D leta 2024.",
+    width: 1200,
+    height: 800,
+  },
+  {
+    src: "/media/2024/kitarist-v-modri-silhueti-2024.jpg",
+    alt: "Silhueta kitarista z dvignjeno kitaro v modrih žarometih na Glasbenem Atlasu 2024.",
+    width: 800,
+    height: 1200,
+  },
+  {
+    src: "/media/2024/druzba-fantov-2024.jpg",
+    alt: "Nasmejana družba obiskovalcev pozira v objektiv pod šotorom leta 2024.",
+    width: 1200,
+    height: 800,
+  },
+  {
+    src: "/media/2024/ekipa-za-sankom-2024.jpg",
+    alt: "Prostovoljci Glasbenega Atlasa za šankom pod napisom Glasbeni Atlas leta 2024.",
+    width: 1200,
+    height: 800,
+  },
+  {
+    src: "/media/2024/pevec-crno-belo-2024.jpg",
+    alt: "Pevec z mikrofonom v roki sredi nastopa na Glasbenem Atlasu 2024.",
+    width: 1200,
+    height: 1774,
+  },
+  {
+    src: "/media/2024/prijatelji-pred-odrom-2024.jpg",
+    alt: "Skupina prijateljev s pijačo pred modro osvetljenim odrom leta 2024.",
+    width: 1200,
+    height: 800,
+  },
+  {
+    src: "/media/2024/majica-z-lineupom-2024.jpg",
+    alt: "Obiskovalec v majici z zasedbo Glasbenega Atlasa 2024: Siddharta, Dan D, Jet Black Diamonds in Kreera.",
+    width: 1200,
+    height: 800,
+  },
+  {
+    src: "/media/2024/publika-ob-ograji-2024.jpg",
+    alt: "Prva vrsta ob odrski ograji med nastopom leta 2024, obiskovalka snema s telefonom.",
+    width: 1200,
+    height: 800,
+  },
+  {
+    src: "/media/2024/druzba-s-pijaco-2024.jpg",
+    alt: "Družba obiskovalcev s kozarci v rokah med koncertom leta 2024.",
+    width: 1200,
+    height: 800,
+  },
+] as const;
+
+/**
  * Statistika ("Glasbeni Atlas v številkah") — na izvorni strani so animirani
  * števci ob zajemu kazali 0, zato zanesljivih vrednosti NI in sekcija je
  * izklopljena. Ko organizatorji potrdite prave številke, jih vpišite spodaj

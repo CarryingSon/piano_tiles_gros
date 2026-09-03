@@ -1,0 +1,64 @@
+/* Razmetan kolaž utrinkov — fotografije so namerno postavljene poševno in se
+   prekrivajo, kot bi jih kdo vrgel na mizo.
+
+   Na telefonu absolutna postavitev ne pride v poštev (premalo prostora, kadri
+   bi se skrili drug za drugim), zato je tam dvostolpčni tok z istimi zasuki —
+   občutek ostane, berljivost pa ne trpi. */
+
+.scatter {
+  columns: 2;
+  column-gap: 0.75rem;
+}
+
+.item {
+  position: relative;
+  margin: 0 0 0.75rem;
+  break-inside: avoid;
+  border: 1px solid var(--color-line);
+  background: var(--color-coal);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 55%);
+  transform: rotate(var(--r, 0deg));
+  transition:
+    transform 0.45s ease,
+    box-shadow 0.45s ease;
+}
+
+.photo {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Siv filter čez vse kadre — enak videz kot pri črno-belih fotografijah 2024. */
+  filter: grayscale(1) contrast(1.08) brightness(1.04);
+}
+
+@media (min-width: 768px) {
+  .scatter {
+    position: relative;
+    columns: auto;
+    aspect-ratio: 3 / 2;
+  }
+
+  .item {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--w);
+    margin: 0;
+    z-index: var(--z, 1);
+  }
+
+  /* Slika, na kateri je kazalec, se poravna in stopi predse. */
+  .item:hover {
+    z-index: 40;
+    transform: rotate(0deg) scale(1.06);
+    box-shadow: 0 26px 60px rgb(0 0 0 / 70%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .item,
+  .item:hover {
+    transform: rotate(var(--r, 0deg));
+    transition: none;
+  }
+}
