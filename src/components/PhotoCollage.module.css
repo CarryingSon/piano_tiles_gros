@@ -35,7 +35,7 @@
   .scatter {
     position: relative;
     columns: auto;
-    aspect-ratio: 3 / 2;
+    aspect-ratio: 6 / 5;
   }
 
   .item {

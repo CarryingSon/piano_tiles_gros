@@ -314,9 +314,10 @@ export const story = {
 } as const;
 
 /**
- * Kolaž utrinkov z Glasbenega Atlasa 2024 (sekcija Doživetje). Vrstni red je
- * hkrati vrstni red razmetane postavitve — koordinate so v `PhotoCollage`.
- * Vse fotografije so na strani prevlečene s sivim filtrom.
+ * Kolaž utrinkov z Glasbenega Atlasa 2022 in 2024 — edina fotografska vsebina
+ * sekcije Doživetje. Vrstni red je hkrati vrstni red razmetane postavitve
+ * (koordinate so v `PhotoCollage`), vse skupaj pa je prevlečeno s sivim
+ * filtrom, da kolaž deluje kot en kader.
  */
 export const collage = [
   {
@@ -378,6 +379,24 @@ export const collage = [
     alt: "Družba obiskovalcev s kozarci v rokah med koncertom leta 2024.",
     width: 1200,
     height: 800,
+  },
+  {
+    src: "/media/2022/publika-pod-satorom-2022.jpg",
+    alt: "Nasmejana publika pod šotorom Glasbenega Atlasa 2022 pozdravlja v objektiv.",
+    width: 1600,
+    height: 1067,
+  },
+  {
+    src: "/media/2022/kitarist-v-zarkih-2022.jpg",
+    alt: "Kitarist v snopih odrske svetlobe na Glasbenem Atlasu 2022.",
+    width: 1600,
+    height: 1067,
+  },
+  {
+    src: "/media/2024/dekleta-ob-ograji-2024.jpg",
+    alt: "Prijateljice v prvi vrsti ob odrski ograji na Glasbenem Atlasu 2024.",
+    width: 1600,
+    height: 1067,
   },
 ] as const;
 
