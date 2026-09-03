@@ -1,5 +1,5 @@
 /* Razmetan kolaž utrinkov — fotografije so namerno postavljene poševno in se
-   prekrivajo, kot bi jih kdo vrgel na mizo.
+   prekrivajo, kot bi kdo stresel star album na mizo.
 
    Na telefonu absolutna postavitev ne pride v poštev (premalo prostora, kadri
    bi se skrili drug za drugim), zato je tam dvostolpčni tok z istimi zasuki —
@@ -10,36 +10,56 @@
   column-gap: 0.75rem;
 }
 
-/* Bel paspartu kot pri natisnjenih fotografijah v ozadnjem kolažu: širina je
-   odstotek širine slike (torej se z njo skalira), pri nekaterih je spodnji rob
-   širši — tako kot pri polaroidu. Vrednosti nastavi `PhotoCollage`. */
+/* Papirnat rob natisnjene fotografije: širina je odstotek širine slike (torej
+   se z njo skalira), pri nekaterih je spodnji rob širši — tako kot pri
+   polaroidu. Vrednosti nastavi `PhotoCollage`. */
 .item {
   position: relative;
   margin: 0 0 0.75rem;
   break-inside: avoid;
-  padding: var(--p, 3%) var(--p, 3%) var(--pb, 3%);
-  background: #f6f4ef;
-  box-shadow: 0 18px 40px rgb(0 0 0 / 55%);
+  padding: var(--p, 2%) var(--p, 2%) var(--pb, 2%);
+  background: #efe7d6;
+  box-shadow: 0 14px 32px rgb(0 0 0 / 55%);
   transform: rotate(var(--r, 0deg));
   transition:
     transform 0.45s ease,
     box-shadow 0.45s ease;
 }
 
+.frame {
+  position: relative;
+  display: block;
+}
+
+/* Obledelost starega odtisa: topel nadih čez celoto in potemnjeni robovi. */
+.frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgb(206 176 128 / 14%), rgb(206 176 128 / 14%)),
+    radial-gradient(
+      118% 92% at 50% 45%,
+      rgb(255 244 224 / 8%) 40%,
+      rgb(28 18 8 / 30%) 100%
+    );
+}
+
 .photo {
   display: block;
   width: 100%;
   height: auto;
-  /* Nežna sivina čez vse kadre: dovolj, da kolaž drži skupaj, ne toliko, da
-     bi kadri postali ploski — kanček barve ostane. */
-  filter: grayscale(0.8) contrast(1.01) brightness(1.03);
+  /* Vintage namesto čiste sivine: barva ostane le v sledeh, kontrast je mehak,
+     ton pa topel — kot fotografija, ki je nekaj let ležala v škatli. */
+  filter: sepia(0.42) saturate(0.62) contrast(0.92) brightness(1.06);
 }
 
 @media (min-width: 768px) {
   .scatter {
     position: relative;
     columns: auto;
-    aspect-ratio: 6 / 5;
+    aspect-ratio: 3 / 2;
   }
 
   .item {
