@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { editions, tickets } from "@/data/event";
+import EditionGallery from "@/components/EditionGallery";
 import PhotoWall from "@/components/PhotoWall";
 
 /**
@@ -30,6 +31,7 @@ export default function Timeline() {
         <ol className="relative mt-10 space-y-12 border-l-2 border-dashed border-atlas/40 pl-8 sm:mt-16 sm:space-y-20 sm:pl-12">
           {editions.map((edition) => {
             const is2026 = edition.year === "2026";
+            const [firstImage] = edition.images;
             return (
               <li key={edition.year} className="reveal relative">
                 {/* Pika postaje na črti */}
@@ -83,23 +85,30 @@ export default function Timeline() {
                     )}
                   </div>
 
-                  {edition.image ? (
+                  {edition.images.length > 1 ? (
+                    /* Več fotografij (2024: po ena na bend) — samodejni vrtiljak
+                       v razmerju 3 : 2, da med prehodi ne skače višina. */
+                    <EditionGallery
+                      images={edition.images}
+                      year={edition.year}
+                    />
+                  ) : firstImage ? (
                     <figure>
                       {/* Brez vsiljenega razmerja: arhivske fotografije so 3 : 2,
                           kampanjski pas 2026 pa je bistveno širši in bi mu
                           `object-cover` v okvirju 3 : 2 odrezal logotipe ob robu. */}
                       <div className="overflow-hidden">
                         <Image
-                          src={edition.image.src}
-                          alt={edition.image.alt}
-                          width={edition.image.width}
-                          height={edition.image.height}
+                          src={firstImage.src}
+                          alt={firstImage.alt}
+                          width={firstImage.width}
+                          height={firstImage.height}
                           sizes="(min-width: 768px) 45vw, 100vw"
                           className="h-auto w-full"
                         />
                       </div>
                       <figcaption className="mt-2 text-xs uppercase tracking-widest text-fog">
-                        {edition.image.caption ??
+                        {firstImage.caption ??
                           `Arhiv · Glasbeni Atlas ${edition.year}`}
                       </figcaption>
                     </figure>

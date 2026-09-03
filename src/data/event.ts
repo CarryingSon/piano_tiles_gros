@@ -197,6 +197,15 @@ export const lineup: Performer[] = [
   },
 ];
 
+export type EditionImage = {
+  src: string;
+  alt: string;
+  width: number;
+  height: number;
+  /** Pripis pod sliko; brez njega se izpiše "Arhiv · Glasbeni Atlas <leto>". */
+  caption?: string;
+};
+
 export type Edition = {
   year: string;
   stopLabel: string;
@@ -204,14 +213,12 @@ export type Edition = {
   dateHuman: string;
   performers: string[];
   note?: string;
-  image: {
-    src: string;
-    alt: string;
-    width: number;
-    height: number;
-    /** Pripis pod sliko; brez njega se izpiše "Arhiv · Glasbeni Atlas <leto>". */
-    caption?: string;
-  } | null;
+  /**
+   * Fotografije postaje. Ena se izpiše statično, več pa se v časovnici
+   * samodejno zvrsti (ob `prefers-reduced-motion` mirujejo). Prazen seznam
+   * pomeni postajo brez arhiva.
+   */
+  images: EditionImage[];
 };
 
 /** Pretekli izdaji — potrjeni na klub-gros.com in Eventimu. */
@@ -223,12 +230,14 @@ export const editions: Edition[] = [
     dateHuman: "23. april 2022",
     performers: ["Joker Out", "Koala Voice"],
     note: "Ideja, rojena po 20. obletnici kluba, je prvič oživela pred Gasilskim centrom Grosuplje.",
-    image: {
-      src: "/media/2022/priklon-benda-2022.jpg",
-      alt: "Nastopajoči se ob koncu koncerta priklonijo publiki na odru Glasbenega Atlasa 2022.",
-      width: 1600,
-      height: 1067,
-    },
+    images: [
+      {
+        src: "/media/2022/priklon-benda-2022.jpg",
+        alt: "Nastopajoči se ob koncu koncerta priklonijo publiki na odru Glasbenega Atlasa 2022.",
+        width: 1600,
+        height: 1067,
+      },
+    ],
   },
   {
     year: "2024",
@@ -237,12 +246,38 @@ export const editions: Edition[] = [
     dateHuman: "5. oktober 2024",
     performers: ["Siddharta", "Dan D", "Jet Black Diamonds", "Kreera"],
     note: "Ob 25-letnici ŠK GROŠ so se mladim zasedbam na odru pridružila največja imena slovenskega rocka.",
-    image: {
-      src: "/media/2024/pevka-v-modri-luci-2024.jpg",
-      alt: "Pevka v modri odrski svetlobi na Glasbenem Atlasu 2024.",
-      width: 1600,
-      height: 1067,
-    },
+    /* Vsi štirje nastopi iz arhiva 2024 — v časovnici se vrtijo v istem
+       vrstnem redu kot so našteti med nastopajočimi. */
+    images: [
+      {
+        src: "/media/2024/siddharta-na-odru-2024.jpg",
+        alt: "Siddharta ob koncu nastopa na odru Glasbenega Atlasa 2024, za njimi polna dvorana.",
+        width: 1600,
+        height: 1067,
+        caption: "Siddharta · Glasbeni Atlas 2024",
+      },
+      {
+        src: "/media/2024/dan-d-na-odru-2024.jpg",
+        alt: "Pevec skupine Dan D poje v mikrofon s kitaro v rokah, oder je obsijan z rdečo in modro lučjo.",
+        width: 1600,
+        height: 1067,
+        caption: "Dan D · Glasbeni Atlas 2024",
+      },
+      {
+        src: "/media/2024/jet-black-diamonds-na-odru-2024.jpg",
+        alt: "Pevec skupine Jet Black Diamonds poje s kitaro pred odrsko zaveso z napisom Jet Black Diamonds.",
+        width: 1600,
+        height: 1067,
+        caption: "Jet Black Diamonds · Glasbeni Atlas 2024",
+      },
+      {
+        src: "/media/2024/kreera-na-odru-2024.jpg",
+        alt: "Zasedba Kreera med nastopom pod šotorom, za njimi osvetljen napis Kreera.",
+        width: 1600,
+        height: 1067,
+        caption: "Kreera · Glasbeni Atlas 2024",
+      },
+    ],
   },
   {
     year: "2026",
@@ -251,15 +286,17 @@ export const editions: Edition[] = [
     dateHuman: "10. oktober 2026",
     performers: ["Kokosy", "MRFY", "Tabu"],
     note: "Atlas se prvič seli v Ivančno Gorico. Zgodba se piše naprej — tokrat s tabo.",
-    image: {
-      /* Uradni plakat 2026, izrisan iz organizatorjevega PDF-ja
-         (Atlas 4000 × 3000). */
-      src: "/media/campaign/glasbeni-atlas-2026-plakat.jpg",
-      alt: "Uradni plakat Glasbenega Atlasa 2026: logotip ŠK GROŠ, datum 10. 10. 2026, imena Kokosy, MRFY in Tabu, napis Ivančna Gorica in logotipi partnerjev na črno-belem kolažu koncertnih fotografij.",
-      width: 1800,
-      height: 1350,
-      caption: "Uradni plakat · Glasbeni Atlas 2026",
-    },
+    images: [
+      {
+        /* Uradni plakat 2026, izrisan iz organizatorjevega PDF-ja
+           (Atlas 4000 × 3000). */
+        src: "/media/campaign/glasbeni-atlas-2026-plakat.jpg",
+        alt: "Uradni plakat Glasbenega Atlasa 2026: logotip ŠK GROŠ, datum 10. 10. 2026, imena Kokosy, MRFY in Tabu, napis Ivančna Gorica in logotipi partnerjev na črno-belem kolažu koncertnih fotografij.",
+        width: 1800,
+        height: 1350,
+        caption: "Uradni plakat · Glasbeni Atlas 2026",
+      },
+    ],
   },
 ];
 
