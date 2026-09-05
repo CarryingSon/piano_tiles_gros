@@ -18,7 +18,10 @@ const grotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
-  title: site.title,
+  /* V zavihku naj stoji samo datum dogodka; celoten naslov ostane v OG in
+     Twitter podatkih, kjer ga vidijo delitve povezave. Ikona je logotip ŠK
+     GROŠ (src/app/icon.png), enak kot na klub-gros.com. */
+  title: event.dateHuman,
   description: site.description,
   alternates: { canonical: "/" },
   openGraph: {
