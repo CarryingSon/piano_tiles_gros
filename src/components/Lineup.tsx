@@ -34,12 +34,17 @@ export default function Lineup() {
           {lineup.map((performer, index) => {
             /* Vrstice se izmenjujejo: pri vsaki drugi zasedbi (MRFY) je
                fotografija levo, ime pa desno — da seznam ne teče v enem samem
-               ritmu. Na telefonu vrstni red ostane ime → fotografija. */
+               ritmu. Ime in opis se takrat poravnata na desni rob mreže, da
+               vrstica zrcali sosednji dve namesto da bi besedilo obviselo na
+               sredini. Na telefonu vrstni red ostane ime → fotografija in vse
+               je poravnano levo. */
             const photoFirst = index % 2 === 1;
             return (
               <li key={performer.name} className="reveal group py-10 sm:py-12">
                 <div className="grid items-center gap-8 md:grid-cols-12">
-                  <div className="md:col-span-7">
+                  <div
+                    className={`md:col-span-7 ${photoFirst ? "md:text-right" : ""}`}
+                  >
                     <h3 className="font-display uppercase leading-none">
                       <span
                         className={`text-6xl transition-[filter] group-hover:brightness-125 sm:text-7xl lg:text-8xl ${performerTitleColors[performer.name] ?? "text-white"}`}
@@ -47,7 +52,9 @@ export default function Lineup() {
                         {performer.name}
                       </span>
                     </h3>
-                    <p className="mt-4 max-w-md text-sm leading-relaxed text-fog">
+                    <p
+                      className={`mt-4 max-w-md text-sm leading-relaxed text-fog ${photoFirst ? "md:ml-auto" : ""}`}
+                    >
                       {performer.description}
                     </p>
                   </div>
