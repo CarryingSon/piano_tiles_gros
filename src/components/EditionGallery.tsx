@@ -8,8 +8,8 @@ import type { EditionImage } from "@/data/event";
 const SLIDE_MS = 4500;
 
 /**
- * Samodejni prehod med fotografijami ene postaje (2024 jih ima štiri — po eno
- * na bend). Vrtenje se ustavi ob prehodu z miško, ob fokusu na pikah in ob
+ * Samodejni prehod med fotografijami ene postaje (2022 in 2024 jih imata po
+ * štiri — po eno na bend), vse pod sivim filtrom. Vrtenje se ustavi ob prehodu z miško, ob fokusu na pikah in ob
  * `prefers-reduced-motion`; takrat ostane ročno preklapljanje s pikami.
  */
 export default function EditionGallery({
@@ -52,7 +52,7 @@ export default function EditionGallery({
             alt={image.alt}
             fill
             sizes="(min-width: 768px) 45vw, 100vw"
-            className={`object-cover transition-opacity duration-700 ${
+            className={`object-cover grayscale transition-opacity duration-700 ${
               position === index ? "opacity-100" : "opacity-0"
             }`}
             aria-hidden={position !== index}
