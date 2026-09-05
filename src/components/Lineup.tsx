@@ -8,7 +8,7 @@ const performerTitleColors: Record<string, string> = {
 };
 
 /**
- * Zasedba 2026 kot legenda zemljevida: tri velike tipografske vrstice.
+ * Zasedba 2026 kot legenda zemljevida: tri kartice v eni vrsti.
  * Fotografije skupin so pripravljene iz uradnih kampanjskih materialov 2026;
  * če posamezna slika manjka, komponenta še vedno prikaže jasen nadomestni okvir.
  */
@@ -30,69 +30,53 @@ export default function Lineup() {
           Trije razlogi, da si tam.
         </h2>
 
-        <ol className="mt-14 divide-y divide-line border-y border-line">
-          {lineup.map((performer, index) => {
-            /* Vrstice se izmenjujejo: pri vsaki drugi zasedbi (MRFY) je
-               fotografija levo, ime pa desno — da seznam ne teče v enem samem
-               ritmu. Ime in opis se takrat poravnata na desni rob mreže, da
-               vrstica zrcali sosednji dve namesto da bi besedilo obviselo na
-               sredini. Na telefonu vrstni red ostane ime → fotografija in vse
-               je poravnano levo. */
-            const photoFirst = index % 2 === 1;
-            return (
-              <li key={performer.name} className="reveal group py-10 sm:py-12">
-                <div className="grid items-center gap-8 md:grid-cols-12">
-                  <div
-                    className={`md:col-span-7 ${photoFirst ? "md:text-right" : ""}`}
-                  >
-                    <h3 className="font-display uppercase leading-none">
-                      <span
-                        className={`text-6xl transition-[filter] group-hover:brightness-125 sm:text-7xl lg:text-8xl ${performerTitleColors[performer.name] ?? "text-white"}`}
-                      >
-                        {performer.name}
-                      </span>
-                    </h3>
-                    <p
-                      className={`mt-4 max-w-md text-sm leading-relaxed text-fog ${photoFirst ? "md:ml-auto" : ""}`}
-                    >
-                      {performer.description}
-                    </p>
-                  </div>
-
-                  <div
-                    className={`md:col-span-5 ${photoFirst ? "md:order-first" : ""}`}
-                  >
-                    {performer.image ? (
-                      /* Uradne fotografije so uokvirjene in rahlo zavrtene, z
-                         naravnim razmerjem in prosojnimi vogali. Vsiljen izrez
-                         (`aspect` + `object-cover`) bi jim odrezal okvir. */
-                      <Image
-                        src={performer.image}
-                        alt={`Uradna fotografija skupine ${performer.name}.`}
-                        width={performer.imageWidth}
-                        height={performer.imageHeight}
-                        sizes="(min-width: 768px) 40vw, 100vw"
-                        className="h-auto w-full"
-                      />
-                    ) : (
-                      /* Nadomestni okvir — zamenjajte z uradno fotografijo (data/event.ts) */
-                      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden border border-dashed border-atlas/30 bg-night">
-                        <span
-                          aria-hidden
-                          className="font-display text-[8rem] leading-none text-white/5 sm:text-[10rem]"
-                        >
-                          {performer.name.charAt(0)}
-                        </span>
-                        <span className="absolute bottom-3 left-3 right-3 text-center text-[11px] uppercase tracking-widest text-fog">
-                          Uradna fotografija — kmalu
-                        </span>
-                      </div>
-                    )}
-                  </div>
+        {/* Kartice namesto treh visokih vrstic: cela zasedba se vidi naenkrat
+            in sekcija zasede približno tretjino prejšnje višine. Fotografije
+            imajo okvir in zasuk vpečena v datoteko, zato jih v okvir vstavimo
+            z `object-contain` — `cover` bi jim odrezal rob. */}
+        <ol className="mt-12 grid gap-4 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3">
+          {lineup.map((performer) => (
+            <li
+              key={performer.name}
+              className="reveal group flex flex-col border border-line bg-night p-4 transition-colors hover:border-atlas/40"
+            >
+              {performer.image ? (
+                <div className="relative aspect-[4/3] overflow-hidden">
+                  <Image
+                    src={performer.image}
+                    alt={`Uradna fotografija skupine ${performer.name}.`}
+                    fill
+                    sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
+                    className="object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
                 </div>
-              </li>
-            );
-          })}
+              ) : (
+                /* Nadomestni okvir — zamenjajte z uradno fotografijo (data/event.ts) */
+                <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden border border-dashed border-atlas/30">
+                  <span
+                    aria-hidden
+                    className="font-display text-[6rem] leading-none text-white/5"
+                  >
+                    {performer.name.charAt(0)}
+                  </span>
+                  <span className="absolute bottom-3 left-3 right-3 text-center text-[11px] uppercase tracking-widest text-fog">
+                    Uradna fotografija — kmalu
+                  </span>
+                </div>
+              )}
+
+              <h3 className="mt-5 font-display uppercase leading-none">
+                <span
+                  className={`text-4xl transition-[filter] group-hover:brightness-125 sm:text-5xl ${performerTitleColors[performer.name] ?? "text-white"}`}
+                >
+                  {performer.name}
+                </span>
+              </h3>
+              <p className="mt-3 text-sm leading-relaxed text-fog">
+                {performer.description}
+              </p>
+            </li>
+          ))}
         </ol>
 
         <p className="reveal mt-8 text-sm text-fog">
