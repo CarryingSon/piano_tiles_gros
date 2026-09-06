@@ -1,7 +1,22 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { event, heroMedia, lineup, supportAct, tickets } from "@/data/event";
+import {
+  event,
+  heroMedia,
+  lineup,
+  supportAct,
+  tickets,
+  type PerformerAccent,
+} from "@/data/event";
+
+/* Razredi so izpisani v celoti, ker Tailwind bere izvorno kodo in sestavljenih
+   imen (`text-${accent}`) ne bi našel. Iste barve nosijo vstopnice. */
+const accentText: Record<PerformerAccent, string> = {
+  kokosy: "text-kokosy",
+  mrfy: "text-mrfy",
+  atlas: "text-atlas",
+};
 
 /**
  * Junaški del: celozaslonski, kinematografski. Utišan video izsek iz
@@ -188,8 +203,17 @@ export default function Hero() {
 
         {/* Imena zasedb stojijo pred naslovom: to je prvo, kar obiskovalca
             zanima, in edino, kar se med izdajami zares spremeni. */}
-        <p className="font-display text-[5.4vw] uppercase leading-none tracking-wide text-atlas sm:text-[2.6vw] lg:text-3xl">
-          {lineup.map((p) => p.name).join(" · ")}
+        <p className="flex flex-wrap items-baseline gap-x-2 font-display text-[5.4vw] uppercase leading-none tracking-wide sm:gap-x-3 sm:text-[2.6vw] lg:text-3xl">
+          {lineup.map((performer, index) => (
+            <span key={performer.name} className={accentText[performer.accent]}>
+              {performer.name}
+              {index < lineup.length - 1 && (
+                <span aria-hidden className="ml-2 text-fog sm:ml-3">
+                  ·
+                </span>
+              )}
+            </span>
+          ))}
         </p>
         {/* Predskupina stoji pod glavo plakata in v manjši pisavi — na plakatu
             je prav tam in prav tako. */}

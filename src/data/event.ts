@@ -159,8 +159,12 @@ export const ticketTiersNote: string | null =
 export const ticketsMemberNote: string | null =
   "Člani ŠK GROŠ vstopnice po članski ceni kupijo na uradnih urah kluba.";
 
+export type PerformerAccent = "kokosy" | "mrfy" | "atlas";
+
 export type Performer = {
   name: string;
+  /** Barva zasedbe s plakata — ista na vstopnici in v junaku. */
+  accent: PerformerAccent;
   /** Kratek, preverjen opis — brez izmišljenih biografij. */
   description: string;
   /** Pot do uradne fotografije v /public. null → označen nadomestni okvir. */
@@ -183,6 +187,7 @@ export const supportAct = {
 export const lineup: Performer[] = [
   {
     name: "Kokosy",
+    accent: "kokosy",
     description:
       "Ena najbolj prepoznavnih zasedb nove slovenske scene — koncerti, ki jih publika poje na pamet.",
     image: "/media/lineup/kokosy.webp",
@@ -191,6 +196,7 @@ export const lineup: Performer[] = [
   },
   {
     name: "MRFY",
+    accent: "mrfy",
     description: "Indie rock iz Novega mesta. Kitare, ki napolnijo šotor.",
     image: "/media/lineup/mrfy.webp",
     imageWidth: 687,
@@ -198,6 +204,7 @@ export const lineup: Performer[] = [
   },
   {
     name: "Tabu",
+    accent: "atlas",
     description:
       "Ena najbolj priljubljenih slovenskih pop-rock zasedb z več kot 25 leti uspešnic.",
     image: "/media/lineup/tabu.webp",

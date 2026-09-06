@@ -1,29 +1,29 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
-import { event, lineup } from "@/data/event";
+import { event, lineup, type PerformerAccent } from "@/data/event";
 import styles from "./LineupTicket.module.css";
 
 /* Razredi so izpisani v celoti, ker Tailwind bere izvorno kodo in sestavljenih
    imen razredov (`text-${accent}`) ne bi našel. */
-const performerTitleColors: Record<string, string> = {
-  Kokosy: "text-kokosy",
-  MRFY: "text-mrfy",
-  Tabu: "text-atlas",
+const performerTitleColors: Record<PerformerAccent, string> = {
+  kokosy: "text-kokosy",
+  mrfy: "text-mrfy",
+  atlas: "text-atlas",
 };
 
 /* Barvna podlaga v barvi zasedbe — enak prijem kot pri serijah vstopnic.
    Preliv riše `.ticket::before` v `LineupTicket.module.css`, tu gre samo
    odtenek. */
-const performerWash: Record<string, string> = {
-  Kokosy: "var(--color-kokosy)",
-  MRFY: "var(--color-mrfy)",
-  Tabu: "var(--color-atlas)",
+const performerWash: Record<PerformerAccent, string> = {
+  kokosy: "var(--color-kokosy)",
+  mrfy: "var(--color-mrfy)",
+  atlas: "var(--color-atlas)",
 };
 
-const performerHoverBorder: Record<string, string> = {
-  Kokosy: "hover:border-kokosy/50",
-  MRFY: "hover:border-mrfy/50",
-  Tabu: "hover:border-atlas/50",
+const performerHoverBorder: Record<PerformerAccent, string> = {
+  kokosy: "hover:border-kokosy/50",
+  mrfy: "hover:border-mrfy/50",
+  atlas: "hover:border-atlas/50",
 };
 
 /**
@@ -55,11 +55,11 @@ export default function Lineup() {
             <li
               key={performer.name}
               className={`reveal group flex flex-col border border-line bg-night transition-transform duration-300 hover:-translate-y-1 ${
-                performerHoverBorder[performer.name] ?? "hover:border-white/40"
+                performerHoverBorder[performer.accent]
               } ${styles.ticket}`}
               style={
                 {
-                  "--wash": performerWash[performer.name] ?? "#ffffff",
+                  "--wash": performerWash[performer.accent],
                 } as CSSProperties
               }
             >
@@ -108,7 +108,7 @@ export default function Lineup() {
               <div className="flex-1 px-4 pb-5 pt-4">
                 <h3 className="font-display uppercase leading-none">
                   <span
-                    className={`text-4xl transition-[filter] group-hover:brightness-125 sm:text-5xl ${performerTitleColors[performer.name] ?? "text-white"}`}
+                    className={`text-4xl transition-[filter] group-hover:brightness-125 sm:text-5xl ${performerTitleColors[performer.accent]}`}
                   >
                     {performer.name}
                   </span>
