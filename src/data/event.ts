@@ -466,6 +466,16 @@ export const heroMedia = {
   videoMp4: "/media/video/hero-loop.mp4",
   videoWebm: "/media/video/hero-loop.webm",
   poster: "/media/video/hero-poster.jpg",
+  /**
+   * Pokončni izsek za telefon (koncertni reel ŠK GROŠ). Široki kinematografski
+   * posnetek čez pokončen zaslon pokaže komaj petino kadra, zato ima telefon
+   * svojega — 9 : 16, zatemnjen na začetku in koncu, da se zanka ne zalomi.
+   * Zvoka nima; junaški del je tako ali tako utišan.
+   */
+  mobile: {
+    videoMp4: "/media/video/hero-loop-mobile.mp4",
+    poster: "/media/video/hero-poster-mobile.jpg",
+  },
   posterAlt:
     "Polna dvorana pod šotorom na Glasbenem Atlasu 2024 — publika pred odrom v soju žarometov.",
 } as const;

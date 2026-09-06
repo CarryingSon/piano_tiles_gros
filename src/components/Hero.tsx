@@ -1,17 +1,25 @@
 "use client";
 
-import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { event, heroMedia, lineup, tickets } from "@/data/event";
 
 /**
  * Junaški del: celozaslonski, kinematografski. Utišan video izsek iz
- * uradnega aftermovia 2024 se naloži šele po prvi izrisani sliki (LCP je
- * statični poster prek next/image) in samo, če uporabnik ne zahteva
- * zmanjšanega gibanja oz. varčevanja s podatki.
+ * uradnega aftermovia 2024 (na telefonu pokončni koncertni reel) se naloži
+ * šele po prvi izrisani sliki — ta je statični poster — in samo, če uporabnik
+ * ne zahteva zmanjšanega gibanja oz. varčevanja s podatki.
  */
 export default function Hero() {
   const [videoOn, setVideoOn] = useState(false);
+  /**
+   * `null`, dokler ne vemo, kako širok je zaslon: telefon dobi pokončni
+   * posnetek, vse od `sm:` naprej pa širokega. Odločitev pade na odjemalcu,
+   * ker strežnik širine ne pozna — video se tako ali tako priklopi šele po
+   * prvem izrisu.
+   */
+  const [phone, setPhone] = useState<boolean | null>(null);
+  /** Video se prelije čez poster šele, ko res teče — brez preskoka. */
+  const [videoVisible, setVideoVisible] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const playVideo = useCallback(() => {
@@ -56,12 +64,16 @@ export default function Hero() {
     const connection = (navigator as Navigator & { connection?: NetInfo })
       .connection;
     if (reduced.matches || connection?.saveData) return;
-    const id = window.requestAnimationFrame(() => setVideoOn(true));
+    const narrow = window.matchMedia("(max-width: 639.98px)");
+    const id = window.requestAnimationFrame(() => {
+      setPhone(narrow.matches);
+      setVideoOn(true);
+    });
     return () => window.cancelAnimationFrame(id);
   }, []);
 
   useEffect(() => {
-    if (!videoOn) return;
+    if (!videoOn || phone === null) return;
 
     const video = videoRef.current;
     if (!video) return;
@@ -69,8 +81,10 @@ export default function Hero() {
     const resumeWhenVisible = () => {
       if (!document.hidden) playVideo();
     };
+    const reveal = () => setVideoVisible(true);
 
     playVideo();
+    video.addEventListener("playing", reveal);
     video.addEventListener("canplay", playVideo);
     window.addEventListener("pageshow", playVideo);
     window.addEventListener("pointerdown", playVideo, { once: true, passive: true });
@@ -78,66 +92,87 @@ export default function Hero() {
     document.addEventListener("visibilitychange", resumeWhenVisible);
 
     return () => {
+      video.removeEventListener("playing", reveal);
       video.removeEventListener("canplay", playVideo);
       window.removeEventListener("pageshow", playVideo);
       window.removeEventListener("pointerdown", playVideo);
       window.removeEventListener("touchstart", playVideo);
       document.removeEventListener("visibilitychange", resumeWhenVisible);
     };
-  }, [playVideo, videoOn]);
+  }, [phone, playVideo, videoOn]);
 
   return (
     <section
       id="vrh"
-      className="grain relative flex min-h-svh flex-col justify-center overflow-hidden"
+      className="grain relative flex min-h-svh flex-col justify-end overflow-hidden sm:justify-center"
     >
       {/*
-        Ozadje: poster (LCP) + utišan video, ko je smiselno.
+        Ozadje: poster + utišan video, ko je smiselno — oboje čez cel zaslon.
 
-        Vir je kinematografski (2,34 : 1). Prej je imel vpečene črne pasove in
-        skril jih je `scale-y-[1.24]` — navpični razteg, ki je sliko popačil in
-        jo po nepotrebnem še povečal. Pasovi so zdaj odrezani iz samih datotek,
-        zato tu ne potrebujemo nobenega raztega ne povečave.
+        Široki vir je kinematografski (2,34 : 1). Prej je imel vpečene črne
+        pasove in skril jih je `scale-y-[1.24]` — navpični razteg, ki je sliko
+        popačil in jo po nepotrebnem še povečal. Pasovi so zdaj odrezani iz
+        samih datotek, zato tu ne potrebujemo nobenega raztega ne povečave.
 
-        Na telefonu posnetek namenoma ne pokriva celotnega zaslona: pri
-        `object-cover` čez pokončen zaslon bi od tako širokega vira ostala
-        vidna komaj petina širine — iz množice pod odrom bi nastal en sam
-        obraz. Nižji pas povečavo skoraj prepolovi, spodnji preliv `from-night`
-        pa ga brez šiva spelje v ozadje strani. Od `sm:` navzgor je okvir
-        dovolj širok in ozadje ostane celozaslonsko.
+        Telefon ne dobi tega izseka, ampak pokončnega (`heroMedia.mobile`):
+        široki kader bi pri `object-cover` čez pokončen zaslon pokazal komaj
+        petino svoje širine. Ker je vir zdaj v pravem razmerju, pokriva ves
+        zaslon, spodnji preliv pa ga brez šiva spelje v ozadje strani.
+
+        Poster je `<picture>` in ne `next/image`: telefon in namizje potrebujeta
+        vsak svoj kader, `next/image` pa medijskih poizvedb ne pozna in bi obe
+        sliki naložil na vsaki napravi. Datoteki sta majhni (74 in 96 kB) in se
+        prenaša samo tista, ki jo brskalnik izbere.
       */}
-      <div
-        className="absolute inset-x-0 top-0 h-[58svh] sm:inset-0 sm:h-auto"
-        aria-hidden
-      >
-        <Image
-          src={heroMedia.poster}
-          alt=""
-          fill
-          priority
-          /* Izrez je precej širši od zaslona, zato `100vw` ne zadošča —
-             brskalnik bi naložil premajhno sliko in jo raztegnil. */
-          sizes="(max-width: 640px) 300vw, 100vw"
-          className="object-cover object-center grayscale-[35%]"
-        />
-        {videoOn && (
-          <video
-            ref={videoRef}
+      <div className="absolute inset-0" aria-hidden>
+        <picture>
+          <source
+            media="(max-width: 639.98px)"
+            srcSet={heroMedia.mobile.poster}
+            width={720}
+            height={1280}
+          />
+          <img
+            src={heroMedia.poster}
+            alt=""
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover object-center grayscale-[35%]"
+          />
+        </picture>
+        {videoOn && phone !== null && (
+          <video
+            /* Zamenjan vir potrebuje svoj element, sicer bi brskalnik obdržal
+               staro sličico do prve odigrane slike. */
+            key={phone ? "phone" : "wide"}
+            ref={videoRef}
+            className={`absolute inset-0 h-full w-full object-cover object-center grayscale-[35%] transition-opacity duration-700 ${
+              videoVisible ? "opacity-100" : "opacity-0"
+            }`}
             autoPlay
             muted
             loop
             playsInline
             preload="auto"
-            poster={heroMedia.poster}
+            poster={phone ? heroMedia.mobile.poster : heroMedia.poster}
           >
-            <source src={heroMedia.videoMp4} type="video/mp4" />
-            <source src={heroMedia.videoWebm} type="video/webm" />
+            {phone ? (
+              <source src={heroMedia.mobile.videoMp4} type="video/mp4" />
+            ) : (
+              <>
+                <source src={heroMedia.videoMp4} type="video/mp4" />
+                <source src={heroMedia.videoWebm} type="video/webm" />
+              </>
+            )}
           </video>
         )}
         {/* Temnitev za berljivost */}
         <div className="absolute inset-0 bg-gradient-to-t from-night via-night/45 to-night/10 sm:via-night/55 sm:to-night/30" />
         <div className="absolute inset-0 bg-gradient-to-r from-night/55 to-transparent sm:from-night/60" />
+        {/* Preliva, ki na telefonu zaključita celozaslonski posnetek: zgoraj
+            pod glavo strani, spodaj pa v črnino, iz katere raste vsebina. */}
+        <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-night/85 via-night/45 to-transparent sm:hidden" />
+        <div className="absolute inset-x-0 bottom-0 h-[45svh] bg-gradient-to-t from-night via-night/75 to-transparent sm:hidden" />
       </div>
 
       {/* Koordinatni okvir — atlas motiv */}
@@ -152,7 +187,9 @@ export default function Hero() {
         </div>
       </div>
 
-      <div className="relative mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-28">
+      {/* Na telefonu vsebina sedi pri dnu: nad njo je ves posnetek, pod njo pa
+          toliko zraka, da naslov in gumba ne stojijo na robu zaslona. */}
+      <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:py-28">
         <p className="mb-3 inline-flex items-center gap-2.5 text-[0.68rem] uppercase tracking-[0.24em] text-atlas sm:mb-4 sm:gap-3 sm:text-sm sm:tracking-[0.3em]">
           <span aria-hidden className="relative flex h-2 w-2">
             <span className="motion-pulse absolute inline-flex h-full w-full rounded-full bg-atlas" />
