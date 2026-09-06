@@ -1,3 +1,4 @@
+import PhotoWall from "@/components/PhotoWall";
 import { lineup, playlist } from "@/data/event";
 
 /**
@@ -16,9 +17,12 @@ export default function Playlist() {
     <section
       id="playlista"
       aria-labelledby="playlista-naslov"
-      className="border-t border-line bg-coal py-20 sm:py-28"
+      className="relative isolate overflow-hidden border-t border-line py-20 sm:py-28"
     >
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
+      {/* Isti kampanjski kolaž kot v Doživetju: zadnja sekcija se tako vrne
+          tja, kjer se je stran začela. */}
+      <PhotoWall variant="experience" />
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
           Playlista
         </p>

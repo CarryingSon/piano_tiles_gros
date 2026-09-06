@@ -1,4 +1,5 @@
 import {
+  organizer,
   tickets,
   ticketTiers,
   ticketTiersNote,
@@ -190,14 +191,53 @@ export default function Tickets() {
           ))}
         </ul>
 
-        {(ticketTiersNote || ticketsMemberNote) && (
-          <div className="reveal mt-4 space-y-1 text-sm text-fog">
-            {ticketsMemberNote && (
-              <p className="text-white">{ticketsMemberNote}</p>
-            )}
-            {ticketTiersNote && <p>{ticketTiersNote}</p>}
-          </div>
+        {ticketTiersNote && (
+          <p className="reveal mt-4 text-sm text-fog">{ticketTiersNote}</p>
         )}
+
+        {/* Dve poti do karte: spletni Eventim in klubske uradne ure, kjer velja
+            članska cena. Prej je bilo drugo samo pripis pod seznamom. */}
+        <div className="reveal mt-8 grid gap-3 sm:grid-cols-2">
+          <div className="flex flex-col gap-3 border border-line bg-coal p-5">
+            <p className="text-xs uppercase tracking-[0.28em] text-atlas">
+              Na spletu
+            </p>
+            <p className="font-display text-2xl uppercase leading-none text-white">
+              {tickets.provider}
+            </p>
+            <p className="text-sm leading-relaxed text-fog">
+              Vse serije, kadarkoli. Karta pride po e-pošti.
+            </p>
+            <a
+              href={tickets.eventUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-auto w-fit rounded-xl bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night transition-transform hover:-translate-y-0.5"
+            >
+              {tickets.ctaLabel}
+            </a>
+          </div>
+
+          <div className="flex flex-col gap-3 border border-line bg-coal p-5">
+            <p className="text-xs uppercase tracking-[0.28em] text-atlas">
+              V klubu
+            </p>
+            <p className="font-display text-2xl uppercase leading-none text-white">
+              Uradne ure {organizer.shortName}
+            </p>
+            <p className="text-sm leading-relaxed text-fog">
+              {ticketsMemberNote} {organizer.address}.
+            </p>
+            <a
+              href={organizer.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-auto w-fit rounded-xl border border-atlas/60 px-5 py-2.5 font-display text-sm uppercase text-atlas transition-colors hover:border-atlas hover:bg-atlas hover:text-night"
+            >
+              Uradne ure kluba
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );

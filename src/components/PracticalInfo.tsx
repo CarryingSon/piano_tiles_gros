@@ -15,8 +15,8 @@ export default function PracticalInfo() {
         ? `Vrata ${event.doorsTime} · začetek ${event.startTimeHuman}`
         : `Začetek ${event.startTimeHuman}`,
     },
+    /* Kraj je izpuščen: "Parkirišče Ivančna Gorica" pove oboje. */
     { label: "Prizorišče", value: event.venue },
-    { label: "Kraj", value: event.city },
     { label: "Organizator", value: organizer.name },
     {
       label: "Vstopnice",
@@ -59,19 +59,27 @@ export default function PracticalInfo() {
               ))}
             </dl>
 
-            {/* Navpično, ne v vrsti: stolpec je na namizju širok le pol mreže in
-                pri dveh povezavah drug ob drugem se dolgi napis prelomi. */}
+            {/* Vstopnice levo, pot desno: prvo je nakup, drugo je "kako pridem
+                tja". Na telefonu se postavita drug pod drugega. */}
             <div className="mt-8 flex flex-col gap-6">
-              {/* Ena sama povezava na zemljevid: prej sta bili dve — tale in
-                  gumb pod načrtom — obe na isti naslov. */}
-              <a
-                href={event.mapsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-block w-fit rounded-xl bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night transition-transform hover:-translate-y-0.5"
-              >
-                Navodila do prizorišča
-              </a>
+              <div className="flex flex-wrap gap-3">
+                <a
+                  href={tickets.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night transition-transform hover:-translate-y-0.5"
+                >
+                  Vstopnice na Eventimu
+                </a>
+                <a
+                  href={event.mapsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-xl border border-atlas/60 px-5 py-2.5 font-display text-sm uppercase text-atlas transition-colors hover:border-atlas hover:bg-atlas hover:text-night"
+                >
+                  Navodila do prizorišča
+                </a>
+              </div>
               <AddToCalendar variant="quiet" />
             </div>
           </div>
