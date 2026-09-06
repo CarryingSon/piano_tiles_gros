@@ -186,6 +186,12 @@ export default function Hero() {
           {event.tagline}
         </p>
 
+        {/* Imena zasedb stojijo pred naslovom: to je prvo, kar obiskovalca
+            zanima, in edino, kar se med izdajami zares spremeni. */}
+        <p className="mb-3 font-display text-[5.4vw] uppercase leading-none tracking-wide text-atlas sm:mb-4 sm:text-[2.6vw] lg:text-3xl">
+          {lineup.map((p) => p.name).join(" · ")}
+        </p>
+
         <h1 className="font-display uppercase leading-[0.9]">
           <span className="block text-[17vw] text-white sm:text-[13vw] lg:text-[9.5rem]">
             Glasbeni
@@ -200,13 +206,8 @@ export default function Hero() {
           </span>
         </h1>
 
-        <p className="mt-5 max-w-xl text-[0.95rem] text-white sm:mt-6 sm:text-lg">
-          <strong className="text-atlas">
-            {lineup.map((p) => p.name).join(" · ")}
-          </strong>
-          <span className="mt-1 block text-fog">
-            {event.dateLong} · {event.venue}
-          </span>
+        <p className="mt-5 max-w-xl text-[0.95rem] text-fog sm:mt-6 sm:text-lg">
+          {event.dateLong} · {event.city}
         </p>
 
         <div className="mt-6 grid w-full max-w-[21rem] gap-3 sm:mt-8 sm:flex sm:max-w-none sm:flex-wrap sm:items-center sm:gap-4">
