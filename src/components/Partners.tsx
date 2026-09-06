@@ -72,21 +72,20 @@ export default function Partners() {
     <section
       id="partnerji"
       aria-labelledby="partnerji-naslov"
-      className="relative overflow-hidden border-y border-line bg-night py-16 sm:py-20"
+      className="relative overflow-hidden border-y border-line bg-night py-10 sm:py-12"
     >
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <p className="reveal mb-3 text-center text-xs uppercase tracking-[0.3em] text-atlas">
-          Partnerji
-        </p>
+        {/* Sekcija je zdaj samo trak logotipov: nadnaslov nosi ime sekcije in
+            je hkrati njen naslov, velika vrstica čez pol zaslona pa je odpadla. */}
         <h2
           id="partnerji-naslov"
-          className="reveal text-center font-display text-3xl uppercase leading-tight text-white sm:text-4xl"
+          className="reveal text-center text-xs uppercase tracking-[0.3em] text-atlas"
         >
-          Brez njih ni odra.
+          Partnerji
         </h2>
       </div>
 
-      <div className="partners-motion marquee relative mt-10 sm:mt-14">
+      <div className="partners-motion marquee relative mt-6 sm:mt-8">
         <ul className="marquee-track items-center py-2">
           {partners.map((partner) => (
             <TrackItem key={partner.name} partner={partner} />
@@ -113,7 +112,7 @@ export default function Partners() {
       </div>
 
       {/* Različica brez gibanja */}
-      <ul className="partners-static mx-auto mt-10 max-w-4xl flex-wrap items-center justify-center gap-x-10 gap-y-8 px-4 sm:px-6">
+      <ul className="partners-static mx-auto mt-6 max-w-4xl flex-wrap items-center justify-center gap-x-10 gap-y-8 px-4 sm:px-6">
         {partners.map((partner) => (
           <li key={partner.name} className="flex items-center justify-center">
             <PartnerLink
