@@ -120,7 +120,7 @@ export default function DesktopGameGate() {
           <div className={styles.desktopScanBlock}>
             <div className={styles.qrFrame}>
               {qrCode ? (
-                <Image src={qrCode} alt="QR-koda za mobilno igro Ujemi ritem" width={260} height={260} unoptimized />
+                <Image src={qrCode} alt="QR-koda za mobilno igro Glatlas Game" width={260} height={260} unoptimized />
               ) : (
                 <span>Nalagam QR …</span>
               )}

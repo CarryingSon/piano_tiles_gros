@@ -118,10 +118,16 @@ export default function Hero() {
   return (
     <section
       id="vrh"
-      className="grain relative flex min-h-svh flex-col justify-end overflow-hidden sm:justify-center"
+      className="grain relative flex min-h-dvh flex-col justify-end overflow-hidden sm:justify-center"
     >
       {/*
         Ozadje: poster + utišan video, ko je smiselno — oboje čez cel zaslon.
+
+        Višina je `dvh` in ne `svh`: `svh` meri zaslon s **prikazano** vrstico
+        Safarija, zato je junaški del ostal tako visok tudi potem, ko se je ob
+        prvem pomiku vrstica umaknila — pod videom je pogledala naslednja
+        sekcija. `dvh` raste in pada z vrstico, tako pokončni posnetek res drži
+        cel zaslon. Na namizju so vse tri mere enake, zato se tam ne spremeni nič.
 
         Široki vir je kinematografski (2,34 : 1). Prej je imel vpečene črne
         pasove in skril jih je `scale-y-[1.24]` — navpični razteg, ki je sliko
@@ -186,7 +192,7 @@ export default function Hero() {
         {/* Preliva, ki na telefonu zaključita celozaslonski posnetek: zgoraj
             pod glavo strani, spodaj pa v črnino, iz katere raste vsebina. */}
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-night/85 via-night/45 to-transparent sm:hidden" />
-        <div className="absolute inset-x-0 bottom-0 h-[45svh] bg-gradient-to-t from-night via-night/75 to-transparent sm:hidden" />
+        <div className="absolute inset-x-0 bottom-0 h-[38dvh] bg-gradient-to-t from-night via-night/62 to-transparent sm:hidden" />
       </div>
 
       {/* Na telefonu vsebina sedi pri dnu: nad njo je ves posnetek, pod njo pa

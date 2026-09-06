@@ -1595,7 +1595,7 @@ export default function RhythmGame() {
     context.fillText("GLASBENI ATLAS 2026", 72, 96);
     context.fillStyle = gameConfig.colors.white;
     context.font = "900 118px Arial Narrow, sans-serif";
-    context.fillText("UJEMI RITEM", 72, 270);
+    context.fillText("GLATLAS GAME", 72, 270);
     context.fillStyle = selectedSong.baseColor;
     context.font = "900 240px Arial Narrow, sans-serif";
     context.fillText(result.score.toLocaleString("sl-SI"), 60, 605);
@@ -1628,9 +1628,9 @@ export default function RhythmGame() {
     const text = gameConfig.shareText(result.score, performance.title);
     try {
       const blob = await makeShareCard();
-      const file = new File([blob], "ujemi-ritem-rezultat.png", { type: "image/png" });
+      const file = new File([blob], "glatlas-game-rezultat.png", { type: "image/png" });
       if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ title: "Ujemi ritem", text, url: gameConfig.siteUrl, files: [file] });
+        await navigator.share({ title: "Glatlas Game", text, url: gameConfig.siteUrl, files: [file] });
         setShareStatus("Rezultat je pripravljen za deljenje.");
         return;
       }
@@ -1686,8 +1686,8 @@ export default function RhythmGame() {
           </header>
           <div className={styles.introContent}>
             <div className={styles.introHead}>
-              <p className={styles.eyebrow}>Ritmična igra · cel komad</p>
-              <h1 className={styles.title}>Ujemi <span>ritem</span></h1>
+              <p className={styles.eyebrow}>Replikacija Piano Tiles</p>
+              <h1 className={styles.title}>Glatlas <span>Game</span></h1>
               <p className={styles.lead}>{gameConfig.supportingText}</p>
             </div>
 
@@ -1838,7 +1838,7 @@ export default function RhythmGame() {
         <section className={`${styles.screen} ${styles.result}`}>
           <div className={styles.resultInner}>
             <p className={styles.eyebrow}>{result.over ? "Konec igre" : "Prispel/-a si na cilj"}</p>
-            <h1>{result.over ? "Game over" : "Ujemi ritem"}</h1>
+            <h1>{result.over ? "Game over" : "Glatlas Game"}</h1>
             <p className={styles.resultScore}>{result.score.toLocaleString("sl-SI")}</p>
             <p className={styles.resultScoreLabel}>
               od {selectedSong.maxScore.toLocaleString("sl-SI")} možnih točk · {accuracy} %

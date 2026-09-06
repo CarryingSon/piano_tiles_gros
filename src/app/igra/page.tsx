@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import RhythmGame from "@/components/game/RhythmGame";
 
 export const metadata: Metadata = {
-  title: "Ujemi ritem | Glasbeni Atlas 2026",
+  title: "Glatlas Game | Glasbeni Atlas 2026",
   description:
-    "Ujemi ritem v kratki koncertni igri in najdi svojo pot do Glasbenega Atlasa 2026.",
+    "Replikacija Piano Tiles s komadi Glasbenega Atlasa 2026. Zaigraj vse tri in se z najboljšim seštevkom uvrsti med tri, ki dobijo zastonj karto.",
   alternates: { canonical: "/igra" },
 };
 

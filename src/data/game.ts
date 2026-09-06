@@ -216,7 +216,7 @@ export function chorusPulseSeconds(song: GameSong) {
 }
 
 export const gameConfig = {
-  name: "Ujemi ritem",
+  name: "Glatlas Game",
   supportingText: "Najdi svoj ritem in pridi do Glasbenega Atlasa.",
   destination: "GLASBENI ATLAS — IVANČNA GORICA",
   event: {
