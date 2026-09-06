@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
+import { gameShots } from "@/data/event";
 import styles from "./GameTeaser.module.css";
 
 type LeaderEntry = {
@@ -34,15 +35,6 @@ const medals = [
   { label: "Srebro", className: "silver" },
   { label: "Bron", className: "bronze" },
 ] as const;
-
-/**
- * Posnetka iz same igre (telefonski zaslon), da je pred klikom jasno, kaj
- * "ritmična igra" sploh pomeni. Zajeta iz produkcijske različice igre.
- */
-const SHOTS = [
-  { src: "/media/game/prikaz-kokosy.jpg", alt: "Zaslon igre med komadom Kokosy: roza ploščice padajo po štirih stezah." },
-  { src: "/media/game/prikaz-mrfy.jpg", alt: "Zaslon igre med komadom MRFY: oranžne ploščice in kombo števec." },
-];
 
 /** Pravila v štirih vrsticah — več jih pred igro nihče ne prebere. */
 const RULES = [
@@ -150,7 +142,7 @@ export default function GameTeaser() {
           {panel === "how" ? (
             <div className={styles.how}>
               <div className={styles.howShots}>
-                {SHOTS.map((shot) => (
+                {gameShots.map((shot) => (
                   <Image
                     key={shot.src}
                     src={shot.src}

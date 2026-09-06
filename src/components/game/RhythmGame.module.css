@@ -1403,10 +1403,30 @@
   line-height: 1.45;
 }
 
+/* Zaslona iz igre nad kodo. Mere se ravnajo po višini okna, da tudi z njima
+   vse skupaj ostane na en zaslon. */
+.desktopShots {
+  display: grid;
+  width: min(100%, 21rem);
+  margin-bottom: clamp(.9rem, 2.4vh, 1.5rem);
+  gap: .6rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.desktopShots img {
+  width: 100%;
+  max-height: clamp(8rem, 24vh, 14rem);
+  height: auto;
+  border: 1px solid rgb(255 255 255 / .14);
+  border-radius: .5rem;
+  object-fit: cover;
+  object-position: top;
+}
+
 .qrFrame {
   display: grid;
-  width: clamp(11rem, 22vh, 15rem);
-  height: clamp(11rem, 22vh, 15rem);
+  width: clamp(8.5rem, 17vh, 12rem);
+  height: clamp(8.5rem, 17vh, 12rem);
   place-items: center;
   padding: .4rem;
   background: #ffd800;

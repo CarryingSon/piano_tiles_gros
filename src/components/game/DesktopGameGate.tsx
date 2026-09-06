@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import { gameShots } from "@/data/event";
 import { gameConfig } from "@/data/game";
 import styles from "./RhythmGame.module.css";
 
@@ -100,6 +101,20 @@ export default function DesktopGameGate() {
         </div>
 
         <div className={styles.desktopGateAside}>
+          {/* Ista posnetka kot na kartici igre: preden kdo skenira kodo, naj
+              vidi, kam pride. */}
+          <div className={styles.desktopShots}>
+            {gameShots.map((shot) => (
+              <Image
+                key={shot.src}
+                src={shot.src}
+                alt={shot.alt}
+                width={540}
+                height={920}
+                sizes="180px"
+              />
+            ))}
+          </div>
           <div className={styles.qrFrame}>
             {qrCode ? (
               <Image src={qrCode} alt="QR-koda za mobilno igro Ujemi ritem" width={260} height={260} unoptimized />

@@ -513,6 +513,21 @@ export const organizer = {
  * Vgradnja na dnu strani se sestavi iz `id`, povezava pa vodi v aplikacijo za
  * tiste, ki bi seznam raje shranili k sebi.
  */
+/**
+ * Zaslona iz same igre. Uporabljata ju kartica na naslovnici in vratar na
+ * namizju — isti sliki, en vir, da se opis igre ne razhaja s tem, kar kaže.
+ */
+export const gameShots = [
+  {
+    src: "/media/game/prikaz-kokosy.jpg",
+    alt: "Zaslon igre med komadom Kokosy: roza ploščice padajo po štirih stezah.",
+  },
+  {
+    src: "/media/game/prikaz-mrfy.jpg",
+    alt: "Zaslon igre med komadom MRFY: oranžne ploščice in kombo števec.",
+  },
+] as const;
+
 export const playlist = {
   id: "0V3SjgNOkTmTy7ncYJN819",
   url: "https://open.spotify.com/playlist/0V3SjgNOkTmTy7ncYJN819",
