@@ -49,11 +49,12 @@ export async function submitLeaderboardScore(input: {
   sessionId: string;
   name: string;
   /**
-   * Neobvezen stik za primer nagrade. Hrani se ločeno od vnosa lestvice
-   * (tabela `leaderboard_contacts`), do katere anonimni ključ nima dostopa —
-   * lestvica je javna, e-naslovi pa ne.
+   * Obvezen: po e-naslovu se igralec prepozna med komadi in se mu krogi
+   * seštejejo, po njem ga tudi obvestimo o karti. Hrani se ločeno od vnosa
+   * lestvice (tabela `leaderboard_contacts`), do katere anonimni ključ nima
+   * dostopa — lestvica je javna, e-naslovi pa ne.
    */
-  email: string | null;
+  email: string;
   songId: string;
   score: number;
   rating: number;

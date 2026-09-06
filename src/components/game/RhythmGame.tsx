@@ -1843,7 +1843,9 @@ export default function RhythmGame() {
             <p className={styles.resultScoreLabel}>
               od {selectedSong.maxScore.toLocaleString("sl-SI")} možnih točk · {accuracy} %
             </p>
-            <p className={styles.resultTitle}>{performance.title}</p>
+            {/* Ob koncu igre naziv odpade: kdor je izgubil v prvi minuti, ne
+                potrebuje še „Izgubljeni turist" čez zaslon. */}
+            <p className={styles.resultTitle}>{result.over ? "Glatlas Game" : performance.title}</p>
             <p className={styles.playedSong}>{selectedSong.artist} · {selectedSong.title}</p>
             <p className={styles.resultMessage}>
               {result.over

@@ -21,16 +21,17 @@ function cleanName(value: unknown) {
 }
 
 /**
- * E-naslov je neobvezen: prazno polje pomeni vnos brez stika. Vrne `undefined`,
- * kadar je nekaj vpisano, a to ni e-naslov — takrat je oddaja zavrnjena, da
- * igralec ne misli, da smo ga zabeležili.
+ * E-naslov je obvezen: po njem se igralčevi krogi seštejejo v skupno lestvico
+ * (`get_public_leaderboard` združuje prav po njem) in po njem ga obvestimo o
+ * karti. Vrne `null`, kadar manjka ali ni e-naslov — oddaja je takrat
+ * zavrnjena, da igralec ne misli, da je rezultat zabeležen.
  */
 function cleanEmail(value: unknown) {
-  if (value === undefined || value === null || value === "") return null;
-  if (typeof value !== "string") return undefined;
-  const email = value.trim();
-  if (email === "") return null;
-  return email.length <= 160 && emailPattern.test(email) ? email : undefined;
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  return email.length >= 6 && email.length <= 160 && emailPattern.test(email)
+    ? email
+    : null;
 }
 
 function integer(value: unknown) {
@@ -68,7 +69,13 @@ export async function POST(request: Request) {
     const good = integer(body.good);
     const misses = integer(body.misses);
 
-    if (!name || email === undefined || !idPattern.test(sessionId) || !song || score === null || perfect === null || good === null || misses === null) {
+    if (!email) {
+      return Response.json(
+        { error: "Vpiši e-naslov — po njem se rezultati seštevajo in brez njega jih ne moremo shraniti." },
+        { status: 400 },
+      );
+    }
+    if (!name || !idPattern.test(sessionId) || !song || score === null || perfect === null || good === null || misses === null) {
       return Response.json({ error: "Preveri ime in e-naslov ter poskusi znova." }, { status: 400 });
     }
     if (
@@ -92,8 +99,17 @@ export async function POST(request: Request) {
     // funkcija preračuna oceno s svojim stropom in zavrne vsako neujemanje.
     // Brez teh podatkov v dnevniku je videti kot izpad baze, čeprav manjka
     // samo zagnana migracija — zato jih izpišemo in vrnemo 422, ne 503.
-    const stale = (error as { message?: string } | null)?.message === "invalid score";
+    const message = (error as { message?: string } | null)?.message;
+    const stale = message === "invalid score";
     console.error("Leaderboard submit error", error, { ...submitted, staleBounds: stale });
+    // `invalid email` pride iz baze, kadar zahtevek e-naslova nima — na primer
+    // iz strani, ki je v zavihku ostala odprta izpred te spremembe.
+    if (message === "invalid email") {
+      return Response.json(
+        { error: "Vpiši e-naslov — po njem se rezultati seštevajo in brez njega jih ne moremo shraniti." },
+        { status: 400 },
+      );
+    }
     return stale
       ? Response.json({ error: "Rezultata ni bilo mogoče potrditi." }, { status: 422 })
       : Response.json({ error: "Rezultata trenutno ni mogoče shraniti." }, { status: 503 });

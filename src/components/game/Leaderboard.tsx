@@ -52,6 +52,12 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
    * začetku) se ne odpre samo: prazen vnos na lestvici ni nikomur v korist.
    */
   const [formOpen, setFormOpen] = useState(sessionId !== null && score > 0);
+  /**
+   * Vmesno vprašanje pred zapiranjem obrazca. Krog je odigran samo enkrat —
+   * kdor okno zapre po nesreči, rezultata ne more več oddati, zato gre vsako
+   * zapiranje (gumb, klik mimo, Escape) najprej skozi potrditev.
+   */
+  const [confirmSkip, setConfirmSkip] = useState(false);
   const nameFieldRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -88,10 +94,19 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
     setScope(next);
   };
 
+  /** Zapri brez oddaje — šele ko je igralec to potrdil. */
+  const discard = useCallback(() => {
+    setConfirmSkip(false);
+    setFormOpen(false);
+  }, []);
+
   useEffect(() => {
     if (!formOpen) return;
     const onKey = (keyEvent: KeyboardEvent) => {
-      if (keyEvent.key === "Escape") setFormOpen(false);
+      if (keyEvent.key !== "Escape") return;
+      // Prvi Escape odpre vprašanje, drugi se vrne k obrazcu; zapre ga samo
+      // gumb v vprašanju.
+      setConfirmSkip((asking) => !asking);
     };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
@@ -118,6 +133,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Rezultata ni mogoče shraniti.");
       setSubmitted(true);
+      setConfirmSkip(false);
       setFormOpen(false);
       setStatus("Tvoj rekord je na lestvici.");
       setEntries(await loadEntries());
@@ -146,7 +162,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
             role="dialog"
             aria-modal="true"
             aria-labelledby="submit-title"
-            onClick={() => setFormOpen(false)}
+            onClick={() => setConfirmSkip(true)}
           >
             <form
               className={styles.submitCard}
@@ -180,7 +196,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                 disabled={!sessionId || submitting}
               />
 
-              <label htmlFor="player-email">E-naslov (ni obvezen)</label>
+              <label htmlFor="player-email">E-naslov</label>
               <input
                 id="player-email"
                 name="playerEmail"
@@ -190,11 +206,15 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                 maxLength={160}
                 autoComplete="email"
                 placeholder="ti@primer.si"
+                required
                 disabled={!sessionId || submitting}
               />
               <small className={styles.submitNote}>
-                E-naslova ne objavimo. Potrebujemo ga samo v primeru, da si
-                dobitnik brezplačne vstopnice in ti jo lahko pošljemo.
+                <strong>Igralca prepoznamo po e-naslovu.</strong> Krogi, oddani
+                z istim e-naslovom, so en igralec in se seštejejo v skupno
+                lestvico — tudi če vsakič vpišeš drugo ime. Pri vsakem komadu
+                torej vpiši istega. E-naslova ne objavimo; brez njega rezultata
+                ne moremo sešteti niti ti poslati karte.
               </small>
 
               {status && <p className={styles.submitError} role="status">{status}</p>}
@@ -206,7 +226,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                 <button
                   type="button"
                   className={styles.submitSkip}
-                  onClick={() => setFormOpen(false)}
+                  onClick={() => setConfirmSkip(true)}
                 >
                   Ne, hvala
                 </button>
@@ -215,6 +235,38 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                 <small>Rezultat lahko objaviš, ko je skupna baza povezana.</small>
               )}
             </form>
+
+            {/* Manjše okno čez obrazec: krog je odigran enkrat, zato zapiranje
+                brez oddaje potrdimo. Obrazec spodaj ostane izpolnjen. */}
+            {confirmSkip && (
+              <div
+                className={styles.confirmBackdrop}
+                role="alertdialog"
+                aria-modal="true"
+                aria-labelledby="confirm-title"
+                onClick={(clickEvent) => clickEvent.stopPropagation()}
+              >
+                <div className={styles.confirmCard}>
+                  <h4 id="confirm-title">Ste prepričani, da ne želite shraniti rezultata?</h4>
+                  <p>
+                    Krog se odigra enkrat: neshranjen rezultat ne gre na
+                    lestvico in ne šteje v seštevek za brezplačno karto.
+                  </p>
+                  <div className={styles.confirmActions}>
+                    <button type="button" onClick={() => setConfirmSkip(false)}>
+                      Vrni se in shrani
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.confirmDiscard}
+                      onClick={discard}
+                    >
+                      Ne shrani rezultata
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <button

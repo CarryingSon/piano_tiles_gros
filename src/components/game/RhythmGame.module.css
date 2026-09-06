@@ -196,21 +196,20 @@
 .title {
   margin: .3rem 0 .4rem;
   font-family: var(--font-display);
-  /* Dvovrstični naslov meri hkrati po širini in po višini okna: na ozkem
-     telefonu ga omeji 15vw, na nizkem 8.6dvh — tako ne poje prostora, ki ga
-     spodaj potrebujejo pravila, izbira komada in gumb. */
-  font-size: clamp(2.5rem, min(15vw, 8.6dvh), 4.6rem);
+  /* Enovrstični naslov: „GLATLAS GAME" stoji v eni vrstici in se raztegne čez
+     ves stolpec, zato ga meri širina okna: Anton je ozek in pri 12 znakih meri
+     natanko 5,03-kratnik svoje stopnje, 17.6vw torej zapolni stolpec do roba.
+     Na nizkih oknih ga prevzame 11dvh. */
+  font-size: clamp(2.2rem, min(17.6vw, 11dvh), 4.6rem);
   font-weight: 400;
-  line-height: .82;
+  line-height: 1;
+  white-space: nowrap;
   letter-spacing: -.035em;
   text-shadow: 0 .5rem 2.2rem rgb(0 0 0 / .52);
   text-transform: uppercase;
 }
 
-.title span {
-  display: block;
-  color: #ffd800;
-}
+.title span { color: #ffd800; }
 
 .lead {
   max-width: 22rem;
@@ -1068,6 +1067,72 @@
 
 .submitReopen:disabled { opacity: .45; }
 
+/* ── Potrditev pred zapiranjem ────────────────────────────────────────────
+   Manjše okno čez obrazec za oddajo. Svoj sloj ima zato, ker mora obrazec
+   ostati viden in izpolnjen pod njim; `fixed` je varen, ker `.submitBackdrop`
+   po koncu svoje animacije nima transformacije. */
+.confirmBackdrop {
+  position: fixed;
+  z-index: 90;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(5 7 8 / 82%);
+  animation: submitIn .14s ease-out;
+}
+
+.confirmCard {
+  width: min(100%, 21rem);
+  padding: 1.15rem 1.15rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--band-color) 45%, transparent);
+  background: #0d0f10;
+  box-shadow: 0 24px 60px rgb(0 0 0 / .7);
+}
+
+.confirmCard h4 {
+  margin: 0 0 .5rem;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 400;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.confirmCard p {
+  margin: 0 0 1rem;
+  color: #a8adb3;
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+.confirmActions {
+  display: grid;
+  gap: .45rem;
+}
+
+.confirmActions button {
+  min-height: 2.9rem;
+  border: 0;
+  background: var(--band-color);
+  color: #050708;
+  cursor: pointer;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  text-transform: uppercase;
+}
+
+.confirmActions .confirmDiscard {
+  min-height: 2.5rem;
+  background: transparent;
+  color: #a8adb3;
+  font: inherit;
+  font-size: .74rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 @keyframes submitIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -1563,7 +1628,7 @@
 @media (max-height: 620px) {
   .introContent { gap: .4rem; padding-top: .25rem; }
   .intro .eyebrow { font-size: .62rem; }
-  .title { font-size: clamp(2.1rem, min(13vw, 8dvh), 3.4rem); }
+  .title { font-size: clamp(1.9rem, min(17vw, 9.5dvh), 3.6rem); }
   .howCard { gap: .6rem; padding: .5rem; }
   .howShot { width: clamp(2.9rem, 14vw, 4rem); }
   .howList { gap: .35rem; }
