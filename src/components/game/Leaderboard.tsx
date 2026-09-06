@@ -144,7 +144,10 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
               onClick={(clickEvent) => clickEvent.stopPropagation()}
             >
               <p className={styles.submitEyebrow}>Konec kroga</p>
-              <h3 id="submit-title">Shrani svoj rezultat</h3>
+              <h3 id="submit-title">Objavi svoj rezultat</h3>
+              <p className={styles.submitLead}>
+                … in se poteguj za brezplačno vstopnico.
+              </p>
               <p className={styles.submitScore}>
                 <strong>{score.toLocaleString("sl-SI")}</strong>
                 <span>točk · {song.artist}</span>
@@ -167,7 +170,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                 disabled={!sessionId || submitting}
               />
 
-              <label htmlFor="player-email">E-naslov</label>
+              <label htmlFor="player-email">E-naslov (ni obvezen)</label>
               <input
                 id="player-email"
                 name="playerEmail"
@@ -180,15 +183,15 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                 disabled={!sessionId || submitting}
               />
               <small className={styles.submitNote}>
-                E-naslov ni obvezen in se ne objavi — potrebujemo ga samo, če si
-                med prvimi tremi in ti moramo poslati karto.
+                E-naslova ne objavimo. Potrebujemo ga samo v primeru, da si
+                dobitnik brezplačne vstopnice in ti jo lahko pošljemo.
               </small>
 
               {status && <p className={styles.submitError} role="status">{status}</p>}
 
               <div className={styles.submitActions}>
                 <button type="submit" disabled={!sessionId || submitting}>
-                  {submitting ? "Shranjujem …" : "Shrani rezultat"}
+                  {submitting ? "Objavljam …" : "Objavi rezultat"}
                 </button>
                 <button
                   type="button"
@@ -210,7 +213,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
             onClick={() => setFormOpen(true)}
             disabled={!sessionId}
           >
-            Shrani svoj rezultat na lestvico
+            Objavi svoj rezultat na lestvico
           </button>
         )
       )}

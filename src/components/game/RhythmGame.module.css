@@ -842,6 +842,9 @@
 
 /* ── Oddaja rezultata ────────────────────────────────────────────────────── */
 
+/* Okno nosi barvo benda, ki je pravkar igral (`--band-color` s `.shell`), tako
+   kot vse ostalo v igri — rumena je bila edina barva, ki ni prišla od nikoder. */
+
 /* Okno se odpre samo od sebe, brž ko je kroga konec: takrat je rezultat pred
    očmi in oddaja je en korak, ne iskanje obrazca nekje pod lestvico. */
 .submitBackdrop {
@@ -861,14 +864,14 @@
   max-height: 100%;
   padding: 1.5rem 1.35rem 1.35rem;
   overflow-y: auto;
-  border: 1px solid rgb(255 216 0 / .35);
+  border: 1px solid color-mix(in srgb, var(--band-color) 45%, transparent);
   background: #0d0f10;
   box-shadow: 0 30px 80px rgb(0 0 0 / .7);
 }
 
 .submitEyebrow {
   margin: 0 0 .35rem;
-  color: #ffd800;
+  color: var(--band-color);
   font-size: .6rem;
   font-weight: 700;
   letter-spacing: .24em;
@@ -884,6 +887,13 @@
   text-transform: uppercase;
 }
 
+.submitLead {
+  margin: .35rem 0 0;
+  color: #a8adb3;
+  font-size: .85rem;
+  line-height: 1.4;
+}
+
 .submitScore {
   display: flex;
   align-items: baseline;
@@ -894,7 +904,7 @@
 }
 
 .submitScore strong {
-  color: #ffd800;
+  color: var(--band-color);
   font-family: var(--font-display);
   font-size: 2.25rem;
   font-weight: 400;
@@ -928,7 +938,7 @@
 }
 
 .submitCard input:focus-visible {
-  border-color: #ffd800;
+  border-color: var(--band-color);
   outline: 0;
 }
 
@@ -942,7 +952,7 @@
 
 .submitError {
   margin: 0 0 .9rem;
-  color: #ffd800;
+  color: var(--band-color);
   font-size: .72rem;
 }
 
@@ -954,7 +964,7 @@
 .submitActions button[type="submit"] {
   min-height: 3.1rem;
   border: 0;
-  background: #ffd800;
+  background: var(--band-color);
   color: #050708;
   cursor: pointer;
   font-family: var(--font-display);
@@ -983,9 +993,9 @@
   width: 100%;
   min-height: 3rem;
   margin-top: 1rem;
-  border: 1px solid rgb(255 216 0 / .5);
+  border: 1px solid color-mix(in srgb, var(--band-color) 55%, transparent);
   background: transparent;
-  color: #ffd800;
+  color: var(--band-color);
   cursor: pointer;
   font-family: var(--font-display);
   font-size: .95rem;
