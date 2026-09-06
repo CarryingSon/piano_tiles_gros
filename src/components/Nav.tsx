@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { event, navLinks, tickets } from "@/data/event";
 import Wordmark from "./Wordmark";
@@ -86,6 +87,16 @@ export default function Nav() {
                   </a>
                 </li>
               ))}
+              {/* Igra ni sidro na tej strani, ampak svoja pot — zato rumena in
+                  krepka, da se loči od ostalih povezav. */}
+              <li>
+                <Link
+                  href="/igra"
+                  className="text-xs font-bold uppercase tracking-widest text-atlas transition-colors hover:text-white"
+                >
+                  Igra
+                </Link>
+              </li>
             </ul>
           </nav>
 
@@ -154,6 +165,18 @@ export default function Nav() {
                   </a>
                 </li>
               ))}
+              <li>
+                <Link
+                  href="/igra"
+                  onClick={() => setOpen(false)}
+                  className="flex items-baseline gap-4 font-display text-4xl uppercase text-atlas transition-colors hover:text-white"
+                >
+                  <span className="text-sm text-atlas">
+                    0{navLinks.length + 1}
+                  </span>
+                  Igra
+                </Link>
+              </li>
             </ul>
           </nav>
           <div className="px-6 pb-10">
