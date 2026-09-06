@@ -40,6 +40,12 @@ export async function createGameSession(songId: string) {
 export async function submitLeaderboardScore(input: {
   sessionId: string;
   name: string;
+  /**
+   * Neobvezen stik za primer nagrade. Hrani se ločeno od vnosa lestvice
+   * (tabela `leaderboard_contacts`), do katere anonimni ključ nima dostopa —
+   * lestvica je javna, e-naslovi pa ne.
+   */
+  email: string | null;
   songId: string;
   score: number;
   rating: number;
@@ -51,6 +57,7 @@ export async function submitLeaderboardScore(input: {
   const { data, error } = await supabase.rpc("submit_leaderboard_score", {
     p_session_id: input.sessionId,
     p_name: input.name,
+    p_email: input.email,
     p_song_id: input.songId,
     p_score: input.score,
     p_rating: input.rating,

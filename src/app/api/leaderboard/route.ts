@@ -9,6 +9,8 @@ export const runtime = "nodejs";
 
 const idPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const namePattern = /^[\p{L}\p{N} ._'’\-]+$/u;
+/** Groba oblika e-naslova: brez presledkov, en @ in pika za njim. */
+const emailPattern = /^[^\s@]+@[^\s@.]+\.[^\s@]{2,}$/;
 
 function cleanName(value: unknown) {
   if (typeof value !== "string") return null;
@@ -16,6 +18,19 @@ function cleanName(value: unknown) {
   const length = [...name].length;
   if (length < 2 || length > 20 || !namePattern.test(name)) return null;
   return name;
+}
+
+/**
+ * E-naslov je neobvezen: prazno polje pomeni vnos brez stika. Vrne `undefined`,
+ * kadar je nekaj vpisano, a to ni e-naslov — takrat je oddaja zavrnjena, da
+ * igralec ne misli, da smo ga zabeležili.
+ */
+function cleanEmail(value: unknown) {
+  if (value === undefined || value === null || value === "") return null;
+  if (typeof value !== "string") return undefined;
+  const email = value.trim();
+  if (email === "") return null;
+  return email.length <= 160 && emailPattern.test(email) ? email : undefined;
 }
 
 function integer(value: unknown) {
@@ -42,6 +57,7 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const name = cleanName(body.name);
+    const email = cleanEmail(body.email);
     const sessionId = typeof body.sessionId === "string" ? body.sessionId : "";
     const songId = typeof body.songId === "string" ? body.songId : "";
     const song = gameConfig.songs.find((item) => item.id === songId);
@@ -52,8 +68,8 @@ export async function POST(request: Request) {
     const good = integer(body.good);
     const misses = integer(body.misses);
 
-    if (!name || !idPattern.test(sessionId) || !song || score === null || perfect === null || good === null || misses === null) {
-      return Response.json({ error: "Preveri ime in poskusi znova." }, { status: 400 });
+    if (!name || email === undefined || !idPattern.test(sessionId) || !song || score === null || perfect === null || good === null || misses === null) {
+      return Response.json({ error: "Preveri ime in e-naslov ter poskusi znova." }, { status: 400 });
     }
     if (
       score < 0 || score > song.maxScore || perfect < 0 || good < 0 || misses < 0 ||
@@ -65,7 +81,7 @@ export async function POST(request: Request) {
     const rating = Math.min(10000, Math.round((score / song.maxScore) * 10000));
     submitted.rating = rating;
     const entry = await submitLeaderboardScore({
-      sessionId, name, songId, score, rating, perfect, good, misses,
+      sessionId, name, email, songId, score, rating, perfect, good, misses,
     });
     if (!entry) {
       return Response.json({ error: "Igralna seja je potekla ali je bil rezultat že oddan." }, { status: 409 });

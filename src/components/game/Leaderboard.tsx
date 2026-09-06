@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { gameConfig, type GameSong, type SongId } from "@/data/game";
 import styles from "./RhythmGame.module.css";
 
@@ -34,6 +34,15 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
   const [scope, setScope] = useState<Scope>("overall");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  /**
+   * Okno za oddajo se odpre samo od sebe, takoj ko je konec kroga — takrat je
+   * rezultat še svež in igralec ga ima pred očmi. Kdor ga zapre, ga lahko z
+   * gumbom pod lestvico odpre nazaj. Pri nič točkah (tap v prazno takoj na
+   * začetku) se ne odpre samo: prazen vnos na lestvici ni nikomur v korist.
+   */
+  const [formOpen, setFormOpen] = useState(sessionId !== null && score > 0);
+  const nameFieldRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -69,6 +78,15 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
     setScope(next);
   };
 
+  useEffect(() => {
+    if (!formOpen) return;
+    const onKey = (keyEvent: KeyboardEvent) => {
+      if (keyEvent.key === "Escape") setFormOpen(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [formOpen]);
+
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!sessionId || submitting || submitted) return;
@@ -81,6 +99,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
         body: JSON.stringify({
           sessionId,
           name,
+          email,
           songId: song.id,
           score,
           ...breakdown,
@@ -89,6 +108,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Rezultata ni mogoče shraniti.");
       setSubmitted(true);
+      setFormOpen(false);
       setStatus("Tvoj rekord je na lestvici.");
       setEntries(await loadEntries());
     } catch (error) {
@@ -108,31 +128,96 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
       </div>
 
       {!submitted && (
-        <form className={styles.nameForm} onSubmit={submit}>
-          <label htmlFor="player-name">Označi svoj rekord z imenom</label>
-          <div>
-            <input
-              id="player-name"
-              name="playerName"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              minLength={2}
-              maxLength={20}
-              pattern="[A-Za-zÀ-ž0-9 ._'’\-]+"
-              autoComplete="nickname"
-              placeholder="Tvoje ime"
-              required
-              disabled={!sessionId || submitting}
-            />
-            <button type="submit" disabled={!sessionId || submitting}>
-              {submitting ? "Shranjujem …" : "Objavi"}
-            </button>
+        formOpen ? (
+          /* Pop-up z oddajo: leži čez zaključni zaslon, dokler ga igralec ne
+             odda ali zapre. */
+          <div
+            className={styles.submitBackdrop}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="submit-title"
+            onClick={() => setFormOpen(false)}
+          >
+            <form
+              className={styles.submitCard}
+              onSubmit={submit}
+              onClick={(clickEvent) => clickEvent.stopPropagation()}
+            >
+              <p className={styles.submitEyebrow}>Konec kroga</p>
+              <h3 id="submit-title">Shrani svoj rezultat</h3>
+              <p className={styles.submitScore}>
+                <strong>{score.toLocaleString("sl-SI")}</strong>
+                <span>točk · {song.artist}</span>
+              </p>
+
+              <label htmlFor="player-name">Ime na lestvici</label>
+              <input
+                id="player-name"
+                name="playerName"
+                ref={nameFieldRef}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                minLength={2}
+                maxLength={20}
+                pattern="[A-Za-zÀ-ž0-9 ._'’\-]+"
+                autoComplete="nickname"
+                placeholder="Tvoje ime"
+                autoFocus
+                required
+                disabled={!sessionId || submitting}
+              />
+
+              <label htmlFor="player-email">E-naslov</label>
+              <input
+                id="player-email"
+                name="playerEmail"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                maxLength={160}
+                autoComplete="email"
+                placeholder="ti@primer.si"
+                disabled={!sessionId || submitting}
+              />
+              <small className={styles.submitNote}>
+                E-naslov ni obvezen in se ne objavi — potrebujemo ga samo, če si
+                med prvimi tremi in ti moramo poslati karto.
+              </small>
+
+              {status && <p className={styles.submitError} role="status">{status}</p>}
+
+              <div className={styles.submitActions}>
+                <button type="submit" disabled={!sessionId || submitting}>
+                  {submitting ? "Shranjujem …" : "Shrani rezultat"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.submitSkip}
+                  onClick={() => setFormOpen(false)}
+                >
+                  Ne, hvala
+                </button>
+              </div>
+              {!sessionId && (
+                <small>Rezultat lahko objaviš, ko je skupna baza povezana.</small>
+              )}
+            </form>
           </div>
-          {!sessionId && <small>Rezultat lahko objaviš, ko je skupna baza povezana.</small>}
-        </form>
+        ) : (
+          <button
+            type="button"
+            className={styles.submitReopen}
+            onClick={() => setFormOpen(true)}
+            disabled={!sessionId}
+          >
+            Shrani svoj rezultat na lestvico
+          </button>
+        )
       )}
 
-      {status && <p className={styles.boardStatus} role="status">{status}</p>}
+      {status && !formOpen && (
+        <p className={styles.boardStatus} role="status">{status}</p>
+      )}
 
       <div className={styles.boardTabs} role="group" aria-label="Vrsta lestvice">
         <button
