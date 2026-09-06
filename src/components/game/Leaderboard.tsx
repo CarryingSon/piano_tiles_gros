@@ -25,6 +25,30 @@ type Props = {
 /** Zlato, srebro in bron za prve tri po skupnem seštevku. */
 const medalClass = [styles.gold, styles.silver, styles.bronze];
 
+/**
+ * Ime in e-naslov zadnje oddaje. Igralec odigra tri komade v treh krogih in
+ * mora pri vsakem vpisati **isti** e-naslov, sicer se mu seštevek razleti na
+ * tri igralce — zato ga obrazec naslednjič ponudi sam. Ostane na napravi;
+ * nikamor drugam ne gre.
+ */
+const PLAYER_KEY = "glasbeni-atlas-igralec";
+
+function readPlayer() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(PLAYER_KEY) ?? "{}") as {
+      name?: unknown;
+      email?: unknown;
+    };
+    return {
+      name: typeof saved.name === "string" ? saved.name : "",
+      email: typeof saved.email === "string" ? saved.email : "",
+    };
+  } catch {
+    /* Zaseben zavihek ali pokvarjen zapis: obrazec ostane prazen. */
+    return { name: "", email: "" };
+  }
+}
+
 /** "1 komad", "2 komada", "3 komadi" — koliko jih igralec ima v seštevku. */
 const SONG_WORDS = ["komadov", "komad", "komada", "komadi"];
 
@@ -43,8 +67,12 @@ type Scope = "overall" | SongId;
 export default function Leaderboard({ song, score, sessionId, breakdown }: Props) {
   const [scope, setScope] = useState<Scope>("overall");
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  /* Prejšnja oddaja s te naprave izpolni obrazec; igralec jo lahko povozi.
+     Lestvica se izriše šele po odigranem krogu, torej samo na odjemalcu, zato
+     branje shrambe v začetnem stanju ne more razdvojiti strežniškega izrisa. */
+  const [player] = useState(readPlayer);
+  const [name, setName] = useState(player.name);
+  const [email, setEmail] = useState(player.email);
   /**
    * Okno za oddajo se odpre samo od sebe, takoj ko je konec kroga — takrat je
    * rezultat še svež in igralec ga ima pred očmi. Kdor ga zapre, ga lahko z
@@ -132,6 +160,11 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
       });
       const data = (await response.json()) as { error?: string };
       if (!response.ok) throw new Error(data.error ?? "Rezultata ni mogoče shraniti.");
+      try {
+        window.localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, email }));
+      } catch {
+        /* Brez shrambe gre naprej; naslednjič se pač vpiše na roko. */
+      }
       setSubmitted(true);
       setConfirmSkip(false);
       setFormOpen(false);

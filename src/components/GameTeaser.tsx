@@ -38,7 +38,7 @@ const medals = [
 
 /** Pravila v petih vrsticah — več jih pred igro nihče ne prebere. */
 const RULES = [
-  "Tapni ploščico v njeni stezi, takoj ko se prikaže.",
+  "Tapni po sami ploščici — tap mimo nje se šteje za napako.",
   "Nižje kot je ob dotiku, več točk.",
   "Dolgo ploščico drži do konca.",
   "Imaš eno življenje — prva napaka konča krog.",

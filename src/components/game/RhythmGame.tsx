@@ -72,7 +72,7 @@ function livesPhrase(count: number) {
 const INTRO_RULES = [
   {
     title: "Tapni v stezi",
-    text: "Ploščico ujemi v njeni stezi. Nižje kot je ob dotiku, več točk.",
+    text: "Prst mora pristati na sami ploščici. Nižje kot jo ujameš, več točk.",
   },
   {
     title: "Dolgo drži",
@@ -297,6 +297,34 @@ function reducedMotion() {
 }
 
 const highScoreKey = (song: GameSong) => `glasbeni-atlas-ritem-high-score-${song.id}`;
+
+/**
+ * Skrito stikalo za haptiko na iPhonu. iOS Vibration API nima — `navigator.
+ * vibrate` tam ne obstaja — zna pa telefon zatresti, kadar se preklopi
+ * `<input type="checkbox" switch>` (Safari 17.4+). Ob zadetku ga na tiho
+ * kliknemo. Element mora biti v dokumentu in izrisan, zato je prosojen in
+ * velik piksel, ne `display: none`.
+ */
+let hapticSwitch: HTMLInputElement | null = null;
+
+/** Kratek sunek ob zadetku; kjer ga naprava ne zna, se ne zgodi nič. */
+function hapticTick(ms: number) {
+  if (typeof navigator === "undefined") return;
+  if (navigator.vibrate?.(ms)) return;
+  if (typeof document === "undefined") return;
+  if (!hapticSwitch) {
+    const input = document.createElement("input");
+    input.type = "checkbox";
+    input.setAttribute("switch", "");
+    input.setAttribute("aria-hidden", "true");
+    input.tabIndex = -1;
+    input.style.cssText =
+      "position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;pointer-events:none;";
+    document.body.appendChild(input);
+    hapticSwitch = input;
+  }
+  hapticSwitch.click();
+}
 
 /** Arrow back to the site, drawn instead of typed: "←" sits off-centre. */
 function BackIcon() {
@@ -729,7 +757,7 @@ export default function RhythmGame() {
     run.laneHitAt[lane] = now + TAP_FLASH_MS;
     run.laneHitY[lane] = y;
     flashFeedback(perfect ? "Perfect" : "Good", perfect ? "perfect" : "good");
-    navigator.vibrate?.(12);
+    hapticTick(12);
   }, [flashFeedback]);
 
   /** Misses and stray presses cost the same: one life each, and three is all. */
@@ -894,7 +922,12 @@ export default function RhythmGame() {
 
   /* ----------------------------------------------------------------- input */
 
-  const pressLane = useCallback((lane: Lane, now: number) => {
+  /**
+   * Pritisk v stezi. `touchY` je navpična lega dotika znotraj igrišča — s
+   * prstom je ploščico treba res zadeti, ne le pogoditi njeno stezo. Tipkovnica
+   * lege nima in poda `null`: tam ostane sodba samo časovna.
+   */
+  const pressLane = useCallback((lane: Lane, now: number, touchY: number | null = null) => {
     const run = runRef.current;
     if (phaseRef.current !== "playing" || run.over) return;
 
@@ -913,6 +946,11 @@ export default function RhythmGame() {
     const here = positionAt(songTime, song);
     const layout = layoutRef.current;
 
+    // Kolikšen zgrešek prsta ploščica še odpusti: pol svoje višine nad in pod
+    // sabo. Ploščica je visoka približno petino igrišča, s tem pasom torej
+    // meri okoli 40 % — dovolj za palec, premalo za tap na drugem koncu steze.
+    const reach = layout ? layout.tileHeight * 0.5 : 0;
+
     let target = -1;
     for (let i = run.cursor; i < notes.length; i += 1) {
       const lead = positionAt(notes[i].time, song) - here;
@@ -923,6 +961,12 @@ export default function RhythmGame() {
         || notes[i].lane !== lane
         || deltaMs < -lateWindowAt(notes[i].time, song)
       ) continue;
+      if (touchY !== null && layout) {
+        // Ploščica sega od `noteY - tileHeight` do `noteY`; `noteY` je njen
+        // spodnji rob, tisti, ki pride do črte.
+        const noteY = layout.top + (1 - lead / travel) * layout.playHeight;
+        if (touchY < noteY - layout.tileHeight - reach || touchY > noteY + reach) continue;
+      }
       target = i;
       break;
     }
@@ -958,7 +1002,7 @@ export default function RhythmGame() {
       else run.good += 1;
       beginHoldCounter(lane);
       flashFeedback("Drži", "hold");
-      navigator.vibrate?.(12);
+      hapticTick(12);
       return;
     }
     state[target] = DONE;
@@ -1028,7 +1072,7 @@ export default function RhythmGame() {
       const laneRect = laneEl.getBoundingClientRect();
       rippleAt(lane, event.clientX - laneRect.left, event.clientY - laneRect.top);
     }
-    pressLane(lane, window.performance.now());
+    pressLane(lane, window.performance.now(), event.clientY - rect.top);
   }, [pressLane, rippleAt]);
 
   const onPointerEnd = useCallback((event: React.PointerEvent<HTMLElement>) => {
@@ -1763,7 +1807,7 @@ export default function RhythmGame() {
           onPointerDown={onPointerDown}
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
-          aria-label="Igralno polje. Tapni ploščico v njeni stezi, takoj ko se prikaže."
+          aria-label="Igralno polje. Tapni po ploščici, ko pade v tvojo bližino."
         >
           <div className={styles.backdrop} aria-hidden="true" />
           <div className={styles.gameHud} ref={hudRef}>
