@@ -170,6 +170,15 @@ export type Performer = {
   imageHeight: number;
 };
 
+/**
+ * Predskupina 2026: zmagovalec Bitke bendov odpre oder. Stoji ločeno od
+ * `lineup`, ker ni enakovredna glava plakata, a mora biti nekje napisana.
+ */
+export const supportAct = {
+  label: "Izbor bitke bendov",
+  name: "Kreera",
+} as const;
+
 /** Zasedba 2026 — potrjena na Eventimu in družbenih omrežjih ŠK GROŠ. */
 export const lineup: Performer[] = [
   {
@@ -317,12 +326,11 @@ export const editions: Edition[] = [
     images: [
       {
         /* Uradni plakat 2026, izrisan iz organizatorjevega PDF-ja
-           (Atlas 4000 × 3000). */
+           (Atlas 4000 × 3000-2). Brez pripisa: plakat pove vse sam. */
         src: "/media/campaign/glasbeni-atlas-2026-plakat.jpg",
-        alt: "Uradni plakat Glasbenega Atlasa 2026: logotip ŠK GROŠ, datum 10. 10. 2026, imena Kokosy, MRFY in Tabu, napis Ivančna Gorica in logotipi partnerjev na črno-belem kolažu koncertnih fotografij.",
+        alt: "Uradni plakat Glasbenega Atlasa 2026: napis Glasbeni Atlas, datum 10. 10. 2026, imena Kokosy, MRFY in Tabu, napis Ivančna Gorica, logotip ŠK GROŠ in logotipi partnerjev na črno-belem kolažu koncertnih fotografij.",
         width: 1800,
         height: 1350,
-        caption: "Uradni plakat · Glasbeni Atlas 2026",
       },
     ],
   },

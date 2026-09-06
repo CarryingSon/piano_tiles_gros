@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { event, heroMedia, lineup, tickets } from "@/data/event";
+import { event, heroMedia, lineup, supportAct, tickets } from "@/data/event";
 
 /**
  * Junaški del: celozaslonski, kinematografski. Utišan video izsek iz
@@ -188,8 +188,13 @@ export default function Hero() {
 
         {/* Imena zasedb stojijo pred naslovom: to je prvo, kar obiskovalca
             zanima, in edino, kar se med izdajami zares spremeni. */}
-        <p className="mb-3 font-display text-[5.4vw] uppercase leading-none tracking-wide text-atlas sm:mb-4 sm:text-[2.6vw] lg:text-3xl">
+        <p className="font-display text-[5.4vw] uppercase leading-none tracking-wide text-atlas sm:text-[2.6vw] lg:text-3xl">
           {lineup.map((p) => p.name).join(" · ")}
+        </p>
+        {/* Predskupina stoji pod glavo plakata in v manjši pisavi — na plakatu
+            je prav tam in prav tako. */}
+        <p className="mb-3 mt-1.5 text-[0.62rem] uppercase tracking-[0.22em] text-fog sm:mb-4 sm:mt-2 sm:text-xs">
+          {supportAct.label}: <span className="text-white">{supportAct.name}</span>
         </p>
 
         <h1 className="font-display uppercase leading-[0.9]">

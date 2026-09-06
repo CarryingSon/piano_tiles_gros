@@ -8,6 +8,14 @@ import PhotoWall from "@/components/PhotoWall";
  * postaje (2022 → 2024 → 2026). Semantično je to preprost <ol> — v celoti
  * uporaben brez animacij in miške.
  */
+/* Vsaka izdaja ima svojo barvo: 2022 roza (Kokosy), 2024 oranžna (MRFY),
+   2026 atlasova rumena. Barva velja za letnico in za piko na poti. */
+const editionAccent: Record<string, { text: string; dot: string }> = {
+  "2022": { text: "text-kokosy", dot: "border-kokosy bg-kokosy/20" },
+  "2024": { text: "text-mrfy", dot: "border-mrfy bg-mrfy/20" },
+  "2026": { text: "text-atlas", dot: "border-atlas bg-atlas" },
+};
+
 export default function Timeline() {
   return (
     <section
@@ -31,17 +39,15 @@ export default function Timeline() {
         <ol className="relative mt-10 space-y-12 border-l-2 border-dashed border-atlas/40 pl-8 sm:mt-16 sm:space-y-20 sm:pl-12">
           {editions.map((edition) => {
             const is2026 = edition.year === "2026";
+            const accent = editionAccent[edition.year]
+              ?? { text: "text-white", dot: "border-atlas/60 bg-night" };
             const [firstImage] = edition.images;
             return (
               <li key={edition.year} className="reveal relative">
                 {/* Pika postaje na črti */}
                 <span
                   aria-hidden
-                  className={`absolute -left-[41px] top-2 flex h-5 w-5 items-center justify-center rounded-full border-2 sm:-left-[57px] ${
-                    is2026
-                      ? "border-atlas bg-atlas"
-                      : "border-atlas/60 bg-night"
-                  }`}
+                  className={`absolute -left-[41px] top-2 flex h-5 w-5 items-center justify-center rounded-full border-2 sm:-left-[57px] ${accent.dot}`}
                 >
                   {is2026 && (
                     <span className="motion-pulse absolute inline-flex h-full w-full rounded-full bg-atlas/60" />
@@ -55,9 +61,7 @@ export default function Timeline() {
                     </p>
                     <p className="mt-2 flex flex-wrap items-baseline gap-x-4">
                       <span
-                        className={`font-display text-6xl uppercase leading-none sm:text-8xl ${
-                          is2026 ? "text-atlas" : "text-white"
-                        }`}
+                        className={`font-display text-6xl uppercase leading-none sm:text-8xl ${accent.text}`}
                       >
                         {edition.year}
                       </span>
@@ -107,10 +111,13 @@ export default function Timeline() {
                           className="h-auto w-full"
                         />
                       </div>
-                      <figcaption className="mt-2 text-xs uppercase tracking-widest text-fog">
-                        {firstImage.caption ??
-                          `Arhiv · Glasbeni Atlas ${edition.year}`}
-                      </figcaption>
+                      {/* Pripis samo tam, kjer kaj pove: plakat 2026 govori
+                          sam zase in ga oznaka pod njim ne izboljša. */}
+                      {firstImage.caption && (
+                        <figcaption className="mt-2 text-xs uppercase tracking-widest text-fog">
+                          {firstImage.caption}
+                        </figcaption>
+                      )}
                     </figure>
                   ) : (
                     /* 2026 — postaja brez arhiva: koordinatna kartica */

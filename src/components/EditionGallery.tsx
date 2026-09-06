@@ -9,8 +9,9 @@ const SLIDE_MS = 4500;
 
 /**
  * Samodejni prehod med fotografijami ene postaje (2022 in 2024 jih imata po
- * štiri — po eno na bend), vse pod sivim filtrom. Vrtenje se ustavi ob prehodu z miško, ob fokusu na pikah in ob
- * `prefers-reduced-motion`; takrat ostane ročno preklapljanje s pikami.
+ * štiri — po eno na bend), v polni barvi. Vrtenje se ustavi ob prehodu z miško
+ * in ob fokusu, ustavljeno pa ostane tudi pri `prefers-reduced-motion`; listati
+ * se da s puščicama na sami fotografiji.
  */
 export default function EditionGallery({
   images,
@@ -36,6 +37,13 @@ export default function EditionGallery({
   const captionOf = (image: EditionImage) =>
     image.caption ?? `Arhiv · Glasbeni Atlas ${year}`;
 
+  /** Naprej ali nazaj, z zavijanjem naokoli. */
+  const step = (delta: number) =>
+    setIndex((current) => (current + delta + images.length) % images.length);
+
+  const arrow =
+    "absolute top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-night/70 text-lg text-white backdrop-blur transition-colors hover:border-atlas hover:text-atlas";
+
   return (
     <figure
       aria-roledescription="vrtiljak fotografij"
@@ -52,32 +60,40 @@ export default function EditionGallery({
             alt={image.alt}
             fill
             sizes="(min-width: 768px) 45vw, 100vw"
-            className={`object-cover grayscale transition-opacity duration-700 ${
+            className={`object-cover transition-opacity duration-700 ${
               position === index ? "opacity-100" : "opacity-0"
             }`}
             aria-hidden={position !== index}
           />
         ))}
+
+        {/* Puščici ležita na sami fotografiji — pike so povedale, koliko slik
+            je, ne pa, da se da med njimi listati. */}
+        <button
+          type="button"
+          onClick={() => step(-1)}
+          aria-label="Prejšnja fotografija"
+          className={`${arrow} left-3`}
+        >
+          <span aria-hidden>‹</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => step(1)}
+          aria-label="Naslednja fotografija"
+          className={`${arrow} right-3`}
+        >
+          <span aria-hidden>›</span>
+        </button>
       </div>
 
       <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
         <figcaption className="text-xs uppercase tracking-widest text-fog">
           {captionOf(images[index])}
         </figcaption>
-        <div className="flex gap-2">
-          {images.map((image, position) => (
-            <button
-              key={image.src}
-              type="button"
-              onClick={() => setIndex(position)}
-              aria-label={`Prikaži fotografijo: ${captionOf(image)}`}
-              aria-current={position === index}
-              className={`h-2 w-2 rounded-full transition-colors ${
-                position === index ? "bg-atlas" : "bg-line hover:bg-fog"
-              }`}
-            />
-          ))}
-        </div>
+        <span className="text-xs tabular-nums tracking-widest text-fog">
+          {index + 1} / {images.length}
+        </span>
       </div>
     </figure>
   );
