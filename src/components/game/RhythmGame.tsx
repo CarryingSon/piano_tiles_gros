@@ -52,6 +52,17 @@ type SpeedMap = {
 
 const speedMaps = new WeakMap<GameSong, SpeedMap>();
 
+/**
+ * Slovenska množina za življenja: 1 življenje, 2 življenji, 3 življenja,
+ * 5 življenj. Besedilo pravil sledi `gameConfig.lives`, da ostane pravilno tudi,
+ * če se število kdaj spremeni.
+ */
+const LIVES_WORDS = ["nič življenj", "eno življenje", "dve življenji", "tri življenja"];
+
+function livesPhrase(count: number) {
+  return LIVES_WORDS[count] ?? `${count} življenj`;
+}
+
 function smoothstep(value: number) {
   const x = Math.max(0, Math.min(1, value));
   return x * x * (3 - 2 * x);
@@ -104,10 +115,13 @@ function buildSpeedMap(song: GameSong): SpeedMap {
 
   const accelerationDensity = (time: number) => {
     const progress = song.duration > 0 ? Math.max(0, Math.min(1, time / song.duration)) : 0;
-    // The small floor keeps the map strictly increasing while progress^1.65
-    // leaves roughly the first third calm and concentrates acceleration later.
+    // The small floor keeps the map strictly increasing; the exponent says how
+    // early the song starts pulling away. Below 1 the acceleration is already
+    // most of the way up by the first chorus, so the board tightens through the
+    // middle instead of saving everything for the last minute — with a single
+    // life, a run that never gets there would otherwise never get harder.
     return 0.035
-      + Math.pow(progress, 1.65) * sectionAccelerationAt(song, time, lastChorusIndex);
+      + Math.pow(progress, 0.8) * sectionAccelerationAt(song, time, lastChorusIndex);
   };
 
   for (let i = 1; i <= intervals; i += 1) {
@@ -1629,9 +1643,9 @@ export default function RhythmGame() {
               <span>Tapni ploščico v njeni stezi, takoj ko se prikaže. Nižja ko je, več točk. Dolgo ploščico drži do konca.</span>
             </div>
             <p className={styles.rules}>
-              Imaš {gameConfig.lives} življenja. Zgrešena ploščica in tap v prazno stezo stanejo
-              eno. Proti koncu komada ploščice padajo hitreje, okno za Perfect se zoži, od zadnjega
-              refrena naprej pa vse točke veljajo
+              Imaš {livesPhrase(gameConfig.lives)}. Zgrešena ploščica in tap v prazno stezo
+              stanejo prav to. Ploščice padajo vse hitreje že sredi komada, okno za Perfect se
+              zoži, od zadnjega refrena naprej pa vse točke veljajo
               ×{(1 + gameConfig.scoring.finaleBonus).toLocaleString("sl-SI")}.
             </p>
             <div className={styles.competitionCallout}>
@@ -1766,7 +1780,7 @@ export default function RhythmGame() {
             <p className={styles.playedSong}>{selectedSong.artist} · {selectedSong.title}</p>
             <p className={styles.resultMessage}>
               {result.over
-                ? `Porabil/-a si vsa ${gameConfig.lives} življenja. Naslednji poskus je lahko cel komad.`
+                ? `${gameConfig.lives === 1 ? "Ena napaka in konec" : `Porabil/-a si vsa ${livesPhrase(gameConfig.lives)}`}. Naslednji poskus je lahko cel komad.`
                 : "Ritem imaš. Zdaj potrebuješ samo še vstopnico."}
             </p>
             {result.milestones > 0 && (

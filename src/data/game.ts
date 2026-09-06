@@ -237,14 +237,20 @@ export const gameConfig = {
   siteUrl: `${site.url}/igra`,
   /**
    * Napake, ki jih igra dovoli, preden je konec. Zgrešena ploščica in tap v
-   * prazno stezo štejeta enako — vsaka napaka je eno življenje.
+   * prazno stezo štejeta enako — vsaka napaka je eno življenje. Eno samo
+   * življenje pomeni, da je konec pri prvi napaki: tekma je od prve ploščice
+   * naprej za čist prehod, ne za preživetje.
    */
-  lives: 3,
+  lives: 1,
   play: {
     /** Sekunde, ki jih ploščica potrebuje čez igrišče na začetku komada. */
     travel: 1.55,
-    /** Ob koncu komada ploščice padajo toliko hitreje. */
-    endSpeed: 2.9,
+    /**
+     * Ob koncu komada ploščice padajo toliko hitreje. Strop je `travel` deljen
+     * z najkrajšim še vidnim časom ploščice (1,55 / 0,45 ≈ 3,44), tako da je
+     * ploščica pri 3,2 na zaslonu še slabih pol sekunde.
+     */
+    endSpeed: 3.2,
     /**
      * Čas pred/po noto, v katerem zadetek šteje za Perfect, na začetku komada.
      *

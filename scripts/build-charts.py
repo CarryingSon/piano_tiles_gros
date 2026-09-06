@@ -59,18 +59,18 @@ PEAK_RATE = 2.4         # early-song ceiling; it rises progressively to 3.2/s
 FILL_AFTER = 1.50       # fill a vocal rest longer than this many seconds
 MAX_EMPTY_GAP = 1.90    # post-countdown playable time without a tile/hold
 
-# The semantic form is known from the three released songs; analysis below
-# re-snaps these approximate starts to the rebuilt beat grid. Keeping the type
-# sequence prevents a dense verse from being mislabeled as a chorus merely
-# because both happen to contain the same number of syllables.
+# Where each released song breaks, in seconds of the shipped file (the silent
+# LEAD included); the analysis below re-snaps these starts to the rebuilt beat
+# grid. Choruses are timed by ear, because inferring them from tile density put
+# them half a verse off. src/data/song-sections.ts carries the same boundaries —
+# change one, change the other.
 SECTION_GUIDES = {
-    "mrfy": [("intro", 0), ("verse", 24), ("chorus", 48), ("verse", 84),
-             ("chorus", 120), ("bridge", 184), ("chorus", 198), ("outro", 216)],
-    "kokosy": [("intro", 0), ("verse", 26), ("chorus", 68), ("verse", 108),
-               ("chorus", 148), ("bridge", 190), ("outro", 207)],
-    "tabu": [("intro", 0), ("verse", 25), ("chorus", 56), ("verse", 84),
-             ("chorus", 124), ("verse", 160), ("bridge", 192),
-             ("chorus", 202), ("outro", 234)],
+    "mrfy": [("intro", 0), ("verse", 24), ("chorus", 87), ("verse", 118),
+             ("chorus", 150)],
+    "kokosy": [("intro", 0), ("verse", 25), ("chorus", 63), ("verse", 84),
+               ("chorus", 144)],
+    "tabu": [("intro", 0), ("verse", 25), ("chorus", 52), ("verse", 91),
+             ("chorus", 133)],
 }
 
 
