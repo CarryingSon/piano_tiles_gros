@@ -1,5 +1,7 @@
 /* Razmetan kolaž utrinkov — fotografije so namerno postavljene poševno in se
-   prekrivajo, kot bi kdo stresel star album na mizo.
+   prekrivajo, kot bi kdo stresel star album na mizo. Barve so take, kot so
+   prišle iz fotoaparata: nekoč je bil čez vse skupaj obledel sepia filter, a
+   je koncertna svetloba tisto, kar te fotografije prodaja.
 
    Na telefonu absolutna postavitev ne pride v poštev (premalo prostora, kadri
    bi se skrili drug za drugim), zato je tam dvostolpčni tok: isti papirnati
@@ -33,34 +35,28 @@
     box-shadow 0.45s ease;
 }
 
+/* Okvir je gumb: klik odpre galerijo. Videti mora biti kot papirnat odtis in
+   ne kot gumb, zato brez lastnega ozadja in roba. */
 .frame {
   position: relative;
   display: block;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: zoom-in;
+  font: inherit;
+  color: inherit;
 }
 
-/* Obledelost starega odtisa: topel nadih čez celoto in potemnjeni robovi. */
-.frame::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(rgb(198 190 176 / 9%), rgb(198 190 176 / 9%)),
-    radial-gradient(
-      118% 92% at 50% 45%,
-      rgb(255 244 224 / 8%) 40%,
-      rgb(28 18 8 / 30%) 100%
-    );
+.frame:focus-visible {
+  outline: 3px solid var(--color-atlas);
+  outline-offset: 3px;
 }
 
 .photo {
   display: block;
   width: 100%;
   height: auto;
-  /* Obledel črno-bel odtis: barva gre skoraj v celoti ven, ostane le kanček
-     toplega tona in mehak kontrast — kot fotografija, ki je nekaj let ležala
-     v škatli. */
-  filter: grayscale(0.9) sepia(0.16) saturate(0.8) contrast(0.93) brightness(1.05);
 }
 
 @media (min-width: 768px) {
@@ -97,4 +93,102 @@
     transform: rotate(var(--tilt));
     transition: none;
   }
+}
+
+/* ── Galerija čez zaslon ─────────────────────────────────────────────────── */
+
+.lightbox {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3.5rem 1rem 1rem;
+  background: rgb(5 7 8 / 98%);
+  animation: lightboxIn 0.18s ease-out;
+}
+
+.stage {
+  display: flex;
+  max-width: min(100%, 78rem);
+  max-height: 100%;
+  flex-direction: column;
+  margin: 0;
+  gap: 0.75rem;
+}
+
+.full {
+  width: auto;
+  max-width: 100%;
+  /* Pripis pod sliko potrebuje svoj prostor, sicer bi visoka fotografija
+     odrinila besedilo čez rob zaslona. */
+  max-height: calc(100vh - 10rem);
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.caption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  color: #a8adb3;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.counter {
+  flex: none;
+  color: var(--color-atlas);
+  font-variant-numeric: tabular-nums;
+}
+
+.control {
+  position: absolute;
+  display: flex;
+  width: 3rem;
+  height: 3rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  background: rgb(13 15 16 / 85%);
+  color: #f6f6f6;
+  cursor: pointer;
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.control:hover {
+  border-color: var(--color-atlas);
+  color: var(--color-atlas);
+}
+
+.close {
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.1rem;
+}
+
+.prev { left: 1rem; }
+.next { right: 1rem; }
+
+@keyframes lightboxIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  /* Na telefonu se lista s prstom, zato gumba stopita k dnu in ne čez sliko. */
+  .lightbox { padding: 3.5rem 0.75rem 1rem; }
+  .prev { left: 0.75rem; bottom: 1rem; }
+  .next { right: 0.75rem; bottom: 1rem; }
+  .full { max-height: calc(100vh - 13rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lightbox { animation: none; }
 }

@@ -1,5 +1,9 @@
+"use client";
+
 import Image from "next/image";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { collage } from "@/data/event";
 import styles from "./PhotoCollage.module.css";
 
@@ -28,47 +32,186 @@ const LAYOUT = [
   { x: 52, y: 67, w: 26, r: -2, z: 10, p: 0.14, pb: 0.14 },
 ];
 
+/** Dovolj dolg poteg s prstom, da šteje za listanje in ne za nesreden dotik. */
+const SWIPE_PX = 45;
+
 /**
  * Kolaž utrinkov 2022 in 2024 — brez mreže in brez pripisov: fotografije se
- * prekrivajo, vse pa so pod istim obledelim, rahlo sepia filtrom, da kup
- * deluje kot star album, ne kot galerija posameznih kadrov.
+ * prekrivajo, kot bi kdo stresel star album na mizo.
+ *
+ * Klik na katerokoli odpre galerijo čez zaslon, po njej pa se lista naprej in
+ * nazaj — z gumboma, puščicami na tipkovnici ali potegom prsta.
  */
 export default function PhotoCollage() {
+  /** Zaporedna številka odprte fotografije; `null`, dokler je galerija zaprta. */
+  const [open, setOpen] = useState<number | null>(null);
+  /** Gumb, s katerega je galerija odprta — vanj se vrne fokus ob zaprtju. */
+  const openerRef = useRef<HTMLButtonElement | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<number | null>(null);
+
+  const close = useCallback(() => {
+    setOpen(null);
+    openerRef.current?.focus();
+  }, []);
+
+  const step = useCallback((delta: number) => {
+    // Zavijemo naokoli: za zadnjo pride prva.
+    setOpen((current) =>
+      current === null ? current : (current + delta + collage.length) % collage.length,
+    );
+  }, []);
+
+  useEffect(() => {
+    if (open === null) return;
+
+    const onKey = (keyEvent: KeyboardEvent) => {
+      if (keyEvent.key === "Escape") close();
+      if (keyEvent.key === "ArrowRight") step(1);
+      if (keyEvent.key === "ArrowLeft") step(-1);
+    };
+
+    // Stran pod galerijo naj miruje, dokler je ta odprta.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", onKey);
+    dialogRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [close, open, step]);
+
+  const photo = open === null ? null : collage[open];
+
   return (
-    <div className={styles.scatter}>
-      {collage.map((photo, index) => {
-        const spot = LAYOUT[index % LAYOUT.length];
-        return (
-          <figure
-            key={photo.src}
-            className={styles.item}
-            style={
-              {
-                "--x": `${spot.x}%`,
-                "--y": `${spot.y}%`,
-                "--w": `${spot.w}%`,
-                "--r": `${spot.r}deg`,
-                "--z": spot.z,
-                "--p": `${spot.p}%`,
-                "--pb": `${spot.pb}%`,
-                /* Isto razmerje roba za telefon, kjer rob merimo v `rem`. */
-                "--pbr": Math.round((spot.pb / spot.p) * 100) / 100,
-              } as CSSProperties
-            }
+    <>
+      <div className={styles.scatter}>
+        {collage.map((item, index) => {
+          const spot = LAYOUT[index % LAYOUT.length];
+          return (
+            <figure
+              key={item.src}
+              className={styles.item}
+              style={
+                {
+                  "--x": `${spot.x}%`,
+                  "--y": `${spot.y}%`,
+                  "--w": `${spot.w}%`,
+                  "--r": `${spot.r}deg`,
+                  "--z": spot.z,
+                  "--p": `${spot.p}%`,
+                  "--pb": `${spot.pb}%`,
+                  /* Isto razmerje roba za telefon, kjer rob merimo v `rem`. */
+                  "--pbr": Math.round((spot.pb / spot.p) * 100) / 100,
+                } as CSSProperties
+              }
+            >
+              <button
+                type="button"
+                className={styles.frame}
+                aria-label={`Odpri fotografijo: ${item.alt}`}
+                onClick={(clickEvent) => {
+                  openerRef.current = clickEvent.currentTarget;
+                  setOpen(index);
+                }}
+              >
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  width={item.width}
+                  height={item.height}
+                  sizes="(min-width: 768px) 25vw, 45vw"
+                  className={styles.photo}
+                />
+              </button>
+            </figure>
+          );
+        })}
+      </div>
+
+      {/* Galerija visi na `body`: sekcija Doživetja ima svoj sloj in skrito
+          prekoračitev, znotraj katere bi jo prerasla glava strani. Odpre jo
+          lahko samo klik, zato ob izrisu na strežniku portala nikoli ni. */}
+      {photo !== null && open !== null
+        && createPortal(
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Utrinki z Glasbenega Atlasa"
+            tabIndex={-1}
+            className={styles.lightbox}
+            onClick={close}
+            onTouchStart={(touchEvent) => {
+              touchStartRef.current = touchEvent.touches[0].clientX;
+            }}
+            onTouchEnd={(touchEvent) => {
+              const start = touchStartRef.current;
+              touchStartRef.current = null;
+              if (start === null) return;
+              const shift = touchEvent.changedTouches[0].clientX - start;
+              if (Math.abs(shift) > SWIPE_PX) step(shift < 0 ? 1 : -1);
+            }}
           >
-            <span className={styles.frame}>
+            <button
+              type="button"
+              className={`${styles.control} ${styles.close}`}
+              aria-label="Zapri galerijo"
+              onClick={close}
+            >
+              ✕
+            </button>
+            <button
+              type="button"
+              className={`${styles.control} ${styles.prev}`}
+              aria-label="Prejšnja fotografija"
+              onClick={(clickEvent) => {
+                clickEvent.stopPropagation();
+                step(-1);
+              }}
+            >
+              ‹
+            </button>
+
+            {/* Klik na samo fotografijo galerije ne zapre. */}
+            <figure
+              className={styles.stage}
+              onClick={(clickEvent) => clickEvent.stopPropagation()}
+            >
               <Image
+                key={photo.src}
                 src={photo.src}
                 alt={photo.alt}
                 width={photo.width}
                 height={photo.height}
-                sizes="(min-width: 768px) 25vw, 45vw"
-                className={styles.photo}
+                sizes="100vw"
+                priority
+                className={styles.full}
               />
-            </span>
-          </figure>
-        );
-      })}
-    </div>
+              <figcaption className={styles.caption}>
+                <span>{photo.alt}</span>
+                <span className={styles.counter}>
+                  {open + 1} / {collage.length}
+                </span>
+              </figcaption>
+            </figure>
+
+            <button
+              type="button"
+              className={`${styles.control} ${styles.next}`}
+              aria-label="Naslednja fotografija"
+              onClick={(clickEvent) => {
+                clickEvent.stopPropagation();
+                step(1);
+              }}
+            >
+              ›
+            </button>
+          </div>,
+          document.body,
+        )}
+    </>
   );
 }
