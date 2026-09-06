@@ -174,15 +174,6 @@ export type Performer = {
   imageHeight: number;
 };
 
-/**
- * Predskupina 2026: zmagovalec Bitke bendov odpre oder. Stoji ločeno od
- * `lineup`, ker ni enakovredna glava plakata, a mora biti nekje napisana.
- */
-export const supportAct = {
-  label: "Izbor bitke bendov",
-  name: "Kreera",
-} as const;
-
 /** Zasedba 2026 — potrjena na Eventimu in družbenih omrežjih ŠK GROŠ. */
 export const lineup: Performer[] = [
   {

@@ -5,7 +5,6 @@ import {
   event,
   heroMedia,
   lineup,
-  supportAct,
   tickets,
   type PerformerAccent,
 } from "@/data/event";
@@ -201,27 +200,7 @@ export default function Hero() {
           {event.tagline}
         </p>
 
-        {/* Imena zasedb stojijo pred naslovom: to je prvo, kar obiskovalca
-            zanima, in edino, kar se med izdajami zares spremeni. */}
-        <p className="flex flex-wrap items-baseline gap-x-2 font-display text-[5.4vw] uppercase leading-none tracking-wide sm:gap-x-3 sm:text-[2.6vw] lg:text-3xl">
-          {lineup.map((performer, index) => (
-            <span key={performer.name} className={accentText[performer.accent]}>
-              {performer.name}
-              {index < lineup.length - 1 && (
-                <span aria-hidden className="ml-2 text-fog sm:ml-3">
-                  ·
-                </span>
-              )}
-            </span>
-          ))}
-        </p>
-        {/* Predskupina stoji pod glavo plakata in v manjši pisavi — na plakatu
-            je prav tam in prav tako. */}
-        <p className="mb-3 mt-1.5 text-[0.62rem] uppercase tracking-[0.22em] text-fog sm:mb-4 sm:mt-2 sm:text-xs">
-          {supportAct.label}: <span className="text-white">{supportAct.name}</span>
-        </p>
-
-        <h1 className="font-display uppercase leading-[0.9]">
+        <h1 className="mt-3 font-display uppercase leading-[0.9] sm:mt-4">
           <span className="block text-[17vw] text-white sm:text-[13vw] lg:text-[9.5rem]">
             Glasbeni
           </span>
@@ -235,7 +214,22 @@ export default function Hero() {
           </span>
         </h1>
 
-        <p className="mt-5 max-w-xl text-[0.95rem] text-fog sm:mt-6 sm:text-lg">
+        {/* Imena zasedb stojijo takoj pod naslovom, vsako v svoji barvi —
+            enako kot na vstopnicah. */}
+        <p className="mt-5 flex flex-wrap items-baseline gap-x-2 font-display text-[5vw] uppercase leading-none tracking-wide sm:mt-6 sm:gap-x-3 sm:text-[2.2vw] lg:text-[1.9rem]">
+          {lineup.map((performer, index) => (
+            <span key={performer.name} className={accentText[performer.accent]}>
+              {performer.name}
+              {index < lineup.length - 1 && (
+                <span aria-hidden className="ml-2 text-fog sm:ml-3">
+                  ·
+                </span>
+              )}
+            </span>
+          ))}
+        </p>
+
+        <p className="mt-2.5 max-w-xl text-[0.95rem] text-fog sm:mt-3 sm:text-lg">
           {event.dateLong} · {event.city}
         </p>
 
