@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { CSSProperties } from "react";
 import styles from "./GameTeaser.module.css";
 
 type LeaderEntry = {
@@ -18,7 +19,7 @@ type SongLeader = {
   /** Barva izvajalca iz `data/game.ts` — pride s strežnika, da domači strani
       ni treba naložiti celotnega modula z notami. */
   color: string;
-  entry: LeaderEntry | null;
+  entries: LeaderEntry[];
 };
 
 type Summary = {
@@ -33,9 +34,20 @@ const medals = [
   { label: "Bron", className: "bronze" },
 ] as const;
 
+/** Delež možnih točk, po katerem se razvrsti skupna lestvica. */
+function share(rating: number) {
+  return `${Math.round(rating / 100)} %`;
+}
+
 export default function GameTeaser() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [unavailable, setUnavailable] = useState(false);
+  /**
+   * Odprta lestvica: skupna ali ena od skladb. Kartica se vedno odpre na
+   * skupni — na njej visijo brezplačne vstopnice — po skladbah pa se listajo
+   * zavihki. Vse vrstice pridejo z istim zahtevkom, zato je preklop trenuten.
+   */
+  const [tab, setTab] = useState<"overall" | string>("overall");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -59,6 +71,7 @@ export default function GameTeaser() {
 
   const overall = summary?.overall ?? [];
   const songs = summary?.songs ?? [];
+  const openSong = songs.find((song) => song.songId === tab) ?? null;
 
   return (
     <section className={styles.section} aria-labelledby="igra-naslov">
@@ -72,7 +85,7 @@ export default function GameTeaser() {
             Zastonj karte za najboljše tri igralce
           </p>
           <p className={styles.copy}>
-            Ena skupna lestvica za vse tri komade.
+            Skupna lestvica deli karte, po zavihkih pa vidiš vsak komad zase.
           </p>
         </div>
 
@@ -80,7 +93,7 @@ export default function GameTeaser() {
           <div className={styles.boardHeader}>
             <div>
               <span>Glasbeni Atlas 2026</span>
-              <h3>Skupna lestvica</h3>
+              <h3>{openSong ? openSong.band : "Skupna lestvica"}</h3>
             </div>
             <span className={styles.live}>
               <i aria-hidden /> V živo
@@ -95,56 +108,90 @@ export default function GameTeaser() {
             </p>
           ) : (
             <>
-              <p className={styles.groupLabel}>
-                Skupno · <span>zastonj karta</span>
-              </p>
-              {overall.length === 0 ? (
-                <p className={styles.empty} role="status">
-                  Prvo mesto še čaka na svojega igralca.
-                </p>
-              ) : (
-                <ol className={styles.list}>
-                  {overall.map((entry, index) => (
-                    <li
-                      key={entry.id}
-                      className={`${styles.medalRow} ${styles[medals[index].className]}`}
-                    >
-                      <span className={styles.rank} aria-hidden />
-                      <span className={styles.player}>
-                        <strong>{entry.name}</strong>
-                        <small>{medals[index].label} · zastonj karta</small>
-                      </span>
-                      <span className={styles.score}>
-                        <strong>{entry.rating.toLocaleString("sl-SI")}</strong>
-                        <small>točk</small>
-                      </span>
-                    </li>
-                  ))}
-                </ol>
-              )}
-
-              <p className={styles.groupLabel}>Vodilni po skladbah</p>
-              <ol className={styles.list}>
+              <div className={styles.tabs} role="group" aria-label="Vrsta lestvice">
+                <button
+                  type="button"
+                  aria-pressed={tab === "overall"}
+                  onClick={() => setTab("overall")}
+                >
+                  Skupno
+                </button>
                 {songs.map((song) => (
-                  <li key={song.songId} className={styles.songRow}>
-                    <span className={styles.songName} style={{ color: song.color }}>
-                      {song.band}
-                    </span>
-                    <span className={styles.player}>
-                      <strong>{song.entry ? song.entry.name : "Še nihče"}</strong>
-                      <small>{song.title}</small>
-                    </span>
-                    <span className={styles.score}>
-                      <strong>
-                        {song.entry
-                          ? song.entry.score.toLocaleString("sl-SI")
-                          : "—"}
-                      </strong>
-                      <small>točk</small>
-                    </span>
-                  </li>
+                  <button
+                    key={song.songId}
+                    type="button"
+                    aria-pressed={tab === song.songId}
+                    /* Odprti zavihek gori v barvi svojega benda. */
+                    style={{ "--tab-color": song.color } as CSSProperties}
+                    onClick={() => setTab(song.songId)}
+                  >
+                    {song.band}
+                  </button>
                 ))}
-              </ol>
+              </div>
+
+              {openSong ? (
+                <>
+                  <p className={styles.groupLabel}>{openSong.title}</p>
+                  {openSong.entries.length === 0 ? (
+                    <p className={styles.empty} role="status">
+                      Ta komad še čaka na prvega igralca.
+                    </p>
+                  ) : (
+                    <ol className={styles.list}>
+                      {openSong.entries.map((entry, index) => (
+                        <li
+                          key={entry.id}
+                          className={index === 0 ? styles.leader : undefined}
+                        >
+                          <span className={styles.rank}>
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
+                          <span className={styles.player}>
+                            <strong>{entry.name}</strong>
+                          </span>
+                          <span className={styles.score}>
+                            <strong>{entry.score.toLocaleString("sl-SI")}</strong>
+                            <small>{share(entry.rating)} možnih</small>
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className={styles.groupLabel}>
+                    Skupno · <span>zastonj karta</span>
+                  </p>
+                  {overall.length === 0 ? (
+                    <p className={styles.empty} role="status">
+                      Prvo mesto še čaka na svojega igralca.
+                    </p>
+                  ) : (
+                    <ol className={styles.list}>
+                      {overall.map((entry, index) => (
+                        <li
+                          key={entry.id}
+                          className={`${styles.medalRow} ${styles[medals[index].className]}`}
+                        >
+                          <span className={styles.rank} aria-hidden />
+                          <span className={styles.player}>
+                            <strong>{entry.name}</strong>
+                            <small>{medals[index].label} · zastonj karta</small>
+                          </span>
+                          {/* Razvrsti delež možnih točk, ne same točke: komadi
+                              nimajo enakega stropa. Zato stoji delež ob njih. */}
+                          <span className={styles.score}>
+                            <strong>{entry.score.toLocaleString("sl-SI")}</strong>
+                            <small>{share(entry.rating)} možnih</small>
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+                </>
+              )}
             </>
           )}
 

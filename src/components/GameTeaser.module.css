@@ -204,6 +204,37 @@
 .leader .player strong { font-size: 1.1rem; }
 .leader .score strong { font-size: 2rem; }
 
+/* ── Zavihki: skupno, nato vsak komad zase ──────────────────────────────── */
+.tabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  border-bottom: 1px solid rgb(255 255 255 / .13);
+}
+
+.tabs button {
+  min-height: 2.9rem;
+  padding: 0 .2rem;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #8d9299;
+  cursor: pointer;
+  font: 700 .62rem var(--font-body);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  transition: color .18s ease, border-color .18s ease;
+}
+
+.tabs button:hover { color: #f6f6f6; }
+
+/* Odprti zavihek nosi barvo svojega benda; skupni nima svoje in vzame
+   atlasovo rumeno iz nadomestne vrednosti. */
+.tabs button[aria-pressed="true"] {
+  border-bottom-color: var(--tab-color, #ffd800);
+  color: var(--tab-color, #ffd800);
+}
+
 /* ── Skupine v lestvici ─────────────────────────────────────────────────── */
 .groupLabel {
   margin: 0;
@@ -281,10 +312,10 @@
   font-size: 1.25rem;
 }
 
-/* Nižje kot prej: pod tem blokom zdaj stojijo še vodilni po skladbah, zato
-   bi 12rem prazne višine razpolovilo kartico. */
+/* Kartica kaže eno lestvico naenkrat, prazno stanje pa drži njeno višino, da
+   preklop med zavihki ne poskoči. */
 .empty {
-  min-height: 8rem;
+  min-height: 12rem;
   margin: 0;
   padding: 4rem 1.5rem;
   color: #a8adb3;

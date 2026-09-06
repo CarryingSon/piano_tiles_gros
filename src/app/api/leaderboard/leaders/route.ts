@@ -3,18 +3,22 @@ import { getOverallLeaderboard, getSongLeaderboard } from "@/lib/leaderboard";
 
 /**
  * Povzetek lestvice za napoved igre na domači strani: prvi trije po skupnem
- * seštevku (prejemniki brezplačnih vstopnic) in vodilni po vsaki skladbi.
+ * seštevku (prejemniki brezplačnih vstopnic) in vrh lestvice vsake skladbe.
  *
  * Svoja pot obstaja zato, da domača stran opravi en zahtevek namesto štirih;
- * poizvedbe se na strežniku izvedejo vzporedno.
+ * poizvedbe se na strežniku izvedejo vzporedno. Kartica preklaplja med zavihki
+ * brez novega zahtevka, zato pride vseh nekaj vrstic na skladbo skupaj.
  */
 export const runtime = "nodejs";
+
+/** Koliko vrstic pokaže zavihek posamezne skladbe. */
+const PER_SONG = 5;
 
 export async function GET() {
   try {
     const [overall, ...perSong] = await Promise.all([
       getOverallLeaderboard(3),
-      ...gameConfig.songs.map((song) => getSongLeaderboard(song.id, 1)),
+      ...gameConfig.songs.map((song) => getSongLeaderboard(song.id, PER_SONG)),
     ]);
 
     return Response.json(
@@ -25,7 +29,7 @@ export async function GET() {
           band: song.band,
           title: song.title,
           color: song.baseColor,
-          entry: perSong[index]?.[0] ?? null,
+          entries: perSong[index] ?? [],
         })),
       },
       { headers: { "Cache-Control": "no-store" } },
