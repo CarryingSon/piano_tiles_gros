@@ -1,9 +1,32 @@
-/* Geometrija vstopnice: perforacija z izrezoma ob robu in črtna koda.
+/* Geometrija vstopnice: perforacija z izrezoma ob robu in barvni preliv.
    Barva izrezov je barva podlage sekcije (coal), da luknji delujeta kot
    izsekani, ne kot narisani krogec. */
 
 .ticket {
   position: relative;
+  isolation: isolate;
+}
+
+/* Barva zasedbe se zliva čez zgornjih 70 % vstopnice — prej je segala samo
+   čez glavo s fotografijo in se je ustavila sredi kartice z vidnim robom.
+   Odtenek prinese `--wash` iz `Lineup`, preliv pa leži pod vsebino. */
+.ticket::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 30%;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--wash, #ffffff) 20%, transparent) 0%,
+    color-mix(in srgb, var(--wash, #ffffff) 9%, transparent) 45%,
+    transparent 100%
+  );
+}
+
+.ticket > * {
+  position: relative;
+  z-index: 1;
 }
 
 /* Nazobčana ločnica med "plakatnim" delom in odtrgljivim kuponom. */
@@ -32,20 +55,4 @@
 
 .perf::after {
   right: -1.25rem;
-}
-
-/* Črtna koda: neenakomerni pasovi, da ne deluje kot pravilen vzorec. */
-.barcode {
-  width: 92px;
-  height: 30px;
-  background-image: repeating-linear-gradient(
-    90deg,
-    var(--color-fog) 0 2px,
-    transparent 2px 4px,
-    var(--color-fog) 4px 5px,
-    transparent 5px 8px,
-    var(--color-fog) 8px 11px,
-    transparent 11px 13px
-  );
-  opacity: 0.75;
 }

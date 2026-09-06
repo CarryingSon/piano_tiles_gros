@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { CSSProperties } from "react";
 import { event, lineup } from "@/data/event";
 import styles from "./LineupTicket.module.css";
 
@@ -10,11 +11,13 @@ const performerTitleColors: Record<string, string> = {
   Tabu: "text-atlas",
 };
 
-/* Barvna podlaga v barvi zasedbe — enak prijem kot pri serijah vstopnic. */
+/* Barvna podlaga v barvi zasedbe — enak prijem kot pri serijah vstopnic.
+   Preliv riše `.ticket::before` v `LineupTicket.module.css`, tu gre samo
+   odtenek. */
 const performerWash: Record<string, string> = {
-  Kokosy: "from-kokosy/20",
-  MRFY: "from-mrfy/20",
-  Tabu: "from-atlas/20",
+  Kokosy: "var(--color-kokosy)",
+  MRFY: "var(--color-mrfy)",
+  Tabu: "var(--color-atlas)",
 };
 
 const performerHoverBorder: Record<string, string> = {
@@ -25,7 +28,7 @@ const performerHoverBorder: Record<string, string> = {
 
 /**
  * Zasedba 2026 kot tri vstopnice: zgoraj "plakatni" del s fotografijo in
- * imenom, pod perforacijo pa odtrgljiv kupon z datumom, krajem in črtno kodo.
+ * imenom, pod perforacijo pa odtrgljiv kupon z datumom in krajem.
  * Fotografije skupin so pripravljene iz uradnih kampanjskih materialov 2026;
  * če posamezna slika manjka, kartica še vedno prikaže jasen nadomestni okvir.
  */
@@ -54,11 +57,14 @@ export default function Lineup() {
               className={`reveal group flex flex-col border border-line bg-night transition-transform duration-300 hover:-translate-y-1 ${
                 performerHoverBorder[performer.name] ?? "hover:border-white/40"
               } ${styles.ticket}`}
+              style={
+                {
+                  "--wash": performerWash[performer.name] ?? "#ffffff",
+                } as CSSProperties
+              }
             >
               {/* Glava vstopnice: dogodek levo, zaporedna številka desno. */}
-              <div
-                className={`bg-gradient-to-b to-transparent px-4 pt-4 ${performerWash[performer.name] ?? "from-white/10"}`}
-              >
+              <div className="px-4 pt-4">
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="text-[10px] uppercase tracking-[0.28em] text-fog">
                     {event.name}
@@ -124,7 +130,6 @@ export default function Lineup() {
                     {event.city} · {event.startTimeHuman}
                   </p>
                 </div>
-                <div className={styles.barcode} aria-hidden />
               </div>
             </li>
           ))}
