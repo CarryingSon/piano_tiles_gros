@@ -7,6 +7,15 @@ import QRCode from "qrcode";
 import { gameConfig } from "@/data/game";
 import styles from "./RhythmGame.module.css";
 
+/** Kako se igra — pet korakov, ki jih igralec potrebuje pred prvim tapom. */
+const RULES = [
+  { title: "Izberi komad", text: "Kokosy, MRFY ali Tabu — vsak ima svojo karto in svojo barvo." },
+  { title: "Tapni ploščico", text: "Ploščice padajo po štirih stezah; vsako tapni v njeni stezi." },
+  { title: "Počakaj jo nižje", text: "Nižja ko je ploščica ob dotiku, več točk. Zaporedni zadetki množijo rezultat." },
+  { title: "Dolgo drži", text: "Podolgovato ploščico drži do konca in izpusti na črti." },
+  { title: "Eno življenje", text: "Prva zgrešena ploščica ali tap v prazno stezo konča krog." },
+];
+
 export default function DesktopGameGate() {
   const [desktop, setDesktop] = useState(false);
   const [qrCode, setQrCode] = useState("");
@@ -62,29 +71,50 @@ export default function DesktopGameGate() {
         </svg>
         <span>Nazaj</span>
       </Link>
+      {/* Dva stolpca, ker mora vse stati na en zaslon brez pomikanja: levo
+          navodila, desno koda, s katero se igra odpre na telefonu. */}
       <div className={styles.desktopGateInner}>
-        <Image
-          src="/media/logo-glasbeni-atlas.svg"
-          width={718}
-          height={577}
-          alt="Glasbeni Atlas"
-          className={styles.desktopLogo}
-          priority
-        />
-        <p className={styles.eyebrow}>Mobilna ritmična igra</p>
-        <h1 id="desktop-game-title">Ritem je v tvojih rokah.</h1>
-        <p>Skeniraj QR-kodo s telefonom in odpri igro v pokončnem načinu.</p>
-        <div className={styles.qrFrame}>
-          {qrCode ? (
-            <Image src={qrCode} alt="QR-koda za mobilno igro Ujemi ritem" width={260} height={260} unoptimized />
-          ) : (
-            <span>Nalagam QR …</span>
-          )}
+        <div className={styles.desktopGateText}>
+          <Image
+            src="/media/logo-glasbeni-atlas.svg"
+            width={718}
+            height={577}
+            alt="Glasbeni Atlas"
+            className={styles.desktopLogo}
+            priority
+          />
+          <p className={styles.eyebrow}>Mobilna ritmična igra</p>
+          <h1 id="desktop-game-title">Glatlas Game</h1>
+          <p className={styles.desktopLead}>
+            Igra teče na telefonu — štiri steze in en cel komad. Tu je na
+            kratko, kako gre.
+          </p>
+          <ol className={styles.gateRules}>
+            {RULES.map((rule) => (
+              <li key={rule.title}>
+                <strong>{rule.title}</strong>
+                <span>{rule.text}</span>
+              </li>
+            ))}
+          </ol>
         </div>
-        <strong className={styles.desktopPrize}>{gameConfig.competition.headline}</strong>
-        <Link href="/" className={styles.desktopTextLink}>
-          Nazaj na Glasbeni Atlas
-        </Link>
+
+        <div className={styles.desktopGateAside}>
+          <div className={styles.qrFrame}>
+            {qrCode ? (
+              <Image src={qrCode} alt="QR-koda za mobilno igro Ujemi ritem" width={260} height={260} unoptimized />
+            ) : (
+              <span>Nalagam QR …</span>
+            )}
+          </div>
+          <p className={styles.desktopScan}>
+            Skeniraj s telefonom in odpri igro v pokončnem načinu.
+          </p>
+          <strong className={styles.desktopPrize}>{gameConfig.competition.headline}</strong>
+          <Link href="/" className={styles.desktopTextLink}>
+            Nazaj na Glasbeni Atlas
+          </Link>
+        </div>
       </div>
     </aside>
   );
