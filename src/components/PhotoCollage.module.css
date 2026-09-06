@@ -8,9 +8,12 @@
    odtisi, le da so zasuki prepolovljeni in med slikami je zrak, da se robovi
    ne zaletavajo drug v drugega. */
 
+/* Telefon dobi isto razmetanost kot namizje, samo v pokončnem okvirju 9 : 16 —
+   dvostolpčni tok je bil urejen, a je izgubil prav tisto, po čemer je kolaž
+   kolaž: prekrivanje. */
 .scatter {
-  columns: 2;
-  column-gap: 1rem;
+  position: relative;
+  aspect-ratio: 9 / 16;
 }
 
 /* Papirnat rob natisnjene fotografije; pri nekaterih je spodnji rob širši —
@@ -21,14 +24,17 @@
    Na telefonu je rob v `rem` in ne v odstotkih: odstotek širine ozkega stolpca
    pade pod piksel, zato se rob nariše le ponekod in okvirji delujejo raztrgano. */
 .item {
-  --tilt: calc(var(--r, 0deg) * 0.45);
+  --tilt: var(--mr, 0deg);
 
-  position: relative;
-  margin: 0 0 1.25rem;
-  break-inside: avoid;
-  padding: 0.3rem 0.3rem calc(0.3rem * var(--pbr, 1));
+  position: absolute;
+  left: var(--mx);
+  top: var(--my);
+  width: var(--mw);
+  z-index: var(--mz, 1);
+  margin: 0;
+  padding: 0.28rem 0.28rem calc(0.28rem * var(--pbr, 1));
   background: #efe7d6;
-  box-shadow: 0 8px 20px rgb(0 0 0 / 45%);
+  box-shadow: 0 10px 26px rgb(0 0 0 / 60%);
   transform: rotate(var(--tilt));
   transition:
     transform 0.45s ease,
@@ -61,19 +67,15 @@
 
 @media (min-width: 768px) {
   .scatter {
-    position: relative;
-    columns: auto;
     aspect-ratio: 3 / 2;
   }
 
   .item {
     --tilt: var(--r, 0deg);
 
-    position: absolute;
     left: var(--x);
     top: var(--y);
     width: var(--w);
-    margin: 0;
     padding: var(--p, 2%) var(--p, 2%) var(--pb, 2%);
     box-shadow: 0 14px 32px rgb(0 0 0 / 55%);
     z-index: var(--z, 1);

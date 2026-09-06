@@ -32,6 +32,27 @@ const LAYOUT = [
   { x: 52, y: 67, w: 26, r: -2, z: 10, p: 0.14, pb: 0.14 },
 ];
 
+/**
+ * Ista razmetanost za telefon, le da je okvir pokončen (9 : 16) in so slike
+ * širše — na 390 px zaslona bi 22 % pomenilo sličico za palec. Prekrivanja so
+ * namerna in `z` pove, katera leži zgoraj.
+ */
+const MOBILE_LAYOUT = [
+  { x: 2, y: 1, w: 52, r: -4, z: 3 },
+  { x: 47, y: 7, w: 50, r: 3, z: 5 },
+  { x: 6, y: 15, w: 41, r: 4, z: 7 },
+  { x: 52, y: 21, w: 44, r: -3, z: 4 },
+  { x: 1, y: 26, w: 47, r: -2, z: 6 },
+  { x: 44, y: 33, w: 53, r: 4, z: 8 },
+  { x: 4, y: 40, w: 50, r: 3, z: 7 },
+  { x: 50, y: 47, w: 46, r: -4, z: 5 },
+  { x: 2, y: 53, w: 44, r: -3, z: 9 },
+  { x: 42, y: 59, w: 54, r: 2, z: 6 },
+  { x: 5, y: 67, w: 51, r: 4, z: 10 },
+  { x: 48, y: 74, w: 48, r: -3, z: 8 },
+  { x: 8, y: 82, w: 55, r: 2, z: 11 },
+];
+
 /** Dovolj dolg poteg s prstom, da šteje za listanje in ne za nesreden dotik. */
 const SWIPE_PX = 45;
 
@@ -90,6 +111,7 @@ export default function PhotoCollage() {
       <div className={styles.scatter}>
         {collage.map((item, index) => {
           const spot = LAYOUT[index % LAYOUT.length];
+          const phoneSpot = MOBILE_LAYOUT[index % MOBILE_LAYOUT.length];
           return (
             <figure
               key={item.src}
@@ -101,6 +123,13 @@ export default function PhotoCollage() {
                   "--w": `${spot.w}%`,
                   "--r": `${spot.r}deg`,
                   "--z": spot.z,
+                  /* Ista polja za telefon; katera veljajo, odloči medijska
+                     poizvedba v `PhotoCollage.module.css`. */
+                  "--mx": `${phoneSpot.x}%`,
+                  "--my": `${phoneSpot.y}%`,
+                  "--mw": `${phoneSpot.w}%`,
+                  "--mr": `${phoneSpot.r}deg`,
+                  "--mz": phoneSpot.z,
                   "--p": `${spot.p}%`,
                   "--pb": `${spot.pb}%`,
                   /* Isto razmerje roba za telefon, kjer rob merimo v `rem`. */
