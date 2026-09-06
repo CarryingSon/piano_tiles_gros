@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { gameConfig, type GameSong } from "@/data/game";
+import { gameConfig, type GameSong, type SongId } from "@/data/game";
 import styles from "./RhythmGame.module.css";
 
 type Entry = {
@@ -22,8 +22,16 @@ type Props = {
 /** Zlato, srebro in bron za prve tri po skupnem seštevku. */
 const medalClass = [styles.gold, styles.silver, styles.bronze];
 
+/**
+ * Katera lestvica je odprta: skupna (po normalizirani oceni, ta deli vstopnice)
+ * ali ena od komadovih. Vedno se odpre skupna — nagrada visi na njej — po
+ * zavihkih pa se da stopiti v posamezen komad, tudi v tistega, ki ga igralec
+ * ravnokar ni igral.
+ */
+type Scope = "overall" | SongId;
+
 export default function Leaderboard({ song, score, sessionId, breakdown }: Props) {
-  const [scope, setScope] = useState<"overall" | "song">("overall");
+  const [scope, setScope] = useState<Scope>("overall");
   const [entries, setEntries] = useState<Entry[]>([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -32,12 +40,12 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
   const [status, setStatus] = useState("");
 
   const loadEntries = useCallback(async () => {
-    const suffix = scope === "song" ? `?song=${song.id}` : "";
+    const suffix = scope === "overall" ? "" : `?song=${scope}`;
     const response = await fetch(`/api/leaderboard${suffix}`, { cache: "no-store" });
     if (!response.ok) throw new Error("leaderboard");
     const data = (await response.json()) as { entries: Entry[] };
     return data.entries;
-  }, [scope, song.id]);
+  }, [scope]);
 
   useEffect(() => {
     let active = true;
@@ -53,6 +61,13 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
       });
     return () => { active = false; };
   }, [loadEntries]);
+
+  /** Preklop zavihka: seznam se osveži prek `loadEntries`, ki visi na `scope`. */
+  const show = (next: Scope) => {
+    if (next === scope) return;
+    setLoading(true);
+    setScope(next);
+  };
 
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -120,8 +135,25 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
       {status && <p className={styles.boardStatus} role="status">{status}</p>}
 
       <div className={styles.boardTabs} role="group" aria-label="Vrsta lestvice">
-        <button type="button" aria-pressed={scope === "overall"} onClick={() => { if (scope !== "overall") { setLoading(true); setScope("overall"); } }}>Skupno</button>
-        <button type="button" aria-pressed={scope === "song"} onClick={() => { if (scope !== "song") { setLoading(true); setScope("song"); } }}>{song.artist}</button>
+        <button
+          type="button"
+          aria-pressed={scope === "overall"}
+          onClick={() => show("overall")}
+        >
+          Skupno
+        </button>
+        {gameConfig.songs.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={scope === item.id}
+            /* Aktivni zavihek nosi barvo svojega benda, skupni pa atlasovo rumeno. */
+            style={{ "--tab-color": item.baseColor } as React.CSSProperties}
+            onClick={() => show(item.id)}
+          >
+            {item.band}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -132,11 +164,37 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
         <ol className={styles.boardList}>
           {entries.map((entry, index) => {
             const entrySong = gameConfig.songs.find((item) => item.id === entry.songId);
+            // Kolajne in nagrada visijo na skupni lestvici; komadova je le
+            // razvrstitev po točkah, zato tam ni ne podija ne pripisa nagrade.
+            const overall = scope === "overall";
+            const winner = overall && index < gameConfig.competition.winnerCount;
+            const classes = [
+              winner ? styles.podium : "",
+              overall ? medalClass[index] ?? "" : "",
+            ].filter(Boolean).join(" ");
             return (
-              <li key={entry.id} className={[scope === "overall" && index < gameConfig.competition.winnerCount ? styles.podium : "", scope === "overall" ? (medalClass[index] ?? "") : ""].filter(Boolean).join(" ") || undefined}>
+              <li key={entry.id} className={classes || undefined}>
                 <span className={styles.rank}>{String(index + 1).padStart(2, "0")}</span>
-                <span className={styles.player}><strong>{entry.name}</strong><small>{entrySong?.artist ?? entry.songId}</small></span>
-                <span className={styles.boardScore}><strong>{entry.score}</strong>{scope === "overall" && <small>{index < gameConfig.competition.winnerCount ? gameConfig.competition.prizeLabel : `${Math.round(entry.rating / 100)} %`}</small>}</span>
+                <span className={styles.player}>
+                  <strong>{entry.name}</strong>
+                  {/* V komadovi lestvici je bend povsod isti, zato tam pod imenom
+                      stoji natančnost namesto ponovljenega imena skupine. */}
+                  <small>
+                    {overall
+                      ? entrySong?.artist ?? entry.songId
+                      : `${Math.round(entry.rating / 100)} % možnih točk`}
+                  </small>
+                </span>
+                <span className={styles.boardScore}>
+                  <strong>{entry.score.toLocaleString("sl-SI")}</strong>
+                  {overall && (
+                    <small>
+                      {winner
+                        ? gameConfig.competition.prizeLabel
+                        : `${Math.round(entry.rating / 100)} %`}
+                    </small>
+                  )}
+                </span>
               </li>
             );
           })}
