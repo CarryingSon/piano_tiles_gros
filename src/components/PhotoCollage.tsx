@@ -33,25 +33,67 @@ const LAYOUT = [
 ];
 
 /**
- * Ista razmetanost za telefon, le da je okvir pokončen (9 : 16) in so slike
- * širše — na 390 px zaslona bi 22 % pomenilo sličico za palec. Prekrivanja so
- * namerna in `z` pove, katera leži zgoraj.
+ * Razmetanost za telefon se izračuna, ne prepiše: fotografije so različno
+ * visoke (nekaj jih je pokončnih) in ročno vpisane koordinate so eno čez drugo
+ * porinile tako, da so se nekatere skoraj skrile.
+ *
+ * Vsaka gre izmenično k levemu in desnemu robu, naslednja pa se začne malo
+ * pred koncem prejšnje — prekrivanje ostane, a le za vogal, in nobena ne uide
+ * čez rob okvirja. Vse mere so v deležih širine okvirja; višina okvirja pade
+ * iz seštevka, zato je razmerje `--m-aspect`, ne fiksnih 9 : 16.
  */
-const MOBILE_LAYOUT = [
-  { x: 2, y: 1, w: 52, r: -4, z: 3 },
-  { x: 47, y: 7, w: 50, r: 3, z: 5 },
-  { x: 6, y: 15, w: 41, r: 4, z: 7 },
-  { x: 52, y: 21, w: 44, r: -3, z: 4 },
-  { x: 1, y: 26, w: 47, r: -2, z: 6 },
-  { x: 44, y: 33, w: 53, r: 4, z: 8 },
-  { x: 4, y: 40, w: 50, r: 3, z: 7 },
-  { x: 50, y: 47, w: 46, r: -4, z: 5 },
-  { x: 2, y: 53, w: 44, r: -3, z: 9 },
-  { x: 42, y: 59, w: 54, r: 2, z: 6 },
-  { x: 5, y: 67, w: 51, r: 4, z: 10 },
-  { x: 48, y: 74, w: 48, r: -3, z: 8 },
-  { x: 8, y: 82, w: 55, r: 2, z: 11 },
-];
+const PHONE = {
+  /** Širine se ponavljajo v tem vrstnem redu, da kup ni preveč urejen. */
+  widths: [0.5, 0.46, 0.48, 0.44],
+  /** Odmik od roba; levi stolpec gre levo, desni desno. */
+  edge: [0.02, 0.04, 0.03, 0.05],
+  rotations: [-3, 2.5, 3.5, -2, 2, -3],
+  /**
+   * Kolikšen del prejšnje fotografije v istem stolpcu naslednja prekrije.
+   * Malo, ker se stolpca po sredini itak že dotikata: kup mora biti razmetan,
+   * ne pa tak, da se pol kadra skrije pod sosedom.
+   */
+  overlap: 0.05,
+};
+
+function phoneLayout(photos: readonly { width: number; height: number }[]) {
+  /* Dva stolpca, vsaka fotografija gre v tistega, ki je trenutno višji. Ker sta
+     skupaj komaj širša od okvirja, se sosedi po sredini le dotikata — od tod
+     razmetan videz brez tega, da bi katera izginila pod drugo. */
+  const cursors = [0, 0];
+
+  const placed = photos.map((photo, index) => {
+    const w = PHONE.widths[index % PHONE.widths.length];
+    const h = w * (photo.height / photo.width);
+    const edge = PHONE.edge[index % PHONE.edge.length];
+    const column = cursors[0] <= cursors[1] ? 0 : 1;
+    const x = column === 0 ? edge : 1 - w - edge;
+    const y = cursors[column];
+
+    cursors[column] = y + h * (1 - PHONE.overlap);
+
+    return { x, y, w, index };
+  });
+
+  /* Doslej je vse merjeno v širinah okvirja. `top` v CSS pa je odstotek
+     VIŠINE, zato mora `y` skozi skupno višino kupa — brez tega bi bile
+     fotografije razmaknjene za faktor te višine in bi zadnje ušle ven. */
+  /* Dva odstotka zraka na koncu: papirnat rob okrog fotografije doda nekaj
+     višine, ki je v računu iz razmerja slike ni. */
+  const total = Math.max(cursors[0], cursors[1]) * 1.02;
+
+  const spots = placed.map(({ x, y, w, index }) => ({
+    x: `${x * 100}%`,
+    y: `${(y / total) * 100}%`,
+    w: `${w * 100}%`,
+    r: `${PHONE.rotations[index % PHONE.rotations.length]}deg`,
+    z: index + 1,
+  }));
+
+  return { spots, aspect: 1 / total };
+}
+
+const PHONE_LAYOUT = phoneLayout(collage);
 
 /** Dovolj dolg poteg s prstom, da šteje za listanje in ne za nesreden dotik. */
 const SWIPE_PX = 45;
@@ -108,10 +150,13 @@ export default function PhotoCollage() {
 
   return (
     <>
-      <div className={styles.scatter}>
+      <div
+        className={styles.scatter}
+        style={{ "--m-aspect": `${PHONE_LAYOUT.aspect}` } as CSSProperties}
+      >
         {collage.map((item, index) => {
           const spot = LAYOUT[index % LAYOUT.length];
-          const phoneSpot = MOBILE_LAYOUT[index % MOBILE_LAYOUT.length];
+          const phoneSpot = PHONE_LAYOUT.spots[index];
           return (
             <figure
               key={item.src}
@@ -125,10 +170,10 @@ export default function PhotoCollage() {
                   "--z": spot.z,
                   /* Ista polja za telefon; katera veljajo, odloči medijska
                      poizvedba v `PhotoCollage.module.css`. */
-                  "--mx": `${phoneSpot.x}%`,
-                  "--my": `${phoneSpot.y}%`,
-                  "--mw": `${phoneSpot.w}%`,
-                  "--mr": `${phoneSpot.r}deg`,
+                  "--mx": phoneSpot.x,
+                  "--my": phoneSpot.y,
+                  "--mw": phoneSpot.w,
+                  "--mr": phoneSpot.r,
                   "--mz": phoneSpot.z,
                   "--p": `${spot.p}%`,
                   "--pb": `${spot.pb}%`,

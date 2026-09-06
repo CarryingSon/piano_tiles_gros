@@ -13,7 +13,9 @@
    kolaž: prekrivanje. */
 .scatter {
   position: relative;
-  aspect-ratio: 9 / 16;
+  /* Razmerje izračuna `PhotoCollage` iz višin fotografij; brez njega bi okvir
+     bodisi odrezal zadnjo vrsto bodisi pustil prazen pas. */
+  aspect-ratio: var(--m-aspect, 9 / 16);
 }
 
 /* Papirnat rob natisnjene fotografije; pri nekaterih je spodnji rob širši —

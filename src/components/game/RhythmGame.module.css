@@ -1330,18 +1330,26 @@
 
 .desktopGateInner {
   display: grid;
-  width: min(100%, 64rem);
+  width: min(100%, 70rem);
   align-items: center;
-  gap: clamp(2rem, 5vw, 4rem);
-  grid-template-columns: 1.05fr .95fr;
+  gap: clamp(1.5rem, 3.5vw, 3rem);
+  grid-template-columns: 1fr 1.15fr;
 }
 
 .desktopGateText { text-align: left; }
 
 .desktopGateAside {
-  display: grid;
-  justify-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1rem, 2.5vw, 2rem);
   text-align: center;
+}
+
+.desktopScanBlock {
+  display: grid;
+  width: min(100%, 16rem);
+  justify-items: center;
 }
 
 .desktopLogo {
@@ -1403,24 +1411,20 @@
   line-height: 1.45;
 }
 
-/* Zaslona iz igre nad kodo. Mere se ravnajo po višini okna, da tudi z njima
-   vse skupaj ostane na en zaslon. */
+/* Zaslona iz igre ob kodi. Višino odmeri okno, širino razmerje slike — cela
+   slika, brez izreza. */
 .desktopShots {
-  display: grid;
-  width: min(100%, 21rem);
-  margin-bottom: clamp(.9rem, 2.4vh, 1.5rem);
-  gap: .6rem;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex: none;
+  gap: .5rem;
 }
 
 .desktopShots img {
-  width: 100%;
-  max-height: clamp(8rem, 24vh, 14rem);
-  height: auto;
+  width: auto;
+  height: clamp(11rem, 34vh, 19rem);
   border: 1px solid rgb(255 255 255 / .14);
   border-radius: .5rem;
-  object-fit: cover;
-  object-position: top;
+  object-fit: contain;
 }
 
 .qrFrame {

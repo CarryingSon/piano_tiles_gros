@@ -225,21 +225,22 @@
   padding: 1.25rem;
 }
 
+/* Cel zaslon igre in ne izrez: `object-fit: cover` je prej odrezal spodnjo
+   polovico in posnetka sta delovala raztegnjena. Višino odmeri panel, širino
+   pa razmerje same slike. */
 .howShots {
-  display: grid;
+  display: flex;
   justify-content: center;
-  grid-template-columns: 1fr 1fr;
-  gap: .75rem;
+  gap: .9rem;
 }
 
 .howShots img {
-  width: 100%;
-  max-height: 14.5rem;
-  height: auto;
+  width: auto;
+  height: 14.5rem;
+  max-width: 45%;
   border: 1px solid rgb(255 255 255 / .14);
   border-radius: .5rem;
-  object-fit: cover;
-  object-position: top;
+  object-fit: contain;
 }
 
 .howList {

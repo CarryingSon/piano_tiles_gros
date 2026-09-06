@@ -100,9 +100,9 @@ export default function DesktopGameGate() {
           </ol>
         </div>
 
+        {/* Posnetka stojita levo od kode, ne nad njo: skupaj tvorita eno
+            vrstico "takole izgleda — takole prideš noter". */}
         <div className={styles.desktopGateAside}>
-          {/* Ista posnetka kot na kartici igre: preden kdo skenira kodo, naj
-              vidi, kam pride. */}
           <div className={styles.desktopShots}>
             {gameShots.map((shot) => (
               <Image
@@ -111,24 +111,27 @@ export default function DesktopGameGate() {
                 alt={shot.alt}
                 width={540}
                 height={920}
-                sizes="180px"
+                sizes="160px"
               />
             ))}
           </div>
-          <div className={styles.qrFrame}>
-            {qrCode ? (
-              <Image src={qrCode} alt="QR-koda za mobilno igro Ujemi ritem" width={260} height={260} unoptimized />
-            ) : (
-              <span>Nalagam QR …</span>
-            )}
+
+          <div className={styles.desktopScanBlock}>
+            <div className={styles.qrFrame}>
+              {qrCode ? (
+                <Image src={qrCode} alt="QR-koda za mobilno igro Ujemi ritem" width={260} height={260} unoptimized />
+              ) : (
+                <span>Nalagam QR …</span>
+              )}
+            </div>
+            <p className={styles.desktopScan}>
+              Skeniraj s telefonom in odpri igro v pokončnem načinu.
+            </p>
+            <strong className={styles.desktopPrize}>{gameConfig.competition.headline}</strong>
+            <Link href="/" className={styles.desktopTextLink}>
+              Nazaj na Glasbeni Atlas
+            </Link>
           </div>
-          <p className={styles.desktopScan}>
-            Skeniraj s telefonom in odpri igro v pokončnem načinu.
-          </p>
-          <strong className={styles.desktopPrize}>{gameConfig.competition.headline}</strong>
-          <Link href="/" className={styles.desktopTextLink}>
-            Nazaj na Glasbeni Atlas
-          </Link>
         </div>
       </div>
     </aside>
