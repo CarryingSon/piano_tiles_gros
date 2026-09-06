@@ -192,7 +192,7 @@ export default function Hero() {
         {/* Preliva, ki na telefonu zaključita celozaslonski posnetek: zgoraj
             pod glavo strani, spodaj pa v črnino, iz katere raste vsebina. */}
         <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-night/85 via-night/45 to-transparent sm:hidden" />
-        <div className="absolute inset-x-0 bottom-0 h-[38dvh] bg-gradient-to-t from-night via-night/62 to-transparent sm:hidden" />
+        <div className="absolute inset-x-0 bottom-0 h-[34dvh] bg-gradient-to-t from-night via-night/62 to-transparent sm:hidden" />
       </div>
 
       {/* Na telefonu vsebina sedi pri dnu: nad njo je ves posnetek, pod njo pa
