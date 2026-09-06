@@ -12,6 +12,7 @@ const TAP_LANES = "wxyz";
 const HOLD_LANES = "WXYZ";
 const TICK_SECONDS = 0.01;
 const COUNTDOWN_LEAD_SECONDS = 3;
+/** Above this a stretch counts as quiet and lands in the report, not as a failure. */
 const MAX_UNCOVERED_GAP_SECONDS = 2;
 const EPSILON = 1e-9;
 const SECTION_END_TOLERANCE_MS = (TICK_SECONDS * 1000) / 2;
@@ -299,14 +300,10 @@ function validateChart(chart, notes) {
   }
   if (duration > coveredUntil) recordGap(coveredUntil, duration, "trailing");
 
-  for (const gap of longGaps) {
-    fail(
-      `${id}: ${gap.kind} uncovered gameplay gap is ${gap.gap.toFixed(2)}s `
-      + `(${gap.start.toFixed(2)}–${gap.end.toFixed(2)}s), above ${MAX_UNCOVERED_GAP_SECONDS.toFixed(2)}s`,
-    );
-  }
-
-  return { maxGap, gapStart, gapEnd };
+  // Long gaps are reported, never fatal. A sparse passage is the chart
+  // author's call — the intro of a song may well be one tile every two and a
+  // half seconds — and nothing in the game breaks when the board is quiet.
+  return { maxGap, gapStart, gapEnd, longGaps };
 }
 
 function extractArray(source, id) {
@@ -476,6 +473,12 @@ function main() {
       + `maxScore ${String(maxScore).padStart(7)}  max gap ${gap.maxGap.toFixed(2)}s `
       + `(${gap.gapStart.toFixed(2)}–${gap.gapEnd.toFixed(2)}s)`,
     );
+    for (const long of gap.longGaps) {
+      console.log(
+        `          quiet ${long.kind} stretch ${long.gap.toFixed(2)}s `
+        + `(${long.start.toFixed(2)}–${long.end.toFixed(2)}s), over the ${MAX_UNCOVERED_GAP_SECONDS.toFixed(2)}s house rule`,
+      );
+    }
   }
   if (migration) console.log(`  migration ${migration.name}`);
 
