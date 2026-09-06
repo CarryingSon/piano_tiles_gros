@@ -492,6 +492,16 @@ export const organizer = {
   ],
 } as const;
 
+/**
+ * Uradni Spotify seznam Glasbenega Atlasa 2026 — izvajalci letošnje zasedbe.
+ * Vgradnja na dnu strani se sestavi iz `id`, povezava pa vodi v aplikacijo za
+ * tiste, ki bi seznam raje shranili k sebi.
+ */
+export const playlist = {
+  id: "0V3SjgNOkTmTy7ncYJN819",
+  url: "https://open.spotify.com/playlist/0V3SjgNOkTmTy7ncYJN819",
+} as const;
+
 export type Partner = {
   name: string;
   /** Uradna spletna stran — vsaka je bila ob vpisu preverjena. */

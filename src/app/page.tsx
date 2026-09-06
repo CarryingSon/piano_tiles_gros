@@ -7,6 +7,7 @@ import Hero from "@/components/Hero";
 import Lineup from "@/components/Lineup";
 import Nav from "@/components/Nav";
 import Partners from "@/components/Partners";
+import Playlist from "@/components/Playlist";
 import PracticalInfo from "@/components/PracticalInfo";
 import Reveal from "@/components/Reveal";
 import Story from "@/components/Story";
@@ -35,6 +36,9 @@ export default function Home() {
         <Story />
         <Partners />
         <PracticalInfo />
+        {/* Zadnja stvar pred nogo je glasba: seznam izvajalcev za poslušanje
+            do dogodka. */}
+        <Playlist />
       </main>
       <Footer />
     </>
