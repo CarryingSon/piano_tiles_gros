@@ -47,7 +47,7 @@ const SHOTS = [
 /** Pravila v štirih vrsticah — več jih pred igro nihče ne prebere. */
 const RULES = [
   "Tapni ploščico v njeni stezi, takoj ko se prikaže.",
-  "Nižja ko je ob dotiku, več točk.",
+  "Nižje kot je ob dotiku, več točk.",
   "Dolgo ploščico drži do konca.",
   "Imaš eno življenje — prva napaka konča krog.",
 ];

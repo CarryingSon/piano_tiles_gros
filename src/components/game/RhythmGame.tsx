@@ -1640,7 +1640,7 @@ export default function RhythmGame() {
             <p className={styles.lead}>{gameConfig.supportingText}</p>
             <div className={styles.instruction}>
               <span className={styles.tapIcon}>↓</span>
-              <span>Tapni ploščico v njeni stezi, takoj ko se prikaže. Nižja ko je, več točk. Dolgo ploščico drži do konca.</span>
+              <span>Tapni ploščico v njeni stezi, takoj ko se prikaže. Nižje kot je, več točk. Dolgo ploščico drži do konca.</span>
             </div>
             <p className={styles.rules}>
               Imaš {livesPhrase(gameConfig.lives)}. Zgrešena ploščica in tap v prazno stezo

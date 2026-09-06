@@ -11,7 +11,7 @@ import styles from "./RhythmGame.module.css";
 const RULES = [
   { title: "Izberi komad", text: "Kokosy, MRFY ali Tabu — vsak ima svojo karto in svojo barvo." },
   { title: "Tapni ploščico", text: "Ploščice padajo po štirih stezah; vsako tapni v njeni stezi." },
-  { title: "Počakaj jo nižje", text: "Nižja ko je ploščica ob dotiku, več točk. Zaporedni zadetki množijo rezultat." },
+  { title: "Počakaj jo nižje", text: "Nižje kot je ploščica ob dotiku, več točk. Zaporedni zadetki množijo rezultat." },
   { title: "Dolgo drži", text: "Podolgovato ploščico drži do konca in izpusti na črti." },
   { title: "Eno življenje", text: "Prva zgrešena ploščica ali tap v prazno stezo konča krog." },
 ];
