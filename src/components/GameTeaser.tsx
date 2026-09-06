@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
@@ -34,6 +35,23 @@ const medals = [
   { label: "Bron", className: "bronze" },
 ] as const;
 
+/**
+ * Posnetka iz same igre (telefonski zaslon), da je pred klikom jasno, kaj
+ * "ritmična igra" sploh pomeni. Zajeta iz produkcijske različice igre.
+ */
+const SHOTS = [
+  { src: "/media/game/prikaz-kokosy.jpg", alt: "Zaslon igre med komadom Kokosy: roza ploščice padajo po štirih stezah." },
+  { src: "/media/game/prikaz-mrfy.jpg", alt: "Zaslon igre med komadom MRFY: oranžne ploščice in kombo števec." },
+];
+
+/** Pravila v štirih vrsticah — več jih pred igro nihče ne prebere. */
+const RULES = [
+  "Tapni ploščico v njeni stezi, takoj ko se prikaže.",
+  "Nižja ko je ob dotiku, več točk.",
+  "Dolgo ploščico drži do konca.",
+  "Imaš eno življenje — prva napaka konča krog.",
+];
+
 /** Delež možnih točk, po katerem se razvrsti skupna lestvica. */
 function share(rating: number) {
   return `${Math.round(rating / 100)} %`;
@@ -48,6 +66,8 @@ export default function GameTeaser() {
    * zavihki. Vse vrstice pridejo z istim zahtevkom, zato je preklop trenuten.
    */
   const [tab, setTab] = useState<"overall" | string>("overall");
+  /** Kartica kaže eno od dvojega: kako se igra ali kdo vodi. */
+  const [panel, setPanel] = useState<"how" | "board">("board");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -85,22 +105,69 @@ export default function GameTeaser() {
             Zastonj karte za najboljše tri igralce
           </p>
           <p className={styles.copy}>
-            Skupna lestvica deli karte, po zavihkih pa vidiš vsak komad zase.
+            Štiri steze, en komad in ena napaka do konca. Skupna lestvica deli
+            karte, po zavihkih pa vidiš vsak komad zase.
           </p>
+          <Link href="/igra" className={styles.cta}>
+            Zaigraj in se uvrsti <span aria-hidden>↗</span>
+          </Link>
         </div>
 
         <div className={styles.board} aria-busy={summary === null}>
           <div className={styles.boardHeader}>
             <div>
               <span>Glasbeni Atlas 2026</span>
-              <h3>{openSong ? openSong.band : "Skupna lestvica"}</h3>
+              <h3>
+                {panel === "how"
+                  ? "Kako se igra"
+                  : openSong
+                    ? openSong.band
+                    : "Skupna lestvica"}
+              </h3>
             </div>
             <span className={styles.live}>
               <i aria-hidden /> V živo
             </span>
           </div>
 
-          {!summary ? (
+          <div className={styles.panelTabs} role="group" aria-label="Vsebina kartice">
+            <button
+              type="button"
+              aria-pressed={panel === "how"}
+              onClick={() => setPanel("how")}
+            >
+              Kako se igra
+            </button>
+            <button
+              type="button"
+              aria-pressed={panel === "board"}
+              onClick={() => setPanel("board")}
+            >
+              Lestvica
+            </button>
+          </div>
+
+          {panel === "how" ? (
+            <div className={styles.how}>
+              <div className={styles.howShots}>
+                {SHOTS.map((shot) => (
+                  <Image
+                    key={shot.src}
+                    src={shot.src}
+                    alt={shot.alt}
+                    width={540}
+                    height={920}
+                    sizes="(min-width: 760px) 20vw, 44vw"
+                  />
+                ))}
+              </div>
+              <ol className={styles.howList}>
+                {RULES.map((rule) => (
+                  <li key={rule}>{rule}</li>
+                ))}
+              </ol>
+            </div>
+          ) : !summary ? (
             <p className={styles.empty} role="status">
               {unavailable
                 ? "Lestvica trenutno ni dosegljiva."
@@ -195,9 +262,6 @@ export default function GameTeaser() {
             </>
           )}
 
-          <Link href="/igra" className={styles.cta}>
-            Zaigraj in se uvrsti <span aria-hidden>↗</span>
-          </Link>
         </div>
       </div>
     </section>
