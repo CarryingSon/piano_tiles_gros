@@ -7,7 +7,10 @@ import styles from "./RhythmGame.module.css";
 type Entry = {
   id: string;
   name: string;
-  songId: string;
+  /** V skupni lestvici `null`: vrstica je seštevek in ne pripada enemu komadu. */
+  songId: string | null;
+  /** Koliko komadov je v seštevku; v komadovi lestvici vedno 1. */
+  songCount: number;
   score: number;
   rating: number;
 };
@@ -22,9 +25,16 @@ type Props = {
 /** Zlato, srebro in bron za prve tri po skupnem seštevku. */
 const medalClass = [styles.gold, styles.silver, styles.bronze];
 
+/** "1 komad", "2 komada", "3 komadi" — koliko jih igralec ima v seštevku. */
+const SONG_WORDS = ["komadov", "komad", "komada", "komadi"];
+
+function songsPhrase(count: number) {
+  return `${count} ${SONG_WORDS[count] ?? "komadov"} v seštevku`;
+}
+
 /**
- * Katera lestvica je odprta: skupna (po normalizirani oceni, ta deli vstopnice)
- * ali ena od komadovih. Vedno se odpre skupna — nagrada visi na njej — po
+ * Katera lestvica je odprta: skupna (seštevek vseh treh komadov, ta deli
+ * vstopnice) ali ena od komadovih. Vedno se odpre skupna — nagrada visi na njej — po
  * zavihkih pa se da stopiti v posamezen komad, tudi v tistega, ki ga igralec
  * ravnokar ni igral.
  */
@@ -124,7 +134,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
       <h2 id="leaderboard-title">Lestvica ritma</h2>
       <div className={styles.boardPrize}>
         <strong>{gameConfig.competition.headline}</strong>
-        <span>{gameConfig.competition.note}</span>
+        <span>{gameConfig.competition.basis} {gameConfig.competition.note}</span>
       </div>
 
       {!submitted && (
@@ -251,7 +261,6 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
       ) : (
         <ol className={styles.boardList}>
           {entries.map((entry, index) => {
-            const entrySong = gameConfig.songs.find((item) => item.id === entry.songId);
             // Kolajne in nagrada visijo na skupni lestvici; komadova je le
             // razvrstitev po točkah, zato tam ni ne podija ne pripisa nagrade.
             const overall = scope === "overall";
@@ -265,11 +274,12 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                 <span className={styles.rank}>{String(index + 1).padStart(2, "0")}</span>
                 <span className={styles.player}>
                   <strong>{entry.name}</strong>
-                  {/* V komadovi lestvici je bend povsod isti, zato tam pod imenom
-                      stoji natančnost namesto ponovljenega imena skupine. */}
+                  {/* V skupni lestvici pove, koliko komadov je v seštevku —
+                      trije so poln komplet. V komadovi je bend povsod isti,
+                      zato tam stoji natančnost. */}
                   <small>
                     {overall
-                      ? entrySong?.artist ?? entry.songId
+                      ? songsPhrase(entry.songCount)
                       : `${Math.round(entry.rating / 100)} % možnih točk`}
                   </small>
                 </span>

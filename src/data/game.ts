@@ -232,6 +232,13 @@ export const gameConfig = {
     /** Nagrada za prve tri po skupnem seštevku. */
     prizeLabel: "Zastonj karta",
     headline: "Prvi trije dobijo zastonj karto",
+    /**
+     * Kaj sploh šteje: skupna lestvica sešteje najboljši krog igralca v vsakem
+     * od treh komadov (`get_public_leaderboard` brez `p_song_id`). Enkrat
+     * zapisano tu, da se besedilo v igri, na domači strani in na lestvici ne
+     * razide s tem, kar počne baza.
+     */
+    basis: "Šteje seštevek vseh treh komadov.",
     note: "Pri izenačenju odloča prej oddan rezultat. Velja po potrditvi rezultata in skladno s pravili organizatorja.",
   },
   siteUrl: `${site.url}/igra`,

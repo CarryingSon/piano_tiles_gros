@@ -72,6 +72,9 @@
   padding: max(1rem, env(safe-area-inset-top)) 1rem max(1rem, env(safe-area-inset-bottom));
 }
 
+/* Uvod stoji na enem zaslonu: `introContent` razporedi bloke po višini, vsak
+   pa se meri v dvh, da se skupaj s pisavo skrči tudi na nizkih oknih. Pomik
+   ostane kot rešilna mreža za ležeč telefon in odprto tipkovnico. */
 .intro {
   height: 100dvh;
   min-height: 0;
@@ -81,15 +84,23 @@
   scroll-padding-bottom: max(1.5rem, env(safe-area-inset-bottom));
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
-  background:
+  /* Isti kolaž in ista zadržanost kot na domači strani: fotografija nosi
+     razpoloženje, brati pa se mora besedilo nad njo. Na telefonu se pas
+     ponavlja navpično — enako kot `photo-wall` v `globals.css` — ker bi
+     `cover` ležečo sliko na pokončnem zaslonu povečal približno štirikratno. */
+  background-color: #050708;
+  background-image:
     linear-gradient(
       to bottom,
-      rgb(5 7 8 / .28) 0%,
-      rgb(5 7 8 / .58) 34%,
-      rgb(5 7 8 / .9) 74%,
-      #050708 100%
+      rgb(5 7 8 / .82) 0%,
+      rgb(5 7 8 / .74) 38%,
+      rgb(5 7 8 / .88) 72%,
+      rgb(5 7 8 / .94) 100%
     ),
-    url("/media/wall/kolaz-2026.jpg") center / cover no-repeat;
+    url("/media/wall/kolaz-2026-mobile.jpg");
+  background-repeat: no-repeat, repeat-y;
+  background-position: center, 50% top;
+  background-size: auto, 180% auto;
 }
 
 .topbar,
@@ -103,15 +114,19 @@
 
 .topbar {
   flex: 0 0 auto;
-  padding-bottom: .8rem;
-  border-bottom: 1px solid rgb(255 255 255 / .13);
+  padding-bottom: .5rem;
 }
 
+/* V glavi sta gumba okrogla in tiha: ločnica pod njima je odpadla, ker je
+   rezala kolaž na dvoje, težo pa nosi naslov pod njo. */
 .intro .back,
 .intro .iconButton {
-  border-color: rgb(255 255 255 / .34);
-  background: rgb(5 7 8 / .68);
-  box-shadow: 0 .6rem 1.8rem rgb(0 0 0 / .22);
+  min-width: 2.5rem;
+  min-height: 2.5rem;
+  border-color: rgb(255 255 255 / .2);
+  border-radius: 999px;
+  background: rgb(5 7 8 / .55);
+  box-shadow: 0 .5rem 1.4rem rgb(0 0 0 / .28);
 }
 
 .back,
@@ -129,26 +144,43 @@
 
 .logo {
   width: auto;
-  height: clamp(2rem, 8vw, 2.7rem);
+  height: clamp(1.9rem, 7.4vw, 2.5rem);
 }
 
 .introContent {
   display: flex;
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   flex-direction: column;
-  justify-content: flex-start;
+  /* Sredinsko, ne `space-between`: na visokem zaslonu bi razmiki zrasli v
+     luknje, tako pa blok ostane skupaj in se le postavi na sredo. */
+  justify-content: center;
+  gap: clamp(.5rem, 2.1dvh, 1.4rem);
   width: min(100%, 34rem);
   margin: 0 auto;
-  padding: 1.15rem 0 max(1.75rem, calc(1rem + env(safe-area-inset-bottom)));
+  padding: clamp(.35rem, 1.4dvh, 1rem) 0 0;
+}
+
+.introHead {
+  flex: 0 0 auto;
 }
 
 /* The CTA stays in document flow. A sticky CTA used to cover the prize and
    song cards on short Safari viewports. */
 .introContent .primary {
   position: static;
-  margin-top: .35rem;
   flex-shrink: 0;
+  min-height: 3.2rem;
+  font-size: 1.08rem;
   box-shadow: 0 .35rem 0 #9a8200, 0 .9rem 2rem rgb(0 0 0 / .28);
+}
+
+.introFoot {
+  margin: 0;
+  color: #8f9499;
+  font-size: .6rem;
+  letter-spacing: .12em;
+  text-align: center;
+  text-transform: uppercase;
 }
 
 .eyebrow,
@@ -162,11 +194,14 @@
 }
 
 .title {
-  margin: .55rem 0 .7rem;
+  margin: .3rem 0 .4rem;
   font-family: var(--font-display);
-  font-size: clamp(4.35rem, 22vw, 7.25rem);
+  /* Dvovrstični naslov meri hkrati po širini in po višini okna: na ozkem
+     telefonu ga omeji 15vw, na nizkem 8.6dvh — tako ne poje prostora, ki ga
+     spodaj potrebujejo pravila, izbira komada in gumb. */
+  font-size: clamp(2.5rem, min(15vw, 8.6dvh), 4.6rem);
   font-weight: 400;
-  line-height: .79;
+  line-height: .82;
   letter-spacing: -.035em;
   text-shadow: 0 .5rem 2.2rem rgb(0 0 0 / .52);
   text-transform: uppercase;
@@ -178,45 +213,92 @@
 }
 
 .lead {
-  max-width: 24rem;
+  max-width: 22rem;
   margin: 0;
   color: #d4d4d0;
-  font-size: clamp(.95rem, 4.2vw, 1.15rem);
+  font-size: clamp(.82rem, 3.6vw, 1rem);
   line-height: 1.35;
   text-shadow: 0 .2rem .8rem rgb(0 0 0 / .72);
 }
 
-.instruction {
+/* Pravila ob posnetku iz igre: slika pove, kaj so steze in ploščice, hitreje
+   kot odstavek besedila — in je ista, ki jo kažeta napoved na domači strani in
+   vratar na namizju. */
+.howCard {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
-  gap: .75rem;
-  margin: 1.15rem 0 .65rem;
-  padding: .85rem;
-  border: 1px solid rgb(255 255 255 / .2);
-  background: rgb(5 7 8 / .66);
+  gap: .8rem;
+  padding: .6rem;
+  border: 1px solid rgb(255 255 255 / .16);
+  background: rgb(5 7 8 / .62);
   box-shadow: 0 .75rem 2rem rgb(0 0 0 / .18);
-  color: #f6f6f6;
-  font-size: .86rem;
-  line-height: 1.4;
   backdrop-filter: blur(8px);
 }
 
-.rules {
-  margin: 0 0 1rem;
-  padding: 0 .15rem;
-  color: #c3c6c9;
-  font-size: .72rem;
-  line-height: 1.48;
+.howShot {
+  flex: 0 0 auto;
+  width: clamp(3.4rem, 17vw, 5rem);
+  height: auto;
+  border: 1px solid rgb(255 255 255 / .14);
+}
+
+.howList {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: rule;
+}
+
+.howList li {
+  display: grid;
+  grid-template-columns: 1.2rem 1fr;
+  gap: 0 .5rem;
+  counter-increment: rule;
+}
+
+.howList li::before {
+  content: counter(rule);
+  display: grid;
+  grid-row: span 2;
+  width: 1.2rem;
+  height: 1.2rem;
+  place-items: center;
+  border: 1px solid rgb(255 216 0 / .7);
+  border-radius: 50%;
+  color: #ffd800;
+  font-size: .58rem;
+  font-weight: 700;
+}
+
+.howList strong {
+  color: #ffd800;
+  font-size: .6rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.howList span {
+  color: #c9ccd0;
+  font-size: .74rem;
+  line-height: 1.32;
 }
 
 .competitionCallout {
   display: grid;
+  flex: 0 0 auto;
   grid-template-columns: auto 1fr;
-  gap: .15rem .8rem;
-  margin: 0 0 1.1rem;
-  padding: .8rem .85rem;
-  border: 1px solid rgb(255 216 0 / .64);
-  background: linear-gradient(110deg, rgb(255 216 0 / .11), rgb(5 7 8 / .78) 46%);
+  align-items: center;
+  gap: .1rem .75rem;
+  margin: 0;
+  padding: .55rem .75rem;
+  border: 1px solid rgb(255 216 0 / .6);
+  background: linear-gradient(110deg, rgb(255 216 0 / .12), rgb(5 7 8 / .74) 48%);
   box-shadow: 0 .8rem 2rem rgb(0 0 0 / .2);
   backdrop-filter: blur(8px);
 }
@@ -225,21 +307,22 @@
   grid-row: span 2;
   align-self: center;
   color: #ffd800;
-  font: 400 1.6rem var(--font-display);
+  font: 400 1.35rem var(--font-display);
 }
 
-.competitionCallout strong { font-size: .76rem; text-transform: uppercase; }
-.competitionCallout small { color: #b5b9bd; font-size: .58rem; line-height: 1.35; }
+.competitionCallout strong { font-size: .72rem; text-transform: uppercase; }
+.competitionCallout small { color: #b5b9bd; font-size: .6rem; line-height: 1.35; }
 
 .songPicker {
+  flex: 0 0 auto;
   min-width: 0;
-  margin: 0 0 .75rem;
+  margin: 0;
   padding: 0;
   border: 0;
 }
 
 .songPicker legend {
-  margin-bottom: .65rem;
+  margin-bottom: .4rem;
   color: #ffd800;
   font-size: .63rem;
   font-weight: 700;
@@ -250,13 +333,13 @@
 .songGrid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: .5rem;
+  gap: .45rem;
 }
 
 .songButton {
   min-width: 0;
-  min-height: 5.25rem;
-  padding: .72rem .58rem;
+  min-height: 3.9rem;
+  padding: .5rem .5rem .45rem;
   border: 1px solid rgb(255 255 255 / .24);
   background: linear-gradient(145deg, rgb(18 20 21 / .9), rgb(5 7 8 / .78));
   box-shadow: 0 .55rem 1.4rem rgb(0 0 0 / .18);
@@ -276,9 +359,9 @@
 }
 
 .songButton em {
-  margin-top: .2rem;
+  margin-top: .1rem;
   color: #a8adb3;
-  font-size: .56rem;
+  font-size: .54rem;
   font-style: normal;
   letter-spacing: .1em;
 }
@@ -286,15 +369,16 @@
 .songButton strong {
   color: var(--band-color);
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: .98rem;
   font-weight: 400;
   letter-spacing: .03em;
   text-transform: uppercase;
 }
 
 .songButton span {
-  margin-top: .2rem;
-  font-size: .58rem;
+  margin-top: .12rem;
+  color: #d4d4d0;
+  font-size: .56rem;
 }
 
 .songButton[aria-pressed="true"] {
@@ -308,17 +392,6 @@
     inset 0 -4px 0 var(--band-color),
     0 .65rem 1.5rem color-mix(in srgb, var(--band-color) 17%, transparent);
   transform: translateY(-2px);
-}
-
-.tapIcon {
-  display: grid;
-  flex: 0 0 auto;
-  width: 2rem;
-  height: 2rem;
-  place-items: center;
-  border: 1px solid #ffd800;
-  border-radius: 50%;
-  color: #ffd800;
 }
 
 .primary,
@@ -358,15 +431,6 @@
   font-size: .72rem;
   letter-spacing: .06em;
   text-transform: uppercase;
-}
-
-.intro .eventStrip {
-  gap: .35rem 1rem;
-  margin: 0 0 .35rem;
-  padding: .7rem .8rem;
-  border: 1px solid rgb(255 255 255 / .15);
-  background: rgb(5 7 8 / .58);
-  backdrop-filter: blur(8px);
 }
 
 .eventStrip span:nth-child(odd) { color: #ffd800; }
@@ -1484,6 +1548,49 @@
 
 @media (orientation: landscape) and (max-height: 540px) {
   .landscape { display: flex; }
+}
+
+/* Na nizkem oknu (npr. brskalnik z odprto vrstico ali manjši telefon) pade
+   ven podnaslov — vse drugo se skrči samo. */
+@media (max-height: 680px) {
+  .intro .lead { display: none; }
+  .howList span { font-size: .7rem; }
+}
+
+/* Najnižja stopnja (iPhone SE in podobni): skrčijo se še naslov, kartica s
+   pravili in gumbi, spodnja vrstica z datumom pa odpade — datum je na domači
+   strani, pravila in izbira komada pa morajo ostati vidna brez pomikanja. */
+@media (max-height: 620px) {
+  .introContent { gap: .4rem; padding-top: .25rem; }
+  .intro .eyebrow { font-size: .62rem; }
+  .title { font-size: clamp(2.1rem, min(13vw, 8dvh), 3.4rem); }
+  .howCard { gap: .6rem; padding: .5rem; }
+  .howShot { width: clamp(2.9rem, 14vw, 4rem); }
+  .howList { gap: .35rem; }
+  .howList span { font-size: .68rem; }
+  .competitionCallout { padding: .45rem .65rem; }
+  .songButton { min-height: 3.4rem; }
+  .introContent .primary { min-height: 2.9rem; }
+  .introFoot { display: none; }
+}
+
+/* Od te širine navzgor je okvir bliže razmerju kolaža in `cover` ne povečuje
+   več čez mero — enako kot `photo-wall` v `globals.css`. */
+@media (min-width: 640px) {
+  .intro {
+    background-image:
+      linear-gradient(
+        to bottom,
+        rgb(5 7 8 / .82) 0%,
+        rgb(5 7 8 / .74) 38%,
+        rgb(5 7 8 / .88) 72%,
+        rgb(5 7 8 / .94) 100%
+      ),
+      url("/media/wall/kolaz-2026.jpg");
+    background-repeat: no-repeat, no-repeat;
+    background-position: center, center;
+    background-size: auto, cover;
+  }
 }
 
 @media (min-width: 560px) {

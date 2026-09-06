@@ -8,13 +8,14 @@ import { gameShots } from "@/data/event";
 import { gameConfig } from "@/data/game";
 import styles from "./RhythmGame.module.css";
 
-/** Kako se igra — pet korakov, ki jih igralec potrebuje pred prvim tapom. */
+/** Kako se igra — koraki, ki jih igralec potrebuje pred prvim tapom. */
 const RULES = [
   { title: "Izberi komad", text: "Kokosy, MRFY ali Tabu — vsak ima svojo karto in svojo barvo." },
   { title: "Tapni ploščico", text: "Ploščice padajo po štirih stezah; vsako tapni v njeni stezi." },
   { title: "Počakaj jo nižje", text: "Nižje kot je ploščica ob dotiku, več točk. Zaporedni zadetki množijo rezultat." },
   { title: "Dolgo drži", text: "Podolgovato ploščico drži do konca in izpusti na črti." },
   { title: "Eno življenje", text: "Prva zgrešena ploščica ali tap v prazno stezo konča krog." },
+  { title: "Skupni seštevek", text: `Karte deli skupna lestvica. ${gameConfig.competition.basis}` },
 ];
 
 export default function DesktopGameGate() {

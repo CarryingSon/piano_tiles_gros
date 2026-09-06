@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { gameShots } from "@/data/event";
 import {
   chorusPulseSeconds,
   comboMultiplier,
@@ -61,6 +62,33 @@ const LIVES_WORDS = ["nič življenj", "eno življenje", "dve življenji", "tri 
 
 function livesPhrase(count: number) {
   return LIVES_WORDS[count] ?? `${count} življenj`;
+}
+
+/**
+ * Pravila na uvodnem zaslonu: tri vrstice ob posnetku iz igre. Daljša razlaga
+ * (hitrost, okno za Perfect, finale) je namenoma padla ven — pred prvim tapom
+ * je nihče ne prebere, med igro pa se pokaže sama.
+ */
+const INTRO_RULES = [
+  {
+    title: "Tapni v stezi",
+    text: "Ploščico ujemi v njeni stezi. Nižje kot je ob dotiku, več točk.",
+  },
+  {
+    title: "Dolgo drži",
+    text: "Podolgovato ploščico drži do konca in jo izpusti na črti.",
+  },
+  {
+    title: capitalize(livesPhrase(gameConfig.lives)),
+    text:
+      gameConfig.lives === 1
+        ? "Prva zgrešena ploščica ali tap v prazno stezo konča krog."
+        : "Vsaka zgrešena ploščica in vsak tap v prazno stezo vzame eno.",
+  },
+] as const;
+
+function capitalize(text: string) {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
 
 function smoothstep(value: number) {
@@ -269,6 +297,21 @@ function reducedMotion() {
 }
 
 const highScoreKey = (song: GameSong) => `glasbeni-atlas-ritem-high-score-${song.id}`;
+
+/** Arrow back to the site, drawn instead of typed: "←" sits off-centre. */
+function BackIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" aria-hidden="true" focusable="false">
+      <path
+        d="M19 12H5m0 0 6-6m-6 6 6 6"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
 
 /** Speaker with waves, or the same cone with a cross once the round is muted. */
 function SpeakerIcon({ muted }: { muted: boolean }) {
@@ -1615,6 +1658,9 @@ export default function RhythmGame() {
   const recommendedSongs = gameConfig.songs.filter(
     (song) => song.id !== selectedSong.id,
   );
+  /* Posnetek ob pravilih pripada izbranemu bendu, kadar ga imamo. */
+  const introShot =
+    gameShots.find((shot) => shot.src.includes(selectedSong.id)) ?? gameShots[0];
 
   return (
     <main className={styles.shell} style={{ "--band-color": selectedSong.baseColor } as React.CSSProperties}>
@@ -1629,30 +1675,51 @@ export default function RhythmGame() {
 
       {phase === "intro" && (
         <section className={`${styles.screen} ${styles.intro}`}>
-          <div className={styles.topbar}>
-            <Link href="/" className={styles.back} aria-label="Nazaj na Glasbeni Atlas">←</Link>
+          <header className={styles.topbar}>
+            <Link href="/" className={styles.back} aria-label="Nazaj na Glasbeni Atlas">
+              <BackIcon />
+            </Link>
             <Image src="/media/logo-glasbeni-atlas.svg" width={718} height={577} alt="Glasbeni Atlas" className={styles.logo} priority />
-            <button className={styles.iconButton} type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? "Vklopi zvok" : "Utišaj zvok"}>{muted ? "○" : "◉"}</button>
-          </div>
+            <button className={styles.iconButton} type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? "Vklopi zvok" : "Utišaj zvok"}>
+              <SpeakerIcon muted={muted} />
+            </button>
+          </header>
           <div className={styles.introContent}>
-            <p className={styles.eyebrow}>Ritmična igra · cel komad</p>
-            <h1 className={styles.title}>Ujemi <span>ritem</span></h1>
-            <p className={styles.lead}>{gameConfig.supportingText}</p>
-            <div className={styles.instruction}>
-              <span className={styles.tapIcon}>↓</span>
-              <span>Tapni ploščico v njeni stezi, takoj ko se prikaže. Nižje kot je, več točk. Dolgo ploščico drži do konca.</span>
+            <div className={styles.introHead}>
+              <p className={styles.eyebrow}>Ritmična igra · cel komad</p>
+              <h1 className={styles.title}>Ujemi <span>ritem</span></h1>
+              <p className={styles.lead}>{gameConfig.supportingText}</p>
             </div>
-            <p className={styles.rules}>
-              Imaš {livesPhrase(gameConfig.lives)}. Zgrešena ploščica in tap v prazno stezo
-              stanejo prav to. Ploščice padajo vse hitreje že sredi komada, okno za Perfect se
-              zoži, od zadnjega refrena naprej pa vse točke veljajo
-              ×{(1 + gameConfig.scoring.finaleBonus).toLocaleString("sl-SI")}.
-            </p>
+
+            {/* Pravila stojijo ob posnetku iz same igre — istem, ki ga kažeta
+                napoved na domači strani in vratar na namizju. Slika pove, kaj
+                so steze in ploščice, hitreje kot še en odstavek besedila. */}
+            <div className={styles.howCard}>
+              <Image
+                src={introShot.src}
+                alt={introShot.alt}
+                width={540}
+                height={920}
+                sizes="(min-width: 640px) 80px, 20vw"
+                className={styles.howShot}
+                priority
+              />
+              <ol className={styles.howList}>
+                {INTRO_RULES.map((rule) => (
+                  <li key={rule.title}>
+                    <strong>{rule.title}</strong>
+                    <span>{rule.text}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
             <div className={styles.competitionCallout}>
               <span>TOP 3</span>
               <strong>{gameConfig.competition.headline}</strong>
-              <small>{gameConfig.competition.note}</small>
+              <small>{gameConfig.competition.basis}</small>
             </div>
+
             <fieldset className={styles.songPicker}>
               <legend>Izberi komad</legend>
               <div className={styles.songGrid}>
@@ -1673,8 +1740,8 @@ export default function RhythmGame() {
               </div>
             </fieldset>
             {audioError && <p className={styles.error} role="alert">{audioError}</p>}
-            <div className={styles.eventStrip}><span>Datum</span><strong>{gameConfig.event.date}</strong><span>Cilj</span><strong>Ivančna Gorica</strong></div>
             <button className={styles.primary} type="button" onClick={startGame}>Začni · {selectedSong.artist} <span aria-hidden>↗</span></button>
+            <p className={styles.introFoot}>{gameConfig.event.date} · {gameConfig.event.location}</p>
           </div>
         </section>
       )}
@@ -1810,7 +1877,9 @@ export default function RhythmGame() {
             </div>
             <p className={styles.shareStatus} role="status">{shareStatus}</p>
             <div className={styles.recommendations}>
-              <p>Naslednji izziv</p>
+              {/* Skupna lestvica sešteva vse tri komade, zato je naslednji
+                  komad del istega rezultata, ne nova igra. */}
+              <p>Naslednji izziv · šteje v seštevek</p>
               <div className={styles.recommendationGrid}>
                 {recommendedSongs.map((song) => (
                   <button

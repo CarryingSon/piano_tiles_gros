@@ -5,7 +5,13 @@ import { createClient } from "@/utils/supabase/server";
 export type LeaderboardEntry = {
   id: string;
   name: string;
-  songId: string;
+  /**
+   * Komad vrstice — v skupni lestvici `null`, ker je vrstica seštevek več
+   * komadov in ne pripada nobenemu posebej.
+   */
+  songId: string | null;
+  /** Koliko komadov je v seštevku; v lestvici posameznega komada vedno 1. */
+  songCount: number;
   score: number;
   rating: number;
   perfect: number;
@@ -18,7 +24,9 @@ function mapEntry(row: Record<string, unknown>): LeaderboardEntry {
   return {
     id: String(row.id),
     name: String(row.name),
-    songId: String(row.song_id),
+    songId: row.song_id == null ? null : String(row.song_id),
+    /* Oddaja rezultata vrne surovo vrstico vnosa, ki stolpca nima — en komad. */
+    songCount: Number(row.song_count ?? 1),
     score: Number(row.score),
     rating: Number(row.rating),
     perfect: Number(row.perfect),

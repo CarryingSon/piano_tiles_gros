@@ -36,12 +36,13 @@ const medals = [
   { label: "Bron", className: "bronze" },
 ] as const;
 
-/** Pravila v štirih vrsticah — več jih pred igro nihče ne prebere. */
+/** Pravila v petih vrsticah — več jih pred igro nihče ne prebere. */
 const RULES = [
   "Tapni ploščico v njeni stezi, takoj ko se prikaže.",
   "Nižje kot je ob dotiku, več točk.",
   "Dolgo ploščico drži do konca.",
   "Imaš eno življenje — prva napaka konča krog.",
+  "V skupni lestvici šteje seštevek vseh treh komadov.",
 ];
 
 /** Delež možnih točk, po katerem se razvrsti skupna lestvica. */
@@ -97,8 +98,9 @@ export default function GameTeaser() {
             Zastonj karte za najboljše tri igralce
           </p>
           <p className={styles.copy}>
-            Štiri steze, en komad in ena napaka do konca. Skupna lestvica deli
-            karte, po zavihkih pa vidiš vsak komad zase.
+            Štiri steze, en komad in ena napaka do konca. Karte deli skupna
+            lestvica, na kateri šteje seštevek vseh treh komadov; po zavihkih
+            vidiš vsak komad zase.
           </p>
           <Link href="/igra" className={styles.cta}>
             Zaigraj in se uvrsti <span aria-hidden>↗</span>
@@ -221,7 +223,7 @@ export default function GameTeaser() {
               ) : (
                 <>
                   <p className={styles.groupLabel}>
-                    Skupno · <span>zastonj karta</span>
+                    Seštevek treh komadov · <span>zastonj karta</span>
                   </p>
                   {overall.length === 0 ? (
                     <p className={styles.empty} role="status">
