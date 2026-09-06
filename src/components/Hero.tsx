@@ -175,18 +175,6 @@ export default function Hero() {
         <div className="absolute inset-x-0 bottom-0 h-[45svh] bg-gradient-to-t from-night via-night/75 to-transparent sm:hidden" />
       </div>
 
-      {/* Koordinatni okvir — atlas motiv */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 top-6 hidden text-[11px] uppercase tracking-[0.25em] text-fog/70 sm:block"
-      >
-        <div className="mx-auto flex w-full max-w-6xl justify-between px-4 sm:px-6">
-          <span>{event.coords.lat}</span>
-          <span>Naslednja postaja</span>
-          <span>{event.coords.lng}</span>
-        </div>
-      </div>
-
       {/* Na telefonu vsebina sedi pri dnu: nad njo je ves posnetek, pod njo pa
           toliko zraka, da naslov in gumba ne stojijo na robu zaslona. */}
       <div className="relative mx-auto w-full max-w-6xl px-4 pb-16 pt-24 sm:px-6 sm:py-28">

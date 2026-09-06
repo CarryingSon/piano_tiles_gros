@@ -72,31 +72,36 @@ export default function Countdown() {
     <section
       id="odstevanje"
       aria-labelledby="odstevanje-naslov"
-      className="contours relative border-y border-line bg-night py-8 sm:py-14"
+      /* Rumena kot pri igri: odštevanje je edini svetel pas na strani, zato
+         datum in števke stojijo na njem kot na plakatu. Plastnice (`contours`)
+         so risane v isti rumeni in bi bile tu nevidne. */
+      className="relative border-y border-night/15 bg-glow py-8 text-night sm:py-14"
     >
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-6 sm:text-left">
         {/* Na telefonu ostane samo ura: nadnaslov, naslov in datum so tam le
             ponovitev tistega, kar pove že lepilni trak nad nogo strani, ura pa
             mora stati takoj pod naslovnico in brez odvečnega branja. */}
         <div className="reveal hidden sm:block">
-          <p className="mb-2 text-xs uppercase tracking-[0.3em] text-atlas">
+          <p className="mb-2 text-xs uppercase tracking-[0.3em] text-night/60">
             Odštevanje
           </p>
           <h2
             id="odstevanje-naslov"
-            className="font-display text-2xl uppercase leading-tight text-white sm:text-3xl"
+            className="font-display text-2xl uppercase leading-tight text-night sm:text-3xl"
           >
             {started ? (
               <>
-                Atlas je <span className="text-atlas">tukaj.</span>
+                Atlas je{" "}
+                <span className="bg-night px-2 py-0.5 text-glow">tukaj.</span>
               </>
             ) : (
               <>
-                Do Glasbenega <span className="text-atlas">Atlasa</span>
+                Do Glasbenega{" "}
+                <span className="bg-night px-2 py-0.5 text-glow">Atlasa</span>
               </>
             )}
           </h2>
-          <p className="mt-2 text-sm text-fog">
+          <p className="mt-2 text-sm text-night/70">
             {event.dateLong} · {event.startTimeHuman} · {event.city}
           </p>
         </div>
@@ -106,14 +111,14 @@ export default function Countdown() {
         <p className="sr-only">{screenReaderText}</p>
 
         {started ? (
-          <p className="reveal text-lg text-fog">
+          <p className="reveal text-lg text-night/70">
             Odštevanja je konec —{" "}
-            <span className="text-white">se vidimo pod odrom.</span>
+            <span className="text-night">se vidimo pod odrom.</span>
           </p>
         ) : (
           <ol
             aria-hidden
-            className="reveal flex shrink-0 divide-x divide-line border-y border-line"
+            className="reveal flex shrink-0 divide-x divide-night/20 border-y border-night/20"
           >
             {units.map((unit) => {
               const value = remaining?.[unit.key];
@@ -122,12 +127,12 @@ export default function Countdown() {
                   key={unit.key}
                   className="flex w-[4.5rem] flex-col items-center gap-0.5 py-3 sm:w-24 sm:py-4"
                 >
-                  <span className="font-display text-3xl leading-none text-white tabular-nums sm:text-4xl">
+                  <span className="font-display text-3xl leading-none text-night tabular-nums sm:text-4xl">
                     {value === undefined
                       ? "––"
                       : String(value).padStart(2, "0")}
                   </span>
-                  <span className="text-[0.6rem] uppercase tracking-[0.2em] text-fog">
+                  <span className="text-[0.6rem] uppercase tracking-[0.2em] text-night/60">
                     {value === undefined
                       ? unit.forms[3]
                       : plural(value, unit.forms)}

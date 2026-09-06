@@ -5,6 +5,7 @@
    rumenem polju, črno-bela koncertna fotografija). */
 @theme {
   --color-atlas: #fcdb27; /* uradna rumena logotipa */
+  --color-glow: #ffd800; /* svetlejša rumena polnih ploskev — ista kot v igri */
   --color-kokosy: #e38dce; /* roza iz kampanjske grafike izvajalcev */
   --color-mrfy: #f4510b; /* oranžna iz kampanjske grafike izvajalcev */
   --color-night: #050708; /* skoraj-črna podlaga */

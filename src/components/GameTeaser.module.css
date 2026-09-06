@@ -6,29 +6,6 @@
   color: #050708;
 }
 
-.section::before {
-  content: "45.9372° N  /  14.8064° E";
-  position: absolute;
-  top: 1.25rem;
-  right: -1rem;
-  font-size: clamp(2rem, 8vw, 6rem);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -.06em;
-  white-space: nowrap;
-  opacity: .09;
-}
-
-/* Na telefonu je vodni znak s koordinatami segal čez desni rob in zadnja
-   črka je bila odrezana — brez konteksta je bilo videti kot napaka, ne kot
-   namerno iztekanje. Pri tej velikosti se napis v celoti prilega. */
-@media (max-width: 639px) {
-  .section::before {
-    right: .75rem;
-    font-size: 7vw;
-  }
-}
-
 .inner {
   position: relative;
   display: grid;
@@ -47,13 +24,15 @@
   text-transform: uppercase;
 }
 
+/* Naslov se lomi v dve vrsti. Pisava ima visoke črke in pri `line-height: .85`
+   sta se vrsti dotikali — `Č` iz spodnje je zlezel v `G` iz zgornje. */
 .title {
   max-width: 9ch;
   margin: 0;
   font-family: var(--font-display);
   font-size: clamp(3.7rem, 14vw, 7.5rem);
   font-weight: 400;
-  line-height: .85;
+  line-height: 1;
   text-transform: uppercase;
 }
 
