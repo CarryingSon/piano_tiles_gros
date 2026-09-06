@@ -7,7 +7,8 @@ import styles from "./PhotoCollage.module.css";
  * Postavitev razmetanih fotografij v odstotkih okvirja (razmerje 6 : 5):
  * `x`/`y` je zgornji levi kot, `w` širina, `r` zasuk, `z` plast prekrivanja,
  * `p`/`pb` pa širina papirnatega roba (spodaj je pri nekaterih širši, kot pri
- * polaroidu) v odstotkih širine slike.
+ * polaroidu) v odstotkih širine okvirja. Na telefonu velja le razmerje med
+ * `pb` in `p`, ker je rob tam v `rem` — glej `PhotoCollage.module.css`.
  * Vrstni red ustreza vrstnemu redu v `collage`; če se seznam podaljša, se
  * postavitve ponovijo od začetka.
  */
@@ -50,6 +51,8 @@ export default function PhotoCollage() {
                 "--z": spot.z,
                 "--p": `${spot.p}%`,
                 "--pb": `${spot.pb}%`,
+                /* Isto razmerje roba za telefon, kjer rob merimo v `rem`. */
+                "--pbr": Math.round((spot.pb / spot.p) * 100) / 100,
               } as CSSProperties
             }
           >

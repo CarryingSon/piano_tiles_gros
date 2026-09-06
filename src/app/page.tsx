@@ -20,10 +20,11 @@ export default function Home() {
       <Nav />
       <main>
         <Hero />
-        <Experience />
-        {/* Odštevanje stoji med Doživetjem in Izvajalci: najprej vzdušje,
-            nato konkreten datum, šele potem imena na plakatu. */}
+        {/* Odštevanje stoji takoj pod naslovnico: prva stvar pod prvim
+            zaslonom je konkreten datum in koliko časa je še do njega, šele
+            nato vzdušje in imena na plakatu. */}
         <Countdown />
+        <Experience />
         <Lineup />
         {/* Stanje prodaje takoj za zasedbo: šele ko obiskovalec ve, kdo igra,
             ga zanima, koliko stane. */}

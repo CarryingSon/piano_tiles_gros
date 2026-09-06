@@ -72,10 +72,13 @@ export default function Countdown() {
     <section
       id="odstevanje"
       aria-labelledby="odstevanje-naslov"
-      className="contours relative border-y border-line bg-night py-10 sm:py-14"
+      className="contours relative border-y border-line bg-night py-8 sm:py-14"
     >
-      <div className="relative z-10 mx-auto flex max-w-6xl flex-col gap-8 px-4 sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-6">
-        <div className="reveal">
+      <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-6 sm:text-left">
+        {/* Na telefonu ostane samo ura: nadnaslov, naslov in datum so tam le
+            ponovitev tistega, kar pove že lepilni trak nad nogo strani, ura pa
+            mora stati takoj pod naslovnico in brez odvečnega branja. */}
+        <div className="reveal hidden sm:block">
           <p className="mb-2 text-xs uppercase tracking-[0.3em] text-atlas">
             Odštevanje
           </p>

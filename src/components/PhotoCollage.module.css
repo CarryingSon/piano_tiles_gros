@@ -2,25 +2,32 @@
    prekrivajo, kot bi kdo stresel star album na mizo.
 
    Na telefonu absolutna postavitev ne pride v poštev (premalo prostora, kadri
-   bi se skrili drug za drugim), zato je tam dvostolpčni tok z istimi zasuki —
-   občutek ostane, berljivost pa ne trpi. */
+   bi se skrili drug za drugim), zato je tam dvostolpčni tok: isti papirnati
+   odtisi, le da so zasuki prepolovljeni in med slikami je zrak, da se robovi
+   ne zaletavajo drug v drugega. */
 
 .scatter {
   columns: 2;
-  column-gap: 0.75rem;
+  column-gap: 1rem;
 }
 
-/* Papirnat rob natisnjene fotografije: širina je odstotek širine slike (torej
-   se z njo skalira), pri nekaterih je spodnji rob širši — tako kot pri
-   polaroidu. Vrednosti nastavi `PhotoCollage`. */
+/* Papirnat rob natisnjene fotografije; pri nekaterih je spodnji rob širši —
+   tako kot pri polaroidu. Razmerje med spodnjim in ostalimi robovi nosi
+   `--pbr`, natančne odstotke za namizje pa `--p`/`--pb`; oboje nastavi
+   `PhotoCollage`.
+
+   Na telefonu je rob v `rem` in ne v odstotkih: odstotek širine ozkega stolpca
+   pade pod piksel, zato se rob nariše le ponekod in okvirji delujejo raztrgano. */
 .item {
+  --tilt: calc(var(--r, 0deg) * 0.45);
+
   position: relative;
-  margin: 0 0 0.75rem;
+  margin: 0 0 1.25rem;
   break-inside: avoid;
-  padding: var(--p, 2%) var(--p, 2%) var(--pb, 2%);
+  padding: 0.3rem 0.3rem calc(0.3rem * var(--pbr, 1));
   background: #efe7d6;
-  box-shadow: 0 14px 32px rgb(0 0 0 / 55%);
-  transform: rotate(var(--r, 0deg));
+  box-shadow: 0 8px 20px rgb(0 0 0 / 45%);
+  transform: rotate(var(--tilt));
   transition:
     transform 0.45s ease,
     box-shadow 0.45s ease;
@@ -64,11 +71,15 @@
   }
 
   .item {
+    --tilt: var(--r, 0deg);
+
     position: absolute;
     left: var(--x);
     top: var(--y);
     width: var(--w);
     margin: 0;
+    padding: var(--p, 2%) var(--p, 2%) var(--pb, 2%);
+    box-shadow: 0 14px 32px rgb(0 0 0 / 55%);
     z-index: var(--z, 1);
   }
 
@@ -83,7 +94,7 @@
 @media (prefers-reduced-motion: reduce) {
   .item,
   .item:hover {
-    transform: rotate(var(--r, 0deg));
+    transform: rotate(var(--tilt));
     transition: none;
   }
 }
