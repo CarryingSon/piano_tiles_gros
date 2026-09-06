@@ -31,8 +31,10 @@ export default function Home() {
             ga zanima, koliko stane. */}
         <Tickets />
         <GameTeaser />
-        <Aftermovie />
         <Timeline />
+        {/* Aftermovie stoji med postajami in zgodbo projekta: šele ko je jasno,
+            kaj Atlas je, ima posnetek prejšnjih izdaj kaj dokazovati. */}
+        <Aftermovie />
         <Story />
         <Partners />
         <PracticalInfo />
