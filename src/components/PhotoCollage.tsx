@@ -264,8 +264,10 @@ export default function PhotoCollage() {
                 priority
                 className={styles.full}
               />
+              {/* Pod odprto fotografijo stoji samo števec. Opis ostaja v
+                  `alt` fotografije in v oznaki gumba, kjer ga potrebuje
+                  bralnik zaslona — na sliki ga ni. */}
               <figcaption className={styles.caption}>
-                <span>{photo.alt}</span>
                 <span className={styles.counter}>
                   {open + 1} / {collage.length}
                 </span>

@@ -125,9 +125,9 @@
 .full {
   width: auto;
   max-width: 100%;
-  /* Pripis pod sliko potrebuje svoj prostor, sicer bi visoka fotografija
-     odrinila besedilo čez rob zaslona. */
-  max-height: calc(100vh - 10rem);
+  /* Pod sliko stoji samo števec, zato je zanj rezerviranega manj prostora kot
+     za nekdanji pripis — visoka fotografija dobi razliko. */
+  max-height: calc(100vh - 8rem);
   height: auto;
   margin: 0 auto;
   object-fit: contain;
@@ -136,7 +136,8 @@
 .caption {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  /* Ostal je samo števec, zato je poravnan na desni rob fotografije. */
+  justify-content: flex-end;
   gap: 1.5rem;
   color: #a8adb3;
   font-size: 0.78rem;
@@ -190,7 +191,7 @@
   .lightbox { padding: 3.5rem 0.75rem 1rem; }
   .prev { left: 0.75rem; bottom: 1rem; }
   .next { right: 0.75rem; bottom: 1rem; }
-  .full { max-height: calc(100vh - 13rem); }
+  .full { max-height: calc(100vh - 11rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {
