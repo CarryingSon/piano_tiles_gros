@@ -26,6 +26,14 @@ const performerHoverBorder: Record<PerformerAccent, string> = {
   atlas: "hover:border-atlas/50",
 };
 
+/* Gumb do Spotifyja nosi barvo zasedbe — isto kot ime nad njim. Besedilo je
+   skoraj-črno, ker so vse tri barve svetle ploskve. */
+const performerButton: Record<PerformerAccent, string> = {
+  kokosy: "bg-kokosy hover:bg-kokosy/85",
+  mrfy: "bg-mrfy hover:bg-mrfy/85",
+  atlas: "bg-atlas hover:bg-atlas/85",
+};
+
 /**
  * Zasedba 2026 kot tri vstopnice: zgoraj "plakatni" del s fotografijo in
  * imenom, pod perforacijo pa odtrgljiv kupon z datumom in krajem.
@@ -131,6 +139,21 @@ export default function Lineup() {
                   </p>
                 </div>
               </div>
+
+              {/* Dno kupona je gumb do zasedbe na Spotifyju: čez celo širino
+                  kartice in v njeni barvi, da se ga vidi, preden se bere. */}
+              <a
+                href={performer.spotifyUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`${performer.name} na Spotifyju — odpre se v novem zavihku`}
+                className={`flex items-center justify-center gap-2 px-4 py-3.5 font-display text-sm uppercase tracking-[0.18em] text-night transition-colors ${
+                  performerButton[performer.accent]
+                }`}
+              >
+                Poslušaj na Spotifyju
+                <span aria-hidden>↗</span>
+              </a>
             </li>
           ))}
         </ol>

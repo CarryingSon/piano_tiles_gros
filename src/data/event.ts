@@ -167,6 +167,12 @@ export type Performer = {
   accent: PerformerAccent;
   /** Kratek, preverjen opis — brez izmišljenih biografij. */
   description: string;
+  /**
+   * Profil zasedbe na Spotifyju. Naslov je brez parametra `?si=`: ta nosi
+   * oznako delitve tistega, ki je povezavo kopiral, in za obiskovalca ne
+   * pomeni nič.
+   */
+  spotifyUrl: string;
   /** Pot do uradne fotografije v /public. null → označen nadomestni okvir. */
   image: string | null;
   /** Mere uokvirjene datoteke — potrebne za `next/image` brez CLS. */
@@ -181,6 +187,7 @@ export const lineup: Performer[] = [
     accent: "kokosy",
     description:
       "Ena najbolj prepoznavnih zasedb nove slovenske scene — koncerti, ki jih publika poje na pamet.",
+    spotifyUrl: "https://open.spotify.com/artist/1UG4yGtozFCZpmI2IHRdJM",
     image: "/media/lineup/kokosy.webp",
     imageWidth: 925,
     imageHeight: 560,
@@ -189,6 +196,7 @@ export const lineup: Performer[] = [
     name: "MRFY",
     accent: "mrfy",
     description: "Indie rock iz Novega mesta. Kitare, ki napolnijo šotor.",
+    spotifyUrl: "https://open.spotify.com/artist/0nWEe4MRacRVVWT71b9PeM",
     image: "/media/lineup/mrfy.webp",
     imageWidth: 687,
     imageHeight: 687,
@@ -198,6 +206,7 @@ export const lineup: Performer[] = [
     accent: "atlas",
     description:
       "Ena najbolj priljubljenih slovenskih pop-rock zasedb z več kot 25 leti uspešnic.",
+    spotifyUrl: "https://open.spotify.com/artist/1ZprBjXuvJYkgmWAll8cYP",
     image: "/media/lineup/tabu.webp",
     imageWidth: 943,
     imageHeight: 599,
