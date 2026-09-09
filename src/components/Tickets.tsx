@@ -229,7 +229,7 @@ export default function Tickets() {
               {ticketsMemberNote} {organizer.address}.
             </p>
             <a
-              href={organizer.website}
+              href={organizer.contactPage}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-auto w-fit rounded-xl border border-atlas/60 px-5 py-2.5 font-display text-sm uppercase text-atlas transition-colors hover:border-atlas hover:bg-atlas hover:text-night"

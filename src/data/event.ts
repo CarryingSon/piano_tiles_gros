@@ -504,6 +504,12 @@ export const organizer = {
   phoneHref: "+38641358392",
   president: { name: "Anja Jančar", email: "predsednik@klub-gros.com" },
   website: "https://www.klub-gros.com",
+  /**
+   * Stran s kontakti in uradnimi urami kluba — tja pelje gumb pri nakupu v
+   * klubu. Naslov je zapisan s končno poševnico, ker se `\/kontakt` s 301
+   * preusmeri nanjo; brez nje bi vsak obisk plačal en skok več.
+   */
+  contactPage: "https://www.klub-gros.com/kontakt/",
   eventPage: "https://www.klub-gros.com/glasbeni-atlas-2-4/",
   socials: [
     { label: "Facebook", url: "https://www.facebook.com/sk.gros/" },
