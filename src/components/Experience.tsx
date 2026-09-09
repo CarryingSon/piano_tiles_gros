@@ -23,14 +23,14 @@ export default function Experience() {
           className="reveal max-w-3xl font-display text-4xl uppercase leading-[1.25] text-white sm:text-6xl"
         >
           To ni samo koncert.{" "}
-          <span className="text-atlas">To je večer, ki ga doživiš skupaj.</span>
+          <span className="text-atlas">To je večer, ki ga preživimo skupaj.</span>
         </h2>
         <p className="reveal mt-6 max-w-prose text-lg leading-relaxed text-fog">
-          En večer, en oder in publika, ki pride od blizu in daleč. Mlade
-          zasedbe, ki jih slišiš prvič, in imena, ki jih poznaš na pamet — vmes
-          pa prijatelji, sošolci in sosedje.{" "}
+          En večer. En oder. Nekaj bendov boš slišal prvič, nekatere pa poješ,
+          odkar znaš peti. Zraven bo pelo še pol Grosuplja in Ivančne.{" "}
           <span className="text-white">
-            Glasbeni Atlas je večer, po katerem se domov vračaš hripav.
+            Glasbeni Atlas je večer, po katerem prideš domov šele ob enih in
+            brez glasu.
           </span>
         </p>
 
