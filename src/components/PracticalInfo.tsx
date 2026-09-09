@@ -98,18 +98,19 @@ export default function PracticalInfo() {
             </div>
 
             {/* Pokončni načrt je čez celo širino stolpca prerasel podatke ob
-                sebi in za njimi puščal prazen pas, zato je na namizju manjši,
-                poravnan na sredino in z robom okoli sebe. Na telefonu ostane
-                čez celo širino brez roba, kot je bil zamišljen — tam je edini
-                stolpec in manjši bi bil neberljiv. */}
+                sebi in za njimi puščal prazen pas, zato je na namizju omejen,
+                poravnan na sredino in z robom okoli sebe. Meja je 28rem: pri
+                24 so bili napisi na stojnicah že na meji berljivosti, višje pa
+                bi kartica spet prehitela podatke. Na telefonu ostane čez celo
+                širino brez roba, kot je bil zamišljen — tam je edini stolpec. */}
             <div className="md:p-6">
               <Image
-                src="/media/nacrt-prizorisca.jpg"
-                alt="Načrt prizorišča: oder je na severnem koncu parkirišča, pred njim stojišče, ob levem robu VIP-cona s sedišči in dva šanka, sanitarije ob parkirišču, vhod za obiskovalce pa na jugovzhodni strani ob cesti."
-                width={941}
-                height={1430}
-                sizes="(min-width: 768px) 24rem, 100vw"
-                className="mx-auto h-auto w-full md:max-w-[24rem]"
+                src="/media/nacrt-prizorisca-2.webp"
+                alt="Načrt prizorišča: oder stoji na severnem koncu parkirišča, pred njim je osvetljeno stojišče z mestom za tehniko na sredini. Ob levem robu so VIP-cona s sedišči, šank in stojnica Smash Burger z drugim šankom, sanitarije so južno od stojišča, vhod za obiskovalce pa na jugovzhodni strani ob cesti."
+                width={1086}
+                height={1448}
+                sizes="(min-width: 768px) 28rem, 100vw"
+                className="mx-auto h-auto w-full md:max-w-[28rem]"
               />
             </div>
           </div>
