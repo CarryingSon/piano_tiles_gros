@@ -151,9 +151,8 @@ export default function Aftermovie() {
             </h2>
           </div>
           <p className="reveal max-w-sm text-sm leading-relaxed text-fog">
-            Posnetki niso obljuba — so dokaz. Uradna aftermovieja obeh
-            dosedanjih izdaj: 2024 pred polnim šotorom in 2022, ko se je vse
-            skupaj šele začelo.
+            Uradna aftermovieja obeh dosedanjih izdaj: 2024 pred polnim šotorom
+            in 2022, ko se je vse skupaj šele začelo.
           </p>
         </div>
 
