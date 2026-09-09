@@ -97,14 +97,21 @@ export default function PracticalInfo() {
               </p>
             </div>
 
-            <Image
-              src="/media/nacrt-prizorisca.jpg"
-              alt="Načrt prizorišča: oder je na severnem koncu parkirišča, pred njim stojišče, ob levem robu VIP-cona s sedišči in dva šanka, sanitarije ob parkirišču, vhod za obiskovalce pa na jugovzhodni strani ob cesti."
-              width={941}
-              height={1430}
-              sizes="(min-width: 768px) 45vw, 100vw"
-              className="h-auto w-full"
-            />
+            {/* Pokončni načrt je čez celo širino stolpca prerasel podatke ob
+                sebi in za njimi puščal prazen pas, zato je na namizju manjši,
+                poravnan na sredino in z robom okoli sebe. Na telefonu ostane
+                čez celo širino brez roba, kot je bil zamišljen — tam je edini
+                stolpec in manjši bi bil neberljiv. */}
+            <div className="md:p-6">
+              <Image
+                src="/media/nacrt-prizorisca.jpg"
+                alt="Načrt prizorišča: oder je na severnem koncu parkirišča, pred njim stojišče, ob levem robu VIP-cona s sedišči in dva šanka, sanitarije ob parkirišču, vhod za obiskovalce pa na jugovzhodni strani ob cesti."
+                width={941}
+                height={1430}
+                sizes="(min-width: 768px) 24rem, 100vw"
+                className="mx-auto h-auto w-full md:max-w-[24rem]"
+              />
+            </div>
           </div>
         </div>
       </div>
