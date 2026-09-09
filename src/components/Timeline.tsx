@@ -26,7 +26,7 @@ export default function Timeline() {
       <PhotoWall variant="timeline" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6">
         <p className="reveal mb-3 text-xs uppercase tracking-[0.3em] text-atlas">
-          Zgodba · Postaje
+          Zgodba
         </p>
         <h2
           id="zgodba-naslov"
