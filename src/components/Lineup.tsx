@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { CSSProperties } from "react";
 import { event, lineup, type PerformerAccent } from "@/data/event";
+import { ExternalIcon } from "@/components/Icons";
 import styles from "./LineupTicket.module.css";
 
 /* Razredi so izpisani v celoti, ker Tailwind bere izvorno kodo in sestavljenih
@@ -152,7 +153,7 @@ export default function Lineup() {
                 }`}
               >
                 Poslušaj na Spotifyju
-                <span aria-hidden>↗</span>
+                <ExternalIcon />
               </a>
             </li>
           ))}

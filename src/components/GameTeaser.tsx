@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { gameShots } from "@/data/event";
+import { ExternalIcon } from "@/components/Icons";
 import styles from "./GameTeaser.module.css";
 
 type LeaderEntry = {
@@ -103,7 +104,7 @@ export default function GameTeaser() {
             vidiš vsak komad zase.
           </p>
           <Link href="/igra" className={styles.cta}>
-            Zaigraj in se uvrsti <span aria-hidden>↗</span>
+            Zaigraj in se uvrsti <ExternalIcon />
           </Link>
         </div>
 

@@ -1,5 +1,6 @@
 import PhotoWall from "@/components/PhotoWall";
 import { lineup, playlist } from "@/data/event";
+import { ExternalIcon } from "@/components/Icons";
 
 /**
  * Uradni seznam predvajanja na dnu strani — zadnje, kar obiskovalec dobi, je
@@ -56,7 +57,7 @@ export default function Playlist() {
           rel="noopener noreferrer"
           className="reveal mt-5 inline-block text-sm uppercase tracking-[0.2em] text-fog underline-offset-4 transition-colors hover:text-atlas hover:underline"
         >
-          Odpri na Spotifyju ↗
+          Odpri na Spotifyju <ExternalIcon />
         </a>
       </div>
     </section>

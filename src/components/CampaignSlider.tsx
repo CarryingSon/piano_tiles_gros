@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Image from "next/image";
 import { campaign } from "@/data/event";
 import PhotoWall from "@/components/PhotoWall";
+import { ArrowIcon } from "@/components/Icons";
 
 /**
  * Drsnik z resničnimi kampanjskimi objavami 2026 (Instagram-grafike
@@ -45,7 +46,7 @@ export default function CampaignSlider() {
               aria-label="Prikaži prejšnjo objavo"
               className="flex h-11 w-11 items-center justify-center border border-line text-atlas transition-colors hover:border-atlas"
             >
-              <span aria-hidden>←</span>
+              <ArrowIcon direction="left" />
             </button>
             <button
               type="button"
@@ -53,7 +54,7 @@ export default function CampaignSlider() {
               aria-label="Prikaži naslednjo objavo"
               className="flex h-11 w-11 items-center justify-center border border-line text-atlas transition-colors hover:border-atlas"
             >
-              <span aria-hidden>→</span>
+              <ArrowIcon direction="right" />
             </button>
           </div>
         </div>

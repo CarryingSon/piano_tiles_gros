@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { aftermovies } from "@/data/event";
+import { CloseIcon } from "@/components/Icons";
 
 /**
  * Ena video kartica. Lokalno gostovan <video> (brez YouTube vdelave in
@@ -187,7 +188,7 @@ export default function Aftermovie() {
               aria-label="Zapri predvajalnik"
               className="absolute right-4 top-4 flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-coal/85 text-lg text-white transition-colors hover:border-atlas hover:text-atlas"
             >
-              ✕
+              <CloseIcon />
             </button>
             <video
               key={openVideo.src}

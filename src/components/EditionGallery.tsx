@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import type { EditionImage } from "@/data/event";
+import { ChevronIcon } from "@/components/Icons";
 
 /** Koliko časa se zadrži posamezna fotografija. */
 const SLIDE_MS = 4500;
@@ -75,7 +76,7 @@ export default function EditionGallery({
           aria-label="Prejšnja fotografija"
           className={`${arrow} left-3`}
         >
-          <span aria-hidden>‹</span>
+          <ChevronIcon direction="left" />
         </button>
         <button
           type="button"
@@ -83,7 +84,7 @@ export default function EditionGallery({
           aria-label="Naslednja fotografija"
           className={`${arrow} right-3`}
         >
-          <span aria-hidden>›</span>
+          <ChevronIcon direction="right" />
         </button>
       </div>
 

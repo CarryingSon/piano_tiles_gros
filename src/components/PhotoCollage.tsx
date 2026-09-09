@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { collage } from "@/data/event";
+import { ChevronIcon, CloseIcon } from "@/components/Icons";
 import styles from "./PhotoCollage.module.css";
 
 /**
@@ -235,7 +236,7 @@ export default function PhotoCollage() {
               aria-label="Zapri galerijo"
               onClick={close}
             >
-              ✕
+              <CloseIcon />
             </button>
             <button
               type="button"
@@ -246,7 +247,7 @@ export default function PhotoCollage() {
                 step(-1);
               }}
             >
-              ‹
+              <ChevronIcon direction="left" />
             </button>
 
             {/* Klik na samo fotografijo galerije ne zapre. */}
@@ -283,7 +284,7 @@ export default function PhotoCollage() {
                 step(1);
               }}
             >
-              ›
+              <ChevronIcon direction="right" />
             </button>
           </div>,
           document.body,
