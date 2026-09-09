@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { gameShots } from "@/data/event";
+import { ExternalIcon } from "@/components/Icons";
 import {
   chorusPulseSeconds,
   comboMultiplier,
@@ -336,6 +337,25 @@ function BackIcon() {
         strokeWidth="1.8"
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+/**
+ * Pause bars, drawn instead of typed. The button used to carry the roman
+ * numeral "Ⅱ": phone system fonts have no glyph for it, so it came out as an
+ * empty box — and a control nobody recognises is a control nobody presses.
+ */
+function PauseIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false">
+      <path
+        d="M9.4 5.5v13M14.6 5.5v13"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.6"
+        strokeLinecap="round"
       />
     </svg>
   );
@@ -1784,7 +1804,7 @@ export default function RhythmGame() {
               </div>
             </fieldset>
             {audioError && <p className={styles.error} role="alert">{audioError}</p>}
-            <button className={styles.primary} type="button" onClick={startGame}>Začni · {selectedSong.artist} <span aria-hidden>↗</span></button>
+            <button className={styles.primary} type="button" onClick={startGame}>Začni · {selectedSong.artist} <ExternalIcon /></button>
             <p className={styles.introFoot}>{gameConfig.event.date} · {gameConfig.event.location}</p>
           </div>
         </section>
@@ -1830,7 +1850,7 @@ export default function RhythmGame() {
               <button className={styles.iconButton} type="button" onClick={() => setMuted((value) => !value)} aria-label={muted ? "Vklopi zvok" : "Utišaj zvok"}>
                 <SpeakerIcon muted={muted} />
               </button>
-              <button className={styles.iconButton} type="button" onClick={() => pause("Igra je ustavljena.")} aria-label="Ustavi igro">Ⅱ</button>
+              <button className={styles.iconButton} type="button" onClick={() => pause("Igra je ustavljena.")} aria-label="Ustavi igro"><PauseIcon /></button>
               <Link
                 href="/"
                 className={`${styles.iconButton} ${styles.exitButton}`}
@@ -1919,7 +1939,7 @@ export default function RhythmGame() {
               <button className={styles.secondary} type="button" onClick={() => showSongSelection()}>Izberi drug komad</button>
               <button className={styles.secondary} type="button" onClick={shareResult}>Deli rezultat</button>
               <Link className={styles.secondary} href="/">Nazaj na spletno stran</Link>
-              <a className={styles.ticket} href={gameConfig.ticketUrl} target="_blank" rel="noopener noreferrer">{gameConfig.ticketLabel} ↗</a>
+              <a className={styles.ticket} href={gameConfig.ticketUrl} target="_blank" rel="noopener noreferrer">{gameConfig.ticketLabel} <ExternalIcon /></a>
             </div>
             <p className={styles.shareStatus} role="status">{shareStatus}</p>
             <div className={styles.recommendations}>
