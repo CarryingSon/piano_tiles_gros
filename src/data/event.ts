@@ -351,7 +351,6 @@ export const story = {
   paragraphs: [
     "Glasbeni Atlas smo ustvarili, ker smo želeli v domačem okolju narediti nekaj več — dogodek, ki ne temelji le na eni noči zabave. Po 20. obletnici kluba je ideja rasla, leta 2022 pa smo jo prvič uresničili.",
     "Dogodek v celoti organiziramo študentje in dijaki: od ideje, organizacije in produkcije do izvedbe. Vse nastaja znotraj ekipe, ki verjame v projekt in vanj vlaga svoj čas.",
-    "Na odru združujemo mlade, perspektivne izvajalce in uveljavljena imena slovenske scene. Zmagovalcu Bitke bendov ponujamo mesto predskupine — tako oder vsako izdajo odpre nekomu novemu.",
     "Dogodek iz leta v leto raste — po obisku, odzivu in zanimanju partnerjev. Za nas ni le koncert, ampak projekt, ki povezuje generacije, glasbo in lokalno okolje.",
   ],
 } as const;
