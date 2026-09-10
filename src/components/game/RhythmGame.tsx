@@ -1315,11 +1315,16 @@ export default function RhythmGame() {
       if (note.hold > 0) {
         const tailLead = positionAt(note.time + note.hold, song) - here;
         const tailY = top + (1 - tailLead / travel) * playHeight;
-        // Once its head reaches the line, a hold stays attached there while
-        // its tail shortens. The full-width outer path is one shape: only its
-        // remote top and head bottom are rounded, with no seam in between.
+        // A hold travels like every other tile: its head goes under the line
+        // and off the board while the tail follows it down, and what is left
+        // above the line is what is left to hold. It used to park its head on
+        // the line and shorten from the top instead, which read as the board
+        // dragging the tile to the bottom and holding it there, away from the
+        // finger. The full-width outer path is one shape: only its remote top
+        // and head bottom are rounded, with no seam in between. The clip on the
+        // playfield takes care of everything that has already gone by.
         const shapeTop = tailY - height;
-        const shapeBottom = Math.min(y, bottom);
+        const shapeBottom = y;
         const shapeHeight = Math.max(1, shapeBottom - shapeTop);
 
         context.save();
@@ -1353,25 +1358,27 @@ export default function RhythmGame() {
         context.restore();
 
         // The pastel marks the tail as it is played, and only there: it burns
-        // down at the line under the finger and never runs on ahead of it.
-        // What is still above the line has not been held yet, so it stays bare.
-        if (held && y >= bottom) {
-          const band = Math.min(shapeHeight, tileHeight * 0.4);
+        // at the line, where the tail is going under, and never runs on ahead
+        // of it. What is still above the line has not been held yet, so it
+        // stays bare, and once the head is through, the burn shrinks with the
+        // last of the tail rather than with the tile.
+        const burnHeight = Math.min(bottom - shapeTop, tileHeight * 0.4);
+        if (held && y >= bottom && burnHeight > 0) {
           context.save();
           context.beginPath();
           context.roundRect(x, shapeTop, tileWidth, shapeHeight, radius);
           context.clip();
-          const burn = context.createLinearGradient(0, shapeBottom - band, 0, shapeBottom);
+          const burn = context.createLinearGradient(0, bottom - burnHeight, 0, bottom);
           burn.addColorStop(0, withAlpha(pastel, 0));
           burn.addColorStop(1, pastel);
           context.fillStyle = burn;
-          context.fillRect(x, shapeBottom - band, tileWidth, band);
+          context.fillRect(x, bottom - burnHeight, tileWidth, burnHeight);
           context.restore();
         }
 
         // Keep the original line, dot and HOLD/DRŽI label in the head area.
         if (height > 24 && y - height < bottom) {
-          const headBottom = Math.min(y, bottom);
+          const headBottom = y;
           const headTop = headBottom - height;
           context.save();
           context.globalAlpha = dropped ? 0.42 : 1;
