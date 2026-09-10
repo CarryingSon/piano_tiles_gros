@@ -506,6 +506,13 @@ type Run = {
    * tail that already went by is gone, not credited.
    */
   holdOwedMs: Float64Array;
+  /**
+   * Where the finger carrying each lane's hold actually is, in board pixels.
+   * -1 where there is nothing to draw: the keyboard has no finger, and a lane
+   * that is not holding has nothing to show.
+   */
+  holdTouchX: Float64Array;
+  holdTouchY: Float64Array;
   holdEarned: Float64Array;
   /** Combo multiplier captured when each hold head is hit. */
   holdMultiplier: Float64Array;
@@ -552,6 +559,8 @@ function createRun(song: GameSong): Run {
     activeHold: Int32Array.from([-1, -1, -1, -1]),
     holdHeldMs: new Float64Array(4),
     holdOwedMs: new Float64Array(4),
+    holdTouchX: new Float64Array(4),
+    holdTouchY: Float64Array.from([-1, -1, -1, -1]),
     holdEarned: new Float64Array(4),
     holdMultiplier: Float64Array.from([1, 1, 1, 1]),
     lanePresses: new Int32Array(4),
@@ -590,6 +599,14 @@ export default function RhythmGame() {
   const stageRef = useRef<HTMLElement>(null);
   const hudRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<Layout | null>(null);
+  /**
+   * The board's top-left corner in viewport space, so tracking a finger across
+   * a hold never has to ask the layout engine for it. A pointermove arrives up
+   * to 120 times a second, and the HUD rewrites its text on every frame, so a
+   * getBoundingClientRect() in that handler would force a synchronous layout
+   * each time. The stage only moves when `measure` runs.
+   */
+  const stageOriginRef = useRef({ left: 0, top: 0 });
   const paintersRef = useRef<Painters>({
     sprites: {},
     flash: null,
@@ -929,6 +946,7 @@ export default function RhythmGame() {
     if (!canvas || !stage) return;
 
     const rect = stage.getBoundingClientRect();
+    stageOriginRef.current = { left: rect.left, top: rect.top };
     const hud = hudRef.current?.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const width = Math.max(1, rect.width);
@@ -1101,6 +1119,8 @@ export default function RhythmGame() {
       );
       state[target] = HOLDING;
       run.activeHold[lane] = target;
+      // The keyboard presses a lane, not a place in it: nothing to draw.
+      if (touchY === null) run.holdTouchY[lane] = -1;
       run.holdHeldMs[lane] = 0;
       run.holdOwedMs[lane] = owed * 1000;
       run.holdEarned[lane] = 0;
@@ -1188,14 +1208,34 @@ export default function RhythmGame() {
       const laneRect = laneEl.getBoundingClientRect();
       rippleAt(lane, event.clientX - laneRect.left, event.clientY - laneRect.top);
     }
+    const run = runRef.current;
+    run.holdTouchX[lane] = event.clientX - rect.left;
+    run.holdTouchY[lane] = event.clientY - rect.top;
     pressLane(lane, window.performance.now(), event.clientY - rect.top);
   }, [pressLane, rippleAt]);
+
+  /**
+   * A held finger drifts, and on a hold that lasts two seconds it drifts a long
+   * way. The lane stays the one the press landed in — the pointer is captured,
+   * so sliding sideways cannot hand the hold to a neighbour — but the place the
+   * board draws the grip on follows the finger the whole way.
+   */
+  const onPointerMove = useCallback((event: React.PointerEvent<HTMLElement>) => {
+    const lane = pointerLanesRef.current.get(event.pointerId);
+    if (lane === undefined) return;
+    const run = runRef.current;
+    if (run.activeHold[lane] < 0) return;
+    const origin = stageOriginRef.current;
+    run.holdTouchX[lane] = event.clientX - origin.left;
+    run.holdTouchY[lane] = event.clientY - origin.top;
+  }, []);
 
   const onPointerEnd = useCallback((event: React.PointerEvent<HTMLElement>) => {
     const lane = pointerLanesRef.current.get(event.pointerId);
     if (lane === undefined) return;
     event.preventDefault();
     pointerLanesRef.current.delete(event.pointerId);
+    runRef.current.holdTouchY[lane] = -1;
     releaseLane(lane);
     try {
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -1409,6 +1449,37 @@ export default function RhythmGame() {
       }
     }
 
+    // Where the finger carrying a hold actually is. A fingertip covers the very
+    // spot it presses, so this has to read around the tip and not under it: a
+    // ring wider than a thumb, breathing so it is never mistaken for a tile.
+    // It rides on top of the tail, which is what tells the player that the two
+    // belong together while the tile travels on under the finger.
+    for (let lane = 0; lane < 4; lane += 1) {
+      if (run.activeHold[lane] < 0 || run.holdTouchY[lane] < 0) continue;
+      const laneLeft = lane * laneWidth;
+      const grip = tileWidth * 0.42;
+      const gx = Math.min(
+        laneLeft + laneWidth - grip,
+        Math.max(laneLeft + grip, run.holdTouchX[lane]),
+      );
+      const gy = Math.min(bottom - grip, Math.max(top + grip, run.holdTouchY[lane]));
+      const breath = grip * (1 + Math.sin(now / 170) * 0.07);
+      context.save();
+      context.strokeStyle = blendColor(pastel, "rgba(5,7,8,1)", mix);
+      context.shadowColor = context.strokeStyle;
+      context.shadowBlur = 14;
+      context.lineWidth = 3;
+      context.globalAlpha = 0.9;
+      context.beginPath();
+      context.arc(gx, gy, breath, 0, TAU);
+      context.stroke();
+      context.globalAlpha = 0.28;
+      context.beginPath();
+      context.arc(gx, gy, breath * 0.55, 0, TAU);
+      context.stroke();
+      context.restore();
+    }
+
     context.restore();
   }, []);
 
@@ -1567,8 +1638,15 @@ export default function RhythmGame() {
         const held = run.activeHold[lane];
         if (held < 0) continue;
         const note = notes[held];
+        // Pressed before the head reached the line, the finger is holding a
+        // tile that has not arrived. That is a legal early hit and keeps the
+        // combo, but it is not time on the hold: paying for it would let a
+        // player finish a hold — grace window and all — before its tail was
+        // anywhere near the line.
         const before = run.holdHeldMs[lane];
-        const after = Math.min(run.holdOwedMs[lane], before + deltaMs);
+        const after = songTime < note.time
+          ? before
+          : Math.min(run.holdOwedMs[lane], before + deltaMs);
         if (after > before) {
           const earned = holdPointsPerSecond(note.hold)
             * ((after - before) / 1000)
@@ -1969,6 +2047,7 @@ export default function RhythmGame() {
           data-section="intro"
           style={{ "--chorus-pulse": `${chorusPulseSeconds(selectedSong)}s` } as React.CSSProperties}
           onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
           aria-label="Igralno polje. Tapni po ploščici, ko pade v tvojo bližino."
