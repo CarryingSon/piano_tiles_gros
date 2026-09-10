@@ -271,6 +271,15 @@ export const gameConfig = {
     perfectWindowMs: 530,
     /** … in toliko meri, ko je hitrost na vrhu. */
     perfectWindowEndMs: 250,
+    /**
+     * Delež Perfect okna, po katerem se sodi glava holda.
+     *
+     * Tap se pri glavi konča, hold pa se tam šele začne: zamujena glava odreže
+     * kos repa in s tem izplačilo, dokler je pa okno enako kot pri tapu, je
+     * vsaka taka glava vseeno Perfect. Pol okna pomeni, da je treba ploščico
+     * počakati niže — sodba pri glavi zdaj pove isto, kar izplačilo repa.
+     */
+    holdHeadWindow: 0.5,
     /** Koliko časa po črti je ploščica še igralna, na začetku komada. */
     lateWindowMs: 260,
     /** … in toliko ob koncu, po isti krivulji kot Perfect okno. */

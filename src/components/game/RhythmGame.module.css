@@ -7,21 +7,32 @@
   --band-pastel: color-mix(in srgb, var(--band-color) 45%, white);
   --band-deep: color-mix(in srgb, var(--band-color) 22%, #0a0a0a);
   --band-glow: color-mix(in srgb, var(--band-color) 40%, transparent);
-  /* Refren: barva zalije celo ozadje in glow je 60 % močnejši.
-     --band-deep-lit je spodnji rob refrenskega ozadja, --band-deep zgornji.
-     42 % je kompromis: dovolj, da se iz črne kitice zagori, in ne toliko, da bi
-     ozadje pojedlo ploščice, ki v refrenu nosijo polno --band-color.
-     Ploščica v kitici je --band-tile, ista barva, potisnjena proti noči.
-     Zatemnitev je edina pot, ki se prebere pri vseh treh bendih — mešanje proti
-     beli pri Tabu rumeni skoraj ne premakne barve. */
-  --band-deep-lit: color-mix(in srgb, var(--band-color) 42%, #0a0a0a);
-  --band-glow-lit: color-mix(in srgb, var(--band-color) 64%, transparent);
+  /* Refren obrne ploščo. Kitica je črna plošča z barvo benda nad njo, refren
+     barva benda v polni moči s črnino nad njo: ozadje gre v --band-flood,
+     ploščice, pisava in življenja pa v --board-ink. Prej je bila barva refrena
+     potisnjena proti noči, ker so ploščice nosile polno --band-color; zdaj je
+     ravno obratno in barva sme goreti do konca.
+     --band-flood je spodnji rob refrenskega ozadja, --band-flood-top zgornji;
+     ta dva sta edina gumba za to, kako močno refren zagori.
+     Ploščica v kitici je --band-tile, ista barva, potisnjena proti noči. */
+  --band-flood: var(--band-color);
+  --band-flood-top: color-mix(in srgb, var(--band-color) 78%, #0a0a0a);
   --band-tile: color-mix(in srgb, var(--band-color) 74%, #0a0a0a);
   --lane-glow: var(--band-glow);
+  /* Kar je nad ploščo, mora brati na tem, kar je pod njim: v kitici svetloba na
+     črnem, v refrenu črnina na barvi. Nobeno pravilo naprej ne sme tega obrata
+     početi po svoje — prevrne ga en sam blok pri .game[data-section="chorus"]. */
+  --board-ink: #f6f6f6;
+  --board-accent: var(--band-color);
+  --board-dim: #a8adb3;
   /* Napaki sta samo dve in nista v barvi benda, da ju ni mogoče zamenjati z
-     zadetkom: zgrešena ploščica je rdeča, napačen klik siv. */
+     zadetkom: zgrešena ploščica je rdeča, napačen klik siv. Good je roza.
+     Vse tri obdržijo svoj odtenek tudi v refrenu, le potisnjen v temo — rdeča
+     na MRFY-jevem oranžnem in roza na Kokosyjevem roza refrenu sta drugače
+     ista barva kot tla in beseda izgine. */
   --miss-color: #ff4d3d;
   --misclick-color: #9aa0a6;
+  --good-color: #e99fd6;
   /* Oblika življenja. Maska, da srček podeduje barvo benda in sivino, ko je
      porabljen — z barvo, zapečeno v SVG, bi rabili dve sliki. */
   --heart: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M12 21.3l-1.5-1.4C5.4 15.3 2 12.2 2 8.5 2 5.4 4.4 3 7.5 3c1.7 0 3.4.8 4.5 2.1C13.1 3.8 14.8 3 16.5 3 19.6 3 22 5.4 22 8.5c0 3.7-3.4 6.8-8.5 11.4L12 21.3z'/%3E%3C/svg%3E");
@@ -458,11 +469,15 @@
   text-transform: uppercase;
 }
 
+/* Pisava potuje z ozadjem: ista 1,1 s kot .backdrop, da se plošča obrne v enem
+   zamahu in ne v dveh. */
 .game {
   position: absolute;
   inset: 0;
   padding: max(.7rem, env(safe-area-inset-top)) 0 max(.45rem, env(safe-area-inset-bottom));
+  color: var(--board-ink);
   touch-action: none;
+  transition: color 1.1s linear;
 }
 
 /* Tri kolone namesto space-between: srednja je s `1fr auto 1fr` optično točno na
@@ -484,7 +499,7 @@
 
 .hudValue span {
   display: block;
-  color: #a8adb3;
+  color: var(--board-dim);
   font-size: .56rem;
   letter-spacing: .16em;
   text-transform: uppercase;
@@ -515,11 +530,11 @@
   text-align: center;
 }
 
-.hudScore span { color: color-mix(in srgb, var(--band-color) 62%, #a8adb3); }
+.hudScore span { color: color-mix(in srgb, var(--board-accent) 62%, var(--board-dim)); }
 
 .hudScore strong {
   justify-content: center;
-  color: var(--band-color);
+  color: var(--board-accent);
   font-size: 2.05rem;
 }
 
@@ -546,13 +561,13 @@
 .lives i {
   width: .78rem;
   height: .78rem;
-  background: var(--band-color);
+  background: var(--board-accent);
   transition: background .15s ease;
   -webkit-mask: var(--heart) center / contain no-repeat;
   mask: var(--heart) center / contain no-repeat;
 }
 
-.lives i[data-spent="1"] { background: rgb(255 255 255 / .22); }
+.lives i[data-spent="1"] { background: color-mix(in srgb, var(--board-ink) 22%, transparent); }
 
 .canvas {
   position: absolute;
@@ -578,13 +593,11 @@
   transition: background 1.1s linear, opacity 1.1s ease;
 }
 
-/* Refren zalije celo igrišče, ne samo spodnji rob: spodaj --band-deep-lit,
-   proti vrhu --band-deep. Oba sta barva benda, potisnjena proti noči — polna
-   --band-color bi bila presvetla in bi požrla ploščice, ki so prav v refrenu
-   pobarvane s polno barvo. Odstotka teh dveh žetonov na vrhu datoteke sta edina
-   gumba za to, kako močno refren zagori. */
+/* Refren zalije celo igrišče s polno barvo benda: rumeno pri Tabu, roza pri
+   Kokosy, rdeče pri MRFY. Proti vrhu se umiri v --band-flood-top, da plošča ni
+   ravna ploskev. Ploščice odgovorijo v črni, zato barve ni treba zadrževati. */
 .game[data-section="chorus"] .backdrop {
-  background: linear-gradient(to top, var(--band-deep-lit) 0%, var(--band-deep) 100%);
+  background: linear-gradient(to top, var(--band-flood) 0%, var(--band-flood-top) 100%);
   animation: chorusBreath var(--chorus-pulse, 8s) ease-in-out infinite;
 }
 
@@ -602,9 +615,17 @@
   background: radial-gradient(ellipse at 50% 100%, var(--band-deep) 0%, #050708 62%);
 }
 
-/* Refren posveti tudi steze in ploščice. */
+/* Obrat na enem mestu: pod nogami je barva, torej gre vse nad njo v črno.
+   --lane-glow je edina izjema, ki ni pisava: dih steze mora biti temen, sicer
+   se barva na barvi ne vidi. */
 .game[data-section="chorus"] {
-  --lane-glow: var(--band-glow-lit);
+  --lane-glow: rgb(5 7 8 / .3);
+  --board-ink: #07090a;
+  --board-accent: #07090a;
+  --board-dim: color-mix(in srgb, #07090a 70%, var(--band-color));
+  --miss-color: #7a1005;
+  --misclick-color: #33383d;
+  --good-color: #5c2350;
 }
 
 /* ------------------------------------------------------------ odziv steze */
@@ -628,8 +649,8 @@
 }
 
 .game[data-section="chorus"] .lane {
-  box-shadow: inset 1px 0 0 color-mix(in srgb, var(--band-color) 55%, transparent),
-              inset -1px 0 0 color-mix(in srgb, var(--band-color) 55%, transparent);
+  box-shadow: inset 1px 0 0 rgb(5 7 8 / .22),
+              inset -1px 0 0 rgb(5 7 8 / .22);
 }
 
 /* Bliskec ob dnu steze ob pritisku. */
@@ -665,6 +686,8 @@
   background: var(--band-pastel);
   pointer-events: none;
 }
+
+.game[data-section="chorus"] .ripple { background: rgb(5 7 8 / .42); }
 
 /* Živi "+N" števec holda; isti element ob zaključku odplava navzgor. */
 .floaters {
@@ -722,14 +745,14 @@
   left: .8rem;
   height: 3px;
   overflow: hidden;
-  background: rgb(255 255 255 / .16);
+  background: color-mix(in srgb, var(--board-ink) 16%, transparent);
 }
 
 .progress > span {
   display: block;
   width: 100%;
   height: 100%;
-  background: var(--band-color);
+  background: var(--board-accent);
   transform: scaleX(var(--progress));
   transform-origin: left;
 }
@@ -749,11 +772,18 @@
   transform: translateX(-50%) rotate(-3deg);
 }
 
-.feedback[data-grade="perfect"] { color: var(--band-color); }
-.feedback[data-grade="good"] { color: #e99fd6; }
+.feedback[data-grade="perfect"] { color: var(--board-accent); }
+.feedback[data-grade="good"] { color: var(--good-color); }
 .feedback[data-grade="miss"] { color: var(--miss-color); }
 .feedback[data-grade="misclick"] { color: var(--misclick-color); }
-.feedback[data-grade="hold"] { color: #f6f6f6; }
+.feedback[data-grade="hold"] { color: var(--board-ink); }
+
+/* Poleg temnejšega odtenka besedo od tal loči še obroba. Perfect in Drži sta v
+   refrenu že črna, zato ju obroba ne premakne. */
+.game[data-section="chorus"] .feedback {
+  paint-order: stroke fill;
+  -webkit-text-stroke: .11em #07090a;
+}
 
 /*
  * The milestone banner sits above the feedback word but below the pause
@@ -784,14 +814,14 @@
   left: 50%;
   width: min(48vw, 15rem);
   aspect-ratio: 1;
-  border: 3px solid var(--band-color);
+  border: 3px solid var(--board-accent);
   border-radius: 50%;
   opacity: 0;
   transform: translate(-50%, -50%);
 }
 
 .milestoneLabel {
-  color: var(--band-color);
+  color: var(--board-accent);
   font-family: var(--font-display);
   font-size: min(26vw, 7rem);
   font-weight: 800;
@@ -800,7 +830,7 @@
 }
 
 .milestoneNote {
-  color: #f6f6f6;
+  color: var(--board-ink);
   font-size: .82rem;
   font-weight: 700;
   letter-spacing: .14em;
@@ -813,7 +843,7 @@
   z-index: 6;
   top: 50%;
   left: 50%;
-  color: var(--band-color);
+  color: var(--board-accent);
   font-family: var(--font-display);
   font-size: min(42vw, 11rem);
   line-height: 1;

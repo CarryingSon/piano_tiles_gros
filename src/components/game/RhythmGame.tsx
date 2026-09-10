@@ -33,7 +33,19 @@ const DONE = 2;
 const RELEASED = 3;
 
 const KEY_LANES: Record<string, Lane> = { d: 0, f: 1, j: 2, k: 3 };
+/**
+ * The board is painted twice over: light on the black verse, dark on the band's
+ * colour once the chorus floods it. Every pair below is the same mark in those
+ * two grounds, and `Run.chorusMix` says how far between them the board is.
+ */
 const LANE_IDLE = ["rgba(255,255,255,.02)", "rgba(255,255,255,.05)"] as const;
+const LANE_IDLE_INK = ["rgba(5,7,8,.04)", "rgba(5,7,8,.09)"] as const;
+const LANE_LINE = "rgba(246,246,246,.1)";
+const LANE_LINE_INK = "rgba(5,7,8,.16)";
+/** The chorus tile itself: black, whatever is behind it. */
+const CHORUS_TILE = "#07090a";
+/** Matches the 1.1s backdrop transition in RhythmGame.module.css. */
+const SECTION_FADE_MS = 1100;
 const TAU = Math.PI * 2;
 /** How long the pastel afterimage of a tapped tile stays on the board. */
 const TAP_FLASH_MS = 150;
@@ -228,11 +240,17 @@ function speedProgress(time: number, song: GameSong) {
   return Math.max(0, Math.min(1, (speedAt(time, song) - 1) / (top - 1)));
 }
 
-/** Perfect window in milliseconds at an absolute song time. */
-function perfectWindowAt(time: number, song: GameSong) {
-  const { perfectWindowMs, perfectWindowEndMs } = gameConfig.play;
-  return perfectWindowMs
+/**
+ * Perfect window in milliseconds at an absolute song time. A hold head is
+ * judged inside a fraction of it: a tap ends at the head, a hold only starts
+ * there, so a late head that already cost the player a slice of the tail has
+ * to show in the grade too.
+ */
+function perfectWindowAt(time: number, song: GameSong, hold = 0) {
+  const { perfectWindowMs, perfectWindowEndMs, holdHeadWindow } = gameConfig.play;
+  const width = perfectWindowMs
     + (perfectWindowEndMs - perfectWindowMs) * speedProgress(time, song);
+  return hold > 0 ? width * holdHeadWindow : width;
 }
 
 /** How long past the line a tile stays playable at an absolute song time. */
@@ -279,6 +297,44 @@ function fade(hex: string, alpha: number) {
  * Re-alphas a colour read off a probe element. A browser reports a color-mix()
  * result as `color(srgb …)` rather than `rgb()`, and both have to survive here.
  */
+/**
+ * Both spellings a computed colour can come back in, read out as 0-255 channels
+ * plus alpha. `color(<space> r g b / a)` carries its channels as 0-1 and its
+ * space name can hold digits of its own (display-p3), so the name is dropped by
+ * position rather than by matching.
+ */
+function parseColor(color: string): [number, number, number, number] | null {
+  const alphaOf = (raw: string | undefined) => {
+    if (raw === undefined) return 1;
+    const value = raw.trim().endsWith("%") ? Number(raw.trim().slice(0, -1)) / 100 : Number(raw);
+    return Number.isFinite(value) ? value : 1;
+  };
+
+  if (color.startsWith("color(")) {
+    const [body, alpha] = color.slice(6, color.lastIndexOf(")")).split("/");
+    const rgb = body.trim().split(/\s+/).slice(1).map(Number);
+    if (rgb.length < 3 || rgb.some((value) => !Number.isFinite(value))) return null;
+    return [rgb[0] * 255, rgb[1] * 255, rgb[2] * 255, alphaOf(alpha)];
+  }
+
+  const parts = color.match(/[\d.]+/g);
+  if (!parts || parts.length < 3) return null;
+  return [Number(parts[0]), Number(parts[1]), Number(parts[2]), alphaOf(parts[3])];
+}
+
+/**
+ * Straight lerp between two colours. The board crosses from light-on-black to
+ * dark-on-colour over a section boundary and must not pop, so every mark that is
+ * one flat colour is mixed rather than switched.
+ */
+function blendColor(from: string, to: string, t: number) {
+  const a = parseColor(from);
+  const b = parseColor(to);
+  if (!a || !b) return t < 0.5 ? from : to;
+  const channel = (i: number) => Math.round(a[i] + (b[i] - a[i]) * t);
+  return `rgba(${channel(0)},${channel(1)},${channel(2)},${a[3] + (b[3] - a[3]) * t})`;
+}
+
 function withAlpha(color: string, alpha: number) {
   if (color.startsWith("color(")) {
     const body = color.slice(6, color.lastIndexOf(")")).split("/")[0].trim();
@@ -400,7 +456,13 @@ type Layout = {
 };
 
 type Sprite = { canvas: HTMLCanvasElement; pad: number; width: number; height: number };
-type Painters = { sprites: Record<string, Sprite>; flash: CanvasGradient | null; palette: Palette };
+type Painters = {
+  sprites: Record<string, Sprite>;
+  /** The wash under a pressed lane, one per ground. */
+  flash: CanvasGradient | null;
+  flashInk: CanvasGradient | null;
+  palette: Palette;
+};
 
 /** Per-round mutable state. Lives in a ref so the frame loop never re-renders. */
 type Run = {
@@ -430,14 +492,23 @@ type Run = {
   milestone: number;
   over: boolean;
   section: SectionType | "";
+  /**
+   * 0 on the black verse board, 1 on the flooded chorus board, and on its way
+   * between the two for `SECTION_FADE_MS` around every boundary.
+   */
+  chorusMix: number;
   frameAt: number;
   activeHold: Int32Array;
   holdHeldMs: Float64Array;
+  /**
+   * How much of the active hold was still above the line the moment its head
+   * was struck. That remainder is all a hold can ever pay: press late and the
+   * tail that already went by is gone, not credited.
+   */
+  holdOwedMs: Float64Array;
   holdEarned: Float64Array;
   /** Combo multiplier captured when each hold head is hit. */
   holdMultiplier: Float64Array;
-  /** Played fraction per note; RELEASED holds keep this frozen on the board. */
-  holdFill: Float64Array;
   lanePresses: Int32Array;
   laneFlash: Float64Array;
   laneTapAt: Float64Array;
@@ -476,12 +547,13 @@ function createRun(song: GameSong): Run {
     milestone: 0,
     over: false,
     section: "",
+    chorusMix: sectionAt(song, 0) === "chorus" ? 1 : 0,
     frameAt: 0,
     activeHold: Int32Array.from([-1, -1, -1, -1]),
     holdHeldMs: new Float64Array(4),
+    holdOwedMs: new Float64Array(4),
     holdEarned: new Float64Array(4),
     holdMultiplier: Float64Array.from([1, 1, 1, 1]),
-    holdFill: new Float64Array(notes.length),
     lanePresses: new Int32Array(4),
     laneFlash: new Float64Array(4),
     laneTapAt: Float64Array.from([-1, -1, -1, -1]),
@@ -521,6 +593,7 @@ export default function RhythmGame() {
   const paintersRef = useRef<Painters>({
     sprites: {},
     flash: null,
+    flashInk: null,
     palette: {
       color: "#ffd800", pastel: "#ffd800", deep: "#0a0a0a",
       glow: "rgba(255,216,0,.4)", tile: "#ffd800",
@@ -889,13 +962,17 @@ export default function RhythmGame() {
     // frame is what made the old board stutter on phones. Variable-length hold
     // shapes are painted directly below, since their geometry changes live.
     //
-    // One sprite per part of the song: the chorus tile carries the band's full
-    // colour and a wider halo, the verse tile the same colour pushed towards the
-    // night. The pad has to clear the blur, so the two differ in size as well.
+    // One sprite per part of the song, and the two parts trade places. The verse
+    // tile is the band's colour pushed towards the night, on a black board. The
+    // chorus tile is black, on a board the band's colour has flooded — and it
+    // carries that colour as a ring, because a chorus tile is already on screen
+    // while the board behind it is still the black verse: there the ring is what
+    // reads, and once the colour lands under it, its black body takes over.
+    // The pad has to clear the blur, so the two differ in size as well.
     const sprites: Record<string, Sprite> = {};
-    for (const { color, blur } of [
-      { color: palette.color, blur: 26 },
-      { color: palette.tile, blur: 16 },
+    for (const { color, ring, ink, blur } of [
+      { color: CHORUS_TILE, ring: palette.color, ink: palette.pastel, blur: 26 },
+      { color: palette.tile, ring: "", ink: "#050708", blur: 16 },
     ]) {
       const pad = blur + 4;
       const sprite = document.createElement("canvas");
@@ -906,16 +983,23 @@ export default function RhythmGame() {
       const g = sprite.getContext("2d");
       if (!g) continue;
       g.scale(dpr, dpr);
-      g.shadowColor = color;
+      g.shadowColor = ring || color;
       g.shadowBlur = blur;
       g.fillStyle = color;
       g.beginPath();
       g.roundRect(pad, pad, tileWidth, tileHeight, radius);
       g.fill();
       g.shadowBlur = 0;
-      g.fillStyle = "rgba(5,7,8,.8)";
+      if (ring) {
+        g.strokeStyle = ring;
+        g.lineWidth = 3;
+        g.beginPath();
+        g.roundRect(pad + 1.5, pad + 1.5, tileWidth - 3, tileHeight - 3, Math.max(0, radius - 1.5));
+        g.stroke();
+      }
+      g.fillStyle = withAlpha(ink, 0.8);
       g.fillRect(pad + 9, pad + tileHeight / 2 - 1, tileWidth - 18, 2);
-      g.fillStyle = "#050708";
+      g.fillStyle = ink;
       g.beginPath();
       g.arc(pad + tileWidth - 13, pad + 13, 3, 0, TAU);
       g.fill();
@@ -924,12 +1008,18 @@ export default function RhythmGame() {
 
     const board = canvas.getContext("2d");
     let flash: CanvasGradient | null = null;
+    let flashInk: CanvasGradient | null = null;
     if (board) {
       flash = board.createLinearGradient(0, top, 0, bottom);
       flash.addColorStop(0, withAlpha(palette.color, 0));
       flash.addColorStop(1, withAlpha(palette.color, 0.18));
+      // The same wash for the flooded board: the band's colour on its own
+      // colour is nothing, so there the lane darkens instead of lighting up.
+      flashInk = board.createLinearGradient(0, top, 0, bottom);
+      flashInk.addColorStop(0, "rgba(5,7,8,0)");
+      flashInk.addColorStop(1, "rgba(5,7,8,.22)");
     }
-    paintersRef.current = { sprites, flash, palette };
+    paintersRef.current = { sprites, flash, flashInk, palette };
   }, [placeHoldCounter, readPalette]);
 
   useEffect(() => {
@@ -999,15 +1089,21 @@ export default function RhythmGame() {
 
     const lead = positionAt(notes[target].time, song) - here;
     const deltaMs = Math.abs((notes[target].time - songTime) * 1000);
-    const perfect = deltaMs <= perfectWindowAt(notes[target].time, song);
+    const perfect = deltaMs <= perfectWindowAt(notes[target].time, song, notes[target].hold);
     const hitY = layout ? layout.top + (1 - lead / travel) * layout.playHeight : 0;
     if (notes[target].hold > 0) {
       // The head counts as a hit right away; the points come in over the hold.
+      // Only the tail still above the line is on the table: a head struck late
+      // starts its hold here, not back where the tile began.
+      const owed = Math.min(
+        notes[target].hold,
+        Math.max(0, notes[target].time + notes[target].hold - songTime),
+      );
       state[target] = HOLDING;
       run.activeHold[lane] = target;
       run.holdHeldMs[lane] = 0;
+      run.holdOwedMs[lane] = owed * 1000;
       run.holdEarned[lane] = 0;
-      run.holdFill[target] = 0;
       run.laneFlash[lane] = now + 400;
       run.combo += 1;
       if (run.combo > run.bestCombo) run.bestCombo = run.combo;
@@ -1021,7 +1117,7 @@ export default function RhythmGame() {
       if (perfect) run.perfect += 1;
       else run.good += 1;
       beginHoldCounter(lane);
-      flashFeedback("Drži", "hold");
+      flashFeedback("Drži", perfect ? "hold" : "good");
       hapticTick(12);
       return;
     }
@@ -1046,27 +1142,27 @@ export default function RhythmGame() {
     // payout is built on, the second is what the player sees. Either one
     // landing inside the window counts, so the smoothing on the audio clock can
     // never eat a release the player made on the beat.
-    const heldOut = note.hold * 1000 - run.holdHeldMs[lane] <= holdGraceMs;
+    const owedMs = run.holdOwedMs[lane];
+    // What this hold is worth to this player: the whole `hold` payout only for
+    // a head struck on the line, and its owed share of it for one struck late.
+    const share = note.hold > 0 ? owedMs / (note.hold * 1000) : 1;
+    const heldOut = owedMs - run.holdHeldMs[lane] <= holdGraceMs;
     const tailClose = (note.time + note.hold - songTime) * 1000 <= holdGraceMs;
-    const full = holdPoints * multiplier;
-    const playedFraction = note.hold > 0
-      ? Math.min(1, run.holdHeldMs[lane] / (note.hold * 1000))
-      : 1;
+    const full = holdPoints * multiplier * share;
 
     let earned = run.holdEarned[lane];
     if (!released || heldOut || tailClose) {
       earned += Math.max(0, full - earned);
-      if (released) earned += holdPoints * holdGraceBonus * multiplier;
+      if (released) earned += holdPoints * holdGraceBonus * multiplier * share;
       run.state[held] = DONE;
-      run.holdFill[held] = 1;
     } else {
       run.state[held] = RELEASED;
-      run.holdFill[held] = playedFraction;
     }
 
     run.score += earned - run.holdEarned[lane];
     run.activeHold[lane] = -1;
     run.holdHeldMs[lane] = 0;
+    run.holdOwedMs[lane] = 0;
     run.holdEarned[lane] = 0;
     run.holdMultiplier[lane] = 1;
     finishHoldCounter(lane, Math.round(earned));
@@ -1123,12 +1219,23 @@ export default function RhythmGame() {
 
     const run = runRef.current;
     const painters = paintersRef.current;
-    for (let lane = 0; lane < 4; lane += 1) {
-      const lit = run.lanePresses[lane] > 0 || run.laneFlash[lane] > now;
-      context.fillStyle = lit && painters.flash ? painters.flash : LANE_IDLE[lane % 2];
-      context.fillRect(lane * laneWidth, top, laneWidth, playHeight);
+    const mix = run.chorusMix;
+    // Two grounds, one board: the light layer fades out as the dark one fades
+    // in, so a section boundary crosses instead of snapping.
+    for (const [weight, idle, flash] of [
+      [1 - mix, LANE_IDLE, painters.flash],
+      [mix, LANE_IDLE_INK, painters.flashInk],
+    ] as const) {
+      if (weight <= 0.002) continue;
+      context.globalAlpha = weight;
+      for (let lane = 0; lane < 4; lane += 1) {
+        const lit = run.lanePresses[lane] > 0 || run.laneFlash[lane] > now;
+        context.fillStyle = lit && flash ? flash : idle[lane % 2];
+        context.fillRect(lane * laneWidth, top, laneWidth, playHeight);
+      }
     }
-    context.strokeStyle = "rgba(246,246,246,.1)";
+    context.globalAlpha = 1;
+    context.strokeStyle = blendColor(LANE_LINE, LANE_LINE_INK, mix);
     context.lineWidth = 1;
     context.beginPath();
     for (let lane = 1; lane < 4; lane += 1) {
@@ -1150,9 +1257,10 @@ export default function RhythmGame() {
     context.rect(0, top, width, playHeight);
     context.clip();
 
-    // The pastel print a struck tile leaves behind, so a tap is visible even
-    // though the tile itself is gone the instant it is hit.
-    context.fillStyle = pastel;
+    // The print a struck tile leaves behind, so a tap is visible even though the
+    // tile itself is gone the instant it is hit: pastel on the black verse
+    // board, ink on the flooded chorus one.
+    context.fillStyle = blendColor(pastel, "rgba(5,7,8,1)", mix);
     for (let lane = 0; lane < 4; lane += 1) {
       const until = run.laneHitAt[lane];
       if (until <= now) continue;
@@ -1180,7 +1288,13 @@ export default function RhythmGame() {
 
       const held = state[i] === HOLDING;
       const dropped = state[i] === RELEASED;
-      const color = run.chorusNote[i] ? chorusColor : verseColor;
+      // A tile is coloured by the part of the song it belongs to, not by the
+      // ground it happens to be over: the chorus tile is black with the band's
+      // colour ringed around it, the verse tile that colour pushed into night.
+      const chorusTile = run.chorusNote[i] === 1;
+      const color = chorusTile ? CHORUS_TILE : verseColor;
+      const ring = chorusTile ? chorusColor : "";
+      const ink = chorusTile ? pastel : "#050708";
       const x = note.lane * laneWidth + 6;
       const y = top + (1 - lead / travel) * playHeight;
 
@@ -1207,35 +1321,51 @@ export default function RhythmGame() {
         const shapeTop = tailY - height;
         const shapeBottom = Math.min(y, bottom);
         const shapeHeight = Math.max(1, shapeBottom - shapeTop);
-        const fillProgress = held || dropped ? run.holdFill[i] : 0;
 
         context.save();
         context.globalAlpha = dropped ? 0.25 : 1;
-        context.fillStyle = dropped ? "#f6f6f6" : held ? withAlpha(color, 0.45) : color;
+        // A held verse tail thins out so the burn at the line reads against it.
+        // Black cannot be thinned that way — on the flooded board it would just
+        // let the ground through — so a held chorus tail keeps its body and
+        // says it with the glow instead.
+        context.fillStyle = dropped || (held && !chorusTile)
+          ? (dropped ? "#f6f6f6" : withAlpha(color, 0.45))
+          : color;
         if (!dropped) {
-          context.shadowColor = held ? pastel : color;
-          context.shadowBlur = 16;
+          context.shadowColor = held ? pastel : (ring || color);
+          context.shadowBlur = held && chorusTile ? 22 : 16;
         }
         context.beginPath();
         context.roundRect(x, shapeTop, tileWidth, shapeHeight, radius);
         context.fill();
+        if (ring && !dropped) {
+          context.shadowBlur = 0;
+          context.strokeStyle = held ? pastel : ring;
+          context.lineWidth = 3;
+          context.beginPath();
+          context.roundRect(
+            x + 1.5, shapeTop + 1.5,
+            tileWidth - 3, Math.max(1, shapeHeight - 3),
+            Math.max(0, radius - 1.5),
+          );
+          context.stroke();
+        }
         context.restore();
 
-        // Clip the pastel fill to that same outer path. Its straight live edge
-        // is internal; only the two ends of the complete hold are rounded.
-        if (fillProgress > 0) {
+        // The pastel marks the tail as it is played, and only there: it burns
+        // down at the line under the finger and never runs on ahead of it.
+        // What is still above the line has not been held yet, so it stays bare.
+        if (held && y >= bottom) {
+          const band = Math.min(shapeHeight, tileHeight * 0.4);
           context.save();
           context.beginPath();
           context.roundRect(x, shapeTop, tileWidth, shapeHeight, radius);
           context.clip();
-          context.globalAlpha = dropped ? 0.78 : 1;
-          context.fillStyle = pastel;
-          context.fillRect(
-            x,
-            shapeBottom - shapeHeight * fillProgress,
-            tileWidth,
-            shapeHeight * fillProgress,
-          );
+          const burn = context.createLinearGradient(0, shapeBottom - band, 0, shapeBottom);
+          burn.addColorStop(0, withAlpha(pastel, 0));
+          burn.addColorStop(1, pastel);
+          context.fillStyle = burn;
+          context.fillRect(x, shapeBottom - band, tileWidth, band);
           context.restore();
         }
 
@@ -1245,7 +1375,7 @@ export default function RhythmGame() {
           const headTop = headBottom - height;
           context.save();
           context.globalAlpha = dropped ? 0.42 : 1;
-          context.fillStyle = "#050708";
+          context.fillStyle = ink;
           context.fillRect(x + 9, headTop + height / 2 - 1, tileWidth - 18, 2);
           context.beginPath();
           context.arc(x + tileWidth - 13, headTop + 13, 3, 0, TAU);
@@ -1415,22 +1545,29 @@ export default function RhythmGame() {
       const deltaMs = run.frameAt > 0 ? Math.min(64, now - run.frameAt) : 0;
       run.frameAt = now;
 
+      // The canvas turns over the same 1.1 s as the backdrop in CSS: flipping
+      // the board on the boundary frame would pop while the colour behind it is
+      // still on its way.
+      const litTarget = sectionAt(song, songTime) === "chorus" ? 1 : 0;
+      const step = deltaMs / SECTION_FADE_MS;
+      run.chorusMix = litTarget > run.chorusMix
+        ? Math.min(litTarget, run.chorusMix + step)
+        : Math.max(litTarget, run.chorusMix - step);
+
       // Holds pay as they are held, a fragment of a point per frame, and settle
       // up once the tail has crossed the line.
       for (let lane = 0; lane < 4; lane += 1) {
         const held = run.activeHold[lane];
         if (held < 0) continue;
         const note = notes[held];
-        const requiredMs = note.hold * 1000;
         const before = run.holdHeldMs[lane];
-        const after = Math.min(requiredMs, before + deltaMs);
+        const after = Math.min(run.holdOwedMs[lane], before + deltaMs);
         if (after > before) {
           const earned = holdPointsPerSecond(note.hold)
             * ((after - before) / 1000)
             * run.holdMultiplier[lane];
           run.holdHeldMs[lane] = after;
           run.holdEarned[lane] += earned;
-          run.holdFill[held] = requiredMs > 0 ? after / requiredMs : 1;
           run.score += earned;
         }
         if (positionAt(note.time + note.hold, song) - here <= 0) {
