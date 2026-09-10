@@ -1292,6 +1292,23 @@ export default function RhythmGame() {
     const { color: chorusColor, pastel, tile: verseColor } = painters.palette;
     const radius = tileHeight * gameConfig.play.tileRadius;
 
+    // Where each carried hold is gripped. The fill line inside the tile and the
+    // ring drawn on top of it both read this, so they cannot drift apart. -1 is
+    // a lane with no finger on it: nothing held, or held from the keyboard,
+    // which presses a lane rather than a place in it.
+    const gripX = [0, 0, 0, 0];
+    const gripY = [-1, -1, -1, -1];
+    for (let lane = 0; lane < 4; lane += 1) {
+      if (run.activeHold[lane] < 0 || run.holdTouchY[lane] < 0) continue;
+      const laneLeft = lane * laneWidth;
+      const reach = tileWidth * 0.42;
+      gripX[lane] = Math.min(
+        laneLeft + laneWidth - reach,
+        Math.max(laneLeft + reach, run.holdTouchX[lane]),
+      );
+      gripY[lane] = Math.min(bottom, Math.max(top, run.holdTouchY[lane]));
+    }
+
     context.save();
     context.beginPath();
     context.rect(0, top, width, playHeight);
@@ -1397,22 +1414,28 @@ export default function RhythmGame() {
         }
         context.restore();
 
-        // The pastel marks the tail as it is played, and only there: it burns
-        // at the line, where the tail is going under, and never runs on ahead
-        // of it. What is still above the line has not been held yet, so it
-        // stays bare, and once the head is through, the burn shrinks with the
-        // last of the tail rather than with the tile.
-        const burnHeight = Math.min(bottom - shapeTop, tileHeight * 0.4);
-        if (held && y >= bottom && burnHeight > 0) {
+        // The finger is the fill line. Whatever the tile has already carried
+        // past the grip is played and turns pastel; whatever is still above it
+        // is bare. The line has no say in this — grip high and the tile fills
+        // from up there, which is the whole point: the fill belongs to the
+        // hand, not to the board. A hold played on the keyboard has no finger
+        // to belong to, so there the line stands in for one.
+        const fillFrom = held
+          ? (gripY[note.lane] >= 0 ? gripY[note.lane] : bottom)
+          : -1;
+        if (held && fillFrom < shapeBottom) {
+          const fillTop = Math.max(shapeTop, fillFrom);
           context.save();
           context.beginPath();
           context.roundRect(x, shapeTop, tileWidth, shapeHeight, radius);
           context.clip();
-          const burn = context.createLinearGradient(0, bottom - burnHeight, 0, bottom);
-          burn.addColorStop(0, withAlpha(pastel, 0));
-          burn.addColorStop(1, pastel);
-          context.fillStyle = burn;
-          context.fillRect(x, bottom - burnHeight, tileWidth, burnHeight);
+          // A gradient holds its end colour past its end point, so this is one
+          // soft edge at the grip and solid pastel all the way down from there.
+          const soft = context.createLinearGradient(0, fillTop, 0, fillTop + 14);
+          soft.addColorStop(0, withAlpha(pastel, 0.2));
+          soft.addColorStop(1, pastel);
+          context.fillStyle = soft;
+          context.fillRect(x, fillTop, tileWidth, shapeBottom - fillTop);
           context.restore();
         }
 
@@ -1455,25 +1478,28 @@ export default function RhythmGame() {
     // It rides on top of the tail, which is what tells the player that the two
     // belong together while the tile travels on under the finger.
     for (let lane = 0; lane < 4; lane += 1) {
-      if (run.activeHold[lane] < 0 || run.holdTouchY[lane] < 0) continue;
-      const laneLeft = lane * laneWidth;
-      const grip = tileWidth * 0.42;
-      const gx = Math.min(
-        laneLeft + laneWidth - grip,
-        Math.max(laneLeft + grip, run.holdTouchX[lane]),
-      );
-      const gy = Math.min(bottom - grip, Math.max(top + grip, run.holdTouchY[lane]));
-      const breath = grip * (1 + Math.sin(now / 170) * 0.07);
+      if (gripY[lane] < 0) continue;
+      const breath = tileWidth * 0.42 * (1 + Math.sin(now / 170) * 0.07);
+      const gx = gripX[lane];
+      const gy = gripY[lane];
       context.save();
-      context.strokeStyle = blendColor(pastel, "rgba(5,7,8,1)", mix);
-      context.shadowColor = context.strokeStyle;
-      context.shadowBlur = 14;
-      context.lineWidth = 3;
-      context.globalAlpha = 0.9;
+      // The ring lands on whatever happens to be under the finger — bare tail,
+      // the pastel it has just filled, a black chorus body, or the flooded
+      // board beside it — so it carries its own contrast instead of picking a
+      // side: a dark stroke laid down first and a pastel one on top of it.
+      context.lineWidth = 6;
+      context.strokeStyle = "rgba(5,7,8,.5)";
       context.beginPath();
       context.arc(gx, gy, breath, 0, TAU);
       context.stroke();
-      context.globalAlpha = 0.28;
+      context.strokeStyle = pastel;
+      context.shadowColor = pastel;
+      context.shadowBlur = 12;
+      context.lineWidth = 3;
+      context.beginPath();
+      context.arc(gx, gy, breath, 0, TAU);
+      context.stroke();
+      context.globalAlpha = 0.3;
       context.beginPath();
       context.arc(gx, gy, breath * 0.55, 0, TAU);
       context.stroke();
