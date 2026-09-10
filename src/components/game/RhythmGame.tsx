@@ -507,7 +507,11 @@ type Run = {
    */
   holdOwedMs: Float64Array;
   /**
-   * Where the finger carrying each lane's hold actually is, in board pixels.
+   * Where the finger took hold of each lane, in board pixels, fixed at the
+   * press. It is the fill line, and a fill line can only ever be where the tile
+   * has already gone under: let it follow the finger and a drag upwards would
+   * show more of the tile played than was played, a drag back down would
+   * un-play it. The finger may wander; the grip it made does not.
    * -1 where there is nothing to draw: the keyboard has no finger, and a lane
    * that is not holding has nothing to show.
    */
@@ -599,14 +603,6 @@ export default function RhythmGame() {
   const stageRef = useRef<HTMLElement>(null);
   const hudRef = useRef<HTMLDivElement>(null);
   const layoutRef = useRef<Layout | null>(null);
-  /**
-   * The board's top-left corner in viewport space, so tracking a finger across
-   * a hold never has to ask the layout engine for it. A pointermove arrives up
-   * to 120 times a second, and the HUD rewrites its text on every frame, so a
-   * getBoundingClientRect() in that handler would force a synchronous layout
-   * each time. The stage only moves when `measure` runs.
-   */
-  const stageOriginRef = useRef({ left: 0, top: 0 });
   const paintersRef = useRef<Painters>({
     sprites: {},
     flash: null,
@@ -946,7 +942,6 @@ export default function RhythmGame() {
     if (!canvas || !stage) return;
 
     const rect = stage.getBoundingClientRect();
-    stageOriginRef.current = { left: rect.left, top: rect.top };
     const hud = hudRef.current?.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const width = Math.max(1, rect.width);
@@ -1208,27 +1203,13 @@ export default function RhythmGame() {
       const laneRect = laneEl.getBoundingClientRect();
       rippleAt(lane, event.clientX - laneRect.left, event.clientY - laneRect.top);
     }
+    // The grip a hold is filled from, set here and nowhere else. Where the
+    // finger goes afterwards is its own business.
     const run = runRef.current;
     run.holdTouchX[lane] = event.clientX - rect.left;
     run.holdTouchY[lane] = event.clientY - rect.top;
     pressLane(lane, window.performance.now(), event.clientY - rect.top);
   }, [pressLane, rippleAt]);
-
-  /**
-   * A held finger drifts, and on a hold that lasts two seconds it drifts a long
-   * way. The lane stays the one the press landed in — the pointer is captured,
-   * so sliding sideways cannot hand the hold to a neighbour — but the place the
-   * board draws the grip on follows the finger the whole way.
-   */
-  const onPointerMove = useCallback((event: React.PointerEvent<HTMLElement>) => {
-    const lane = pointerLanesRef.current.get(event.pointerId);
-    if (lane === undefined) return;
-    const run = runRef.current;
-    if (run.activeHold[lane] < 0) return;
-    const origin = stageOriginRef.current;
-    run.holdTouchX[lane] = event.clientX - origin.left;
-    run.holdTouchY[lane] = event.clientY - origin.top;
-  }, []);
 
   const onPointerEnd = useCallback((event: React.PointerEvent<HTMLElement>) => {
     const lane = pointerLanesRef.current.get(event.pointerId);
@@ -1292,10 +1273,11 @@ export default function RhythmGame() {
     const { color: chorusColor, pastel, tile: verseColor } = painters.palette;
     const radius = tileHeight * gameConfig.play.tileRadius;
 
-    // Where each carried hold is gripped. The fill line inside the tile and the
-    // ring drawn on top of it both read this, so they cannot drift apart. -1 is
-    // a lane with no finger on it: nothing held, or held from the keyboard,
-    // which presses a lane rather than a place in it.
+    // Where each carried hold was gripped. The fill line inside the tile and
+    // the ring drawn on top of it both read this, so they cannot drift apart,
+    // and neither of them moves once the press has set it. -1 is a lane with no
+    // finger on it: nothing held, or held from the keyboard, which presses a
+    // lane rather than a place in it.
     const gripX = [0, 0, 0, 0];
     const gripY = [-1, -1, -1, -1];
     for (let lane = 0; lane < 4; lane += 1) {
@@ -1414,12 +1396,13 @@ export default function RhythmGame() {
         }
         context.restore();
 
-        // The finger is the fill line. Whatever the tile has already carried
-        // past the grip is played and turns pastel; whatever is still above it
-        // is bare. The line has no say in this — grip high and the tile fills
-        // from up there, which is the whole point: the fill belongs to the
-        // hand, not to the board. A hold played on the keyboard has no finger
-        // to belong to, so there the line stands in for one.
+        // The grip is the fill line. Whatever the tile has already carried past
+        // it is played and turns pastel; whatever is still above it is bare.
+        // The judgment line has no say — grip high and the tile fills from up
+        // there, which is the whole point: the fill belongs to the hand, not to
+        // the board. It stays where the press put it, so the tile can only ever
+        // fill one way. A hold played on the keyboard has no grip to fill from,
+        // so there the judgment line stands in for one.
         const fillFrom = held
           ? (gripY[note.lane] >= 0 ? gripY[note.lane] : bottom)
           : -1;
@@ -2073,7 +2056,6 @@ export default function RhythmGame() {
           data-section="intro"
           style={{ "--chorus-pulse": `${chorusPulseSeconds(selectedSong)}s` } as React.CSSProperties}
           onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
           onPointerUp={onPointerEnd}
           onPointerCancel={onPointerEnd}
           aria-label="Igralno polje. Tapni po ploščici, ko pade v tvojo bližino."
