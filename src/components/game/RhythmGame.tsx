@@ -2061,6 +2061,7 @@ export default function RhythmGame() {
           aria-label="Igralno polje. Tapni po ploščici, ko pade v tvojo bližino."
         >
           <div className={styles.backdrop} aria-hidden="true" />
+          <div className={styles.chorusFlood} aria-hidden="true" />
           <div className={styles.gameHud} ref={hudRef}>
             <div className={styles.hudLeft}>
               <div

@@ -72,8 +72,17 @@
   pointer-events: none;
   opacity: .075;
   mix-blend-mode: screen;
+  transition: opacity 1.1s linear;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.7'/%3E%3C/svg%3E");
 }
+
+/* Zrno je bilo umerjeno na črn zaslon: `screen` posvetli, kar je pod njim, in
+   na črnem je to komaj vidna packa. Refren pa pod njim prižge polno barvo in
+   isti način potisne vso ploščo proti beli — pisava in ploščice se zameglijo.
+   Na barvi ga zato ni. Ker je zrno na .shell, refren pa je označen na .game
+   pod njo, ga privzdigne `:has()`; brskalnik brez njega dobi natanko to, kar
+   je imel prej. */
+.shell:has(.game[data-section="chorus"])::after { opacity: 0; }
 
 .screen {
   position: relative;
@@ -584,20 +593,34 @@
 /* Kitica je črna, refren je barva benda. To je največji možen preskok, ki ga
    igrišče premore, in edini razlog, da kitica nima niti kančka barve: če jo ima,
    refren ni več prehod iz teme v barvo, ampak samo malo več iste barve.
-   Prehod teče 1,1 s, tako da se zgodi na glasbo in ne poči. */
+   To je temna plast: barvo refrena nosi .chorusFlood nad njo. */
 .backdrop {
   position: absolute;
   z-index: 0;
   inset: 0;
   background: #050708;
-  transition: background 1.1s linear, opacity 1.1s ease;
+  transition: background 1.1s linear;
 }
 
 /* Refren zalije celo igrišče s polno barvo benda: rumeno pri Tabu, roza pri
    Kokosy, rdeče pri MRFY. Proti vrhu se umiri v --band-flood-top, da plošča ni
-   ravna ploskev. Ploščice odgovorijo v črni, zato barve ni treba zadrževati. */
-.game[data-section="chorus"] .backdrop {
+   ravna ploskev. Ploščice odgovorijo v črni, zato barve ni treba zadrževati.
+   Barva je svoja plast in se pretopi prek `opacity`. Prej je visela na isti
+   lastnosti kot črnina pod njo, `background` pa se med barvo in gradientom ne
+   interpolira: `background-image` je šel iz `none` v gradient diskretno, torej
+   je črnina obvisela pol sekunde in rumeno je nato poknilo čez njo. `opacity`
+   se interpolira vedno. */
+.chorusFlood {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  opacity: 0;
   background: linear-gradient(to top, var(--band-flood) 0%, var(--band-flood-top) 100%);
+  transition: opacity 1.1s linear;
+}
+
+.game[data-section="chorus"] .chorusFlood {
+  opacity: 1;
   animation: chorusBreath var(--chorus-pulse, 8s) ease-in-out infinite;
 }
 
@@ -1625,7 +1648,11 @@
 .error { color: #e99fd6; font-size: .8rem; }
 
 @keyframes spin { to { transform: rotate(360deg); } }
-@keyframes chorusBreath { 0%, 100% { opacity: .84; } 50% { opacity: 1; } }
+/* Dih refrena. Nekoč je jemal `opacity`, ki jo zdaj rabi pretop — animacija bi
+   ga povozila in barva bi ob prihodu refrena poknila. `filter` je prost, in ker
+   polna barva pri 84 % kaže črnino pod sabo veliko bolj kot nekdanje zatemnjeno
+   ozadje, je dih tudi plitvejši. */
+@keyframes chorusBreath { 0%, 100% { filter: brightness(.94); } 50% { filter: brightness(1); } }
 @keyframes laneHold { 0%, 100% { opacity: .25; } 50% { opacity: .45; } }
 
 @keyframes laneMiss {
@@ -1702,7 +1729,7 @@
   .recommendation { transition: none; }
 
   /* Barvni odziv ostane — utripanje, valovi in tresenje odpadejo. */
-  .game[data-section="chorus"] .backdrop,
+  .game[data-section="chorus"] .chorusFlood,
   .lane[data-holding="1"] { animation: none; }
   .lane[data-holding="1"] { opacity: .38; }
   .lane[data-error="miss"] {
