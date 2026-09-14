@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createClient } from "@/utils/supabase/server";
+import { createPublicClient } from "@/utils/supabase/public";
 
 export type LeaderboardEntry = {
   id: string;
@@ -79,14 +80,30 @@ export async function submitLeaderboardScore(input: {
   return row ? mapEntry(row as Record<string, unknown>) : null;
 }
 
+/**
+ * Branje lestvice je idempotentno, zato en ponovni poskus ničesar ne tvega.
+ * Supabasov prehod občasno vrne `Gateway Timeout`, drugi klic pa uspe v
+ * stotinkah — brez tega igralec namesto lestvice dobi prazno obvestilo.
+ */
+const READ_RETRY_MS = 250;
+
 async function getLeaderboard(songId: string | null, limit: number) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("get_public_leaderboard", {
-    p_song_id: songId,
-    p_limit: limit,
-  });
-  if (error) throw error;
-  return (data ?? []).map((row: Record<string, unknown>) => mapEntry(row));
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    if (attempt > 0) {
+      await new Promise((resolve) => setTimeout(resolve, READ_RETRY_MS));
+    }
+    const supabase = createPublicClient();
+    const { data, error } = await supabase.rpc("get_public_leaderboard", {
+      p_song_id: songId,
+      p_limit: limit,
+    });
+    if (!error) {
+      return (data ?? []).map((row: Record<string, unknown>) => mapEntry(row));
+    }
+    lastError = error;
+  }
+  throw lastError;
 }
 
 export function getOverallLeaderboard(limit = 20) {
