@@ -49,6 +49,20 @@ function readPlayer() {
   }
 }
 
+/**
+ * Seja je ob oddaji lahko mlajša od tihe glave za odštevanje: z enim življenjem
+ * je krog lahko končan v štirih sekundah, obrazec pa je vrnjenemu igralcu že
+ * izpolnjen, zato pritisne takoj. Baza tako oddajo zavrne s 425 — kar mine samo
+ * od sebe, zato stran počaka in poskusi znova, namesto da bi igralca pošiljala
+ * pritiskat še enkrat.
+ */
+const TOO_EARLY_RETRY_MS = 1200;
+const TOO_EARLY_ATTEMPTS = 4;
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 /** "1 komad", "2 komada", "3 komadi" — koliko jih igralec ima v seštevku. */
 const SONG_WORDS = ["komadov", "komad", "komada", "komadi"];
 
@@ -146,19 +160,29 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
     setSubmitting(true);
     setStatus("");
     try {
-      const response = await fetch("/api/leaderboard", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          name,
-          email,
-          songId: song.id,
-          score,
-          ...breakdown,
-        }),
-      });
-      const data = (await response.json()) as { error?: string };
+      let response: Response;
+      let data: { error?: string };
+      let attempt = 0;
+      for (;;) {
+        response = await fetch("/api/leaderboard", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sessionId,
+            name,
+            email,
+            songId: song.id,
+            score,
+            ...breakdown,
+          }),
+        });
+        data = (await response.json()) as { error?: string };
+        if (response.status !== 425 || attempt >= TOO_EARLY_ATTEMPTS) break;
+        attempt += 1;
+        // Ne napaka, ampak obvestilo: gumb ostane onemogočen in čaka z njim.
+        if (data.error) setStatus(data.error);
+        await wait(TOO_EARLY_RETRY_MS);
+      }
       if (!response.ok) throw new Error(data.error ?? "Rezultata ni mogoče shraniti.");
       try {
         window.localStorage.setItem(PLAYER_KEY, JSON.stringify({ name, email }));

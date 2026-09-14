@@ -38,6 +38,37 @@ function integer(value: unknown) {
   return typeof value === "number" && Number.isSafeInteger(value) ? value : null;
 }
 
+/**
+ * Zavrnitve, ki jih `submit_leaderboard_score` pove po imenu. Vsaka ima svoj
+ * odziv, ker vsaka od igralca terja nekaj drugega: 425 je edina, ki mine sama
+ * od sebe, zato stran prav pri njej počaka in poskusi znova.
+ */
+const REFUSALS: Record<string, { status: number; error: string }> = {
+  // Seja je mlajša od tihe glave za odštevanje — krog se je končal tako hitro,
+  // da oddaja prehiteva bazo. Mine v nekaj sekundah.
+  "session too soon": {
+    status: 425,
+    error: "Rezultat je še vroč — shranjujem …",
+  },
+  // E-naslova ni: na primer zavihek, ki je ostal odprt izpred te zahteve.
+  "invalid email": {
+    status: 400,
+    error: "Vpiši e-naslov — po njem se rezultati seštevajo in brez njega jih ne moremo shraniti.",
+  },
+  "session expired": {
+    status: 409,
+    error: "Igralna seja je potekla. Odigraj krog še enkrat in ga oddaj sproti.",
+  },
+  "unknown session": {
+    status: 409,
+    error: "Te igralne seje ni več. Odigraj krog še enkrat.",
+  },
+  "already submitted": {
+    status: 409,
+    error: "Ta krog je že na lestvici.",
+  },
+};
+
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
@@ -102,14 +133,8 @@ export async function POST(request: Request) {
     const message = (error as { message?: string } | null)?.message;
     const stale = message === "invalid score";
     console.error("Leaderboard submit error", error, { ...submitted, staleBounds: stale });
-    // `invalid email` pride iz baze, kadar zahtevek e-naslova nima — na primer
-    // iz strani, ki je v zavihku ostala odprta izpred te spremembe.
-    if (message === "invalid email") {
-      return Response.json(
-        { error: "Vpiši e-naslov — po njem se rezultati seštevajo in brez njega jih ne moremo shraniti." },
-        { status: 400 },
-      );
-    }
+    const refusal = message ? REFUSALS[message] : undefined;
+    if (refusal) return Response.json({ error: refusal.error }, { status: refusal.status });
     return stale
       ? Response.json({ error: "Rezultata ni bilo mogoče potrditi." }, { status: 422 })
       : Response.json({ error: "Rezultata trenutno ni mogoče shraniti." }, { status: 503 });
