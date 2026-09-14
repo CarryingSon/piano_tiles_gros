@@ -106,6 +106,7 @@ export default function GameTeaser() {
           <Link href="/igra" className={styles.cta}>
             Zaigraj in se uvrsti <ExternalIcon />
           </Link>
+          <p className={styles.note}>Zmagovalci bodo razglašeni 8. 10. 2026.</p>
         </div>
 
         <div className={styles.board} aria-busy={summary === null}>

@@ -415,6 +415,15 @@
   color: #101010;
 }
 
+/* Datum razglasitve stoji pod gumbom — obljubo karte spremlja rok. */
+.note {
+  margin: .9rem 0 0;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
 @keyframes live-pulse {
   0%, 100% { opacity: .45; }
   50% { opacity: 1; }
