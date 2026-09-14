@@ -28,6 +28,15 @@ export type GameSong = {
   duration: number;
   /** The band's colour. Every other shade on the board is mixed from it in CSS. */
   baseColor: string;
+  /**
+   * Kako hitro pada plošča prav pri tem komadu — faktor na celotno krivuljo
+   * hitrosti, od prve ploščice do zadnje. 1 je hišna mera, več je težji komad.
+   * Porabi se PRED stropom `MIN_TILE_LEAD_SECONDS`, tako da težji komad nikjer
+   * ne postane nečitljiv: ploščica ostane na zaslonu vsaj toliko kot pri
+   * vsakem drugem. Ker se okni za Perfect in za pozen zadetek ravnata po
+   * dejanski hitrosti, sta pri težjem komadu tesnejši že od začetka.
+   */
+  difficulty: number;
   notes: Note[];
   sections: SongSection[];
   /** Absolute second the closing stretch starts at; see finaleStartSeconds(). */
@@ -156,7 +165,9 @@ const scoring = {
   maxMultiplier: 4,
 } as const;
 
-type SongMeta = Pick<GameSong, "id" | "artist" | "title" | "band" | "file" | "baseColor">;
+type SongMeta = Pick<GameSong, "id" | "artist" | "title" | "band" | "file" | "baseColor">
+  /** Privzeto 1 — hišna mera; glej `GameSong.difficulty`. */
+  & { difficulty?: number };
 
 function createSong(meta: SongMeta): GameSong {
   const chart = songCharts[meta.id];
@@ -165,6 +176,7 @@ function createSong(meta: SongMeta): GameSong {
   const finaleStart = finaleStartSeconds(sections);
   return {
     ...meta,
+    difficulty: meta.difficulty ?? 1,
     bpm: chart.bpm,
     duration: chart.duration,
     notes,
@@ -198,6 +210,13 @@ export const gameSongs: GameSong[] = [
     title: "Poljubljena",
     file: "/media/game/tabu-poljubljena.m4a",
     baseColor: "#FCDB27",
+    /**
+     * Tabu je najgostejši komad — 586 ploščic čez 242 s, skoraj dve in pol na
+     * sekundo — in prav zato je bil ob isti hitrosti plošče najlažji za točke:
+     * not je toliko, da se kombo drži sam od sebe. Plošča pri njem pada 12 %
+     * hitreje od prve ploščice naprej.
+     */
+    difficulty: 1.12,
   }),
 ];
 

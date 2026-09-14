@@ -115,11 +115,11 @@ function sectionAcceleration(
   lastChorusIndex: number,
 ) {
   const type = song.sections[sectionIndex]?.type ?? "verse";
-  if (type === "intro") return 0.28;
-  if (type === "verse") return 0.58;
-  if (type === "bridge") return 0.9;
+  if (type === "intro") return 0.6;
+  if (type === "verse") return 0.95;
+  if (type === "bridge") return 1.15;
   if (type === "outro") return 1.8;
-  return sectionIndex === lastChorusIndex ? 1.65 : 1.2;
+  return sectionIndex === lastChorusIndex ? 1.45 : 1.3;
 }
 
 /**
@@ -157,12 +157,17 @@ function buildSpeedMap(song: GameSong): SpeedMap {
   const accelerationDensity = (time: number) => {
     const progress = song.duration > 0 ? Math.max(0, Math.min(1, time / song.duration)) : 0;
     // The small floor keeps the map strictly increasing; the exponent says how
-    // early the song starts pulling away. Well below 1 the acceleration is up
-    // before the first chorus, so the board is already fast through the middle
-    // instead of saving everything for the last minute — with a single life,
-    // a run that never gets there would otherwise never get harder.
+    // early the song starts pulling away.
+    //
+    // The ramp below is normalised — whatever this returns, the speed still
+    // ends at the cap — so what moves the climb forward is the SHAPE, not the
+    // size: a density that is already most of its final height early spends
+    // half the ramp by two thirds of the song. That is why the exponent sits
+    // this low and why the section weights above are as close together as they
+    // are. With a single life most runs end in the middle of the song, and the
+    // middle is where the board used to have the least to say.
     return 0.035
-      + Math.pow(progress, 0.65) * sectionAccelerationAt(song, time, lastChorusIndex);
+      + Math.pow(progress, 0.35) * sectionAccelerationAt(song, time, lastChorusIndex);
   };
 
   for (let i = 1; i <= intervals; i += 1) {
@@ -173,14 +178,19 @@ function buildSpeedMap(song: GameSong): SpeedMap {
   }
 
   const totalAcceleration = acceleration[intervals] || 1;
-  const configuredEndSpeed = Math.max(1, gameConfig.play.endSpeed);
+  // A song's own difficulty lifts the whole curve, its opening tile included,
+  // and is spent before the floor below: the harder song falls faster
+  // everywhere, never so fast that a tile stops being readable.
+  const difficulty = Math.max(1, song.difficulty);
+  const configuredEndSpeed = Math.max(1, gameConfig.play.endSpeed) * difficulty;
   const playableEndSpeed = Math.min(
     configuredEndSpeed,
     gameConfig.play.travel / MIN_TILE_LEAD_SECONDS,
   );
+  const startSpeed = Math.min(difficulty, playableEndSpeed);
   for (let i = 0; i <= intervals; i += 1) {
-    speed[i] = 1
-      + (playableEndSpeed - 1) * (acceleration[i] / totalAcceleration);
+    speed[i] = startSpeed
+      + (playableEndSpeed - startSpeed) * (acceleration[i] / totalAcceleration);
     if (i > 0) {
       position[i] = position[i - 1] + ((speed[i - 1] + speed[i]) / 2) * step;
     }
@@ -228,10 +238,16 @@ export function positionAt(time: number, song: GameSong) {
 }
 
 /**
- * How far along the acceleration the song is: 0 while the tiles still fall at
- * their opening speed, 1 once they are at the cap. The hit windows ride this
- * same curve, so precision tightens exactly where the board speeds up and there
- * is no second difficulty curve to keep in step with the first.
+ * How far along the acceleration the song is: 0 at the house opening speed, 1
+ * once the tiles are at the cap. The hit windows ride this same curve, so
+ * precision tightens exactly where the board speeds up and there is no second
+ * difficulty curve to keep in step with the first.
+ *
+ * Measured against the house speed of 1, never against the song's own opening
+ * speed — a song with `difficulty` above 1 therefore starts part way along,
+ * with its windows already tighter. That is the point: the window exists
+ * because a fast tile would otherwise make every tap Perfect, and how fast the
+ * tile actually moves is the only thing that should decide it.
  */
 function speedProgress(time: number, song: GameSong) {
   const map = speedMapFor(song);

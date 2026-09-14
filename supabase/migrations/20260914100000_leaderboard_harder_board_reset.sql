@@ -1,0 +1,33 @@
+-- Izbris dosedanjih krogov po dvigu težavnosti.
+--
+-- Commit "Shorten the tiles' run and tighten what counts as on time" je skrajšal
+-- pot ploščice (`travel` 1,55 → 1,35 s), znižal končno hitrost na 2,9, zožil
+-- okno za Perfect (530 → 430 ms na začetku, 250 → 190 ms pri vrhu) in okno za
+-- pozen zadetek (260 → 200 ms oz. 160 → 125 ms), pospešek pa dvignil že proti
+-- sredini komada (eksponent 0,8 → 0,65). Isti rezultat je zdaj bistveno težje
+-- doseči kot včeraj, po lestvici pa se delijo tri brezplačne karte — stari
+-- krogi bi nove neupravičeno prekrili.
+--
+-- `scoring` se NI spremenil, zato stropi točk in število not ostajajo enaki in
+-- `submit_leaderboard_score` ostane taka, kot jo je pustila migracija
+-- `20260910110000_tabu_recorded_take_10_september.sql`:
+--   mrfy    228890  (387 not)
+--   kokosy  211250  (451 not)
+--   tabu    283570  (586 not)
+-- Preveri z `node scripts/verify-game-data.mjs`.
+--
+-- OPOZORILO: skupaj z vnosi padejo tudi e-naslovi v `leaderboard_contacts`
+-- (ON DELETE CASCADE). Če je kdo od dosedanjih vodilnih že obveščen ali ga je
+-- treba obvestiti, izvozi stike PREJ:
+--   SELECT e.name, e.song_id, e.score, c.email, c.created_at
+--   FROM public.leaderboard_contacts c
+--   JOIN public.leaderboard_entries e ON e.id = c.entry_id
+--   ORDER BY c.created_at;
+
+-- Seje odnesejo vnose, vnosi pa stike — oboje prek ON DELETE CASCADE.
+DELETE FROM public.leaderboard_sessions;
+
+-- Za kontrolo: po izbrisu morajo vse tri vrniti 0.
+-- SELECT COUNT(*) FROM public.leaderboard_sessions;
+-- SELECT COUNT(*) FROM public.leaderboard_entries;
+-- SELECT COUNT(*) FROM public.leaderboard_contacts;
