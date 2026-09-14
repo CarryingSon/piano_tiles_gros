@@ -49,8 +49,16 @@ const SECTION_FADE_MS = 1100;
 const TAU = Math.PI * 2;
 /** How long the pastel afterimage of a tapped tile stays on the board. */
 const TAP_FLASH_MS = 150;
-/** Even at the speed cap, a new tile stays visible for at least this long. */
-const MIN_TILE_LEAD_SECONDS = 0.45;
+/**
+ * Even at the speed cap, a new tile stays visible for at least this long — and
+ * this, not `endSpeed`, is what the closing stretch of every song actually runs
+ * into: the ramp reaches the cap before the last chorus is out, so the floor is
+ * the finale's real speed. While it stood at 0.45s the best players were
+ * finishing all three songs, which is the one thing the finale is there to
+ * prevent; nothing done to `endSpeed` could touch that without moving this
+ * first.
+ */
+const MIN_TILE_LEAD_SECONDS = 0.38;
 /** How long a milestone banner stays on the board. */
 const MILESTONE_MS = 1500;
 const SPEED_SAMPLE_SECONDS = 0.025;

@@ -270,26 +270,26 @@ export const gameConfig = {
   lives: 1,
   play: {
     /** Sekunde, ki jih ploščica potrebuje čez igrišče na začetku komada. */
-    travel: 1.35,
+    travel: 1.20,
     /**
      * Ob koncu komada ploščice padajo toliko hitreje. Strop je `travel` deljen
-     * z najkrajšim še vidnim časom ploščice (1,35 / 0,45 = 3,0), tako da je
-     * ploščica pri 2,9 na zaslonu še slabe pol sekunde.
+     * z najkrajšim še vidnim časom ploščice (1,20 / 0,38 = 3,16), tako da je
+     * ploščica pri 3,1 na zaslonu še 0,39 s.
      */
-    endSpeed: 2.9,
+    endSpeed: 3.1,
     /**
      * Čas pred/po noto, v katerem zadetek šteje za Perfect, na začetku komada.
      *
      * Ploščico lahko tapneš, odkar se prikaže, zato je to okno tisto, kar loči
      * Perfect od Good: široko okno pomeni, da je vsak zadetek Perfect. Ker je
      * ploščica pri končni hitrosti na zaslonu komaj `travel / endSpeed` sekunde,
-     * bi fiksnih 430 ms proti koncu razglasilo za Perfect čisto vsak tap — zato
+     * bi fiksnih 380 ms proti koncu razglasilo za Perfect čisto vsak tap — zato
      * se okno vzdolž komada zoži na `perfectWindowEndMs` po isti krivulji kot
      * hitrost. Konec komada tako zahteva, da ploščico počakaš nižje.
      */
-    perfectWindowMs: 430,
+    perfectWindowMs: 380,
     /** … in toliko meri, ko je hitrost na vrhu. */
-    perfectWindowEndMs: 190,
+    perfectWindowEndMs: 145,
     /**
      * Delež Perfect okna, po katerem se sodi glava holda.
      *
@@ -300,9 +300,9 @@ export const gameConfig = {
      */
     holdHeadWindow: 0.5,
     /** Koliko časa po črti je ploščica še igralna, na začetku komada. */
-    lateWindowMs: 200,
+    lateWindowMs: 175,
     /** … in toliko ob koncu, po isti krivulji kot Perfect okno. */
-    lateWindowEndMs: 125,
+    lateWindowEndMs: 105,
     /** Dva tapa v isti stezi bližje kot toliko sta pomotoma sprožen dvojni tap. */
     doubleTapGuard: 0.08,
     /**

@@ -1,0 +1,36 @@
+-- Izbris lestvice pred ponovnim preizkusom težavnosti.
+--
+-- Plošča se je danes dvignila trikrat. Tretji korak je premaknil tisto, česar
+-- prejšnja dva nista mogla: strop berljivosti `MIN_TILE_LEAD_SECONDS` pade z
+-- 0,45 s na 0,38 s. Krivulja hitrosti doseže vrh že pred koncem zadnjega
+-- refrena, zato je bil zaključek vsakega komada dejansko omejen prav s tem
+-- stropom in ne z `endSpeed` — najboljši igralci so vse tri komade odigrali do
+-- konca, kar je natanko tisto, čemur se finale postavlja po robu. Z njim sta se
+-- skrajšala še `travel` (1,35 → 1,20 s) in obe okni (Perfect 430/190 → 380/145
+-- ms, pozno 200/125 → 175/105 ms).
+--
+-- Trije krogi, ki stojijo na lestvici, so odigrani na lažji plošči — Jalen
+-- 698 300, Petja 438 072, jure 320 684, vsi 14. 9. dopoldne. Za nove niso
+-- merilo, po tej lestvici pa se delijo tri brezplačne karte, zato gredo dol.
+--
+-- Stropi točk in število not se ne spremenijo: `scoring` stoji, spremenila se
+-- je hitrost plošče. `submit_leaderboard_score` zato ostane taka, kot jo je
+-- pustila migracija `20260914120000_leaderboard_submit_window.sql`:
+--   mrfy    228890  (387 not)
+--   kokosy  211250  (451 not)
+--   tabu    283570  (586 not)
+--
+-- OPOZORILO: z vnosi padejo tudi e-naslovi v `leaderboard_contacts`
+-- (ON DELETE CASCADE). Če je koga treba obvestiti, izvozi stike PREJ:
+--   SELECT e.name, e.song_id, e.score, c.email, c.created_at
+--   FROM public.leaderboard_contacts c
+--   JOIN public.leaderboard_entries e ON e.id = c.entry_id
+--   ORDER BY c.created_at;
+
+-- Seje odnesejo vnose, vnosi pa stike — oboje prek ON DELETE CASCADE.
+DELETE FROM public.leaderboard_sessions;
+
+-- Za kontrolo: po izbrisu morajo vse tri vrniti 0.
+-- SELECT COUNT(*) FROM public.leaderboard_sessions;
+-- SELECT COUNT(*) FROM public.leaderboard_entries;
+-- SELECT COUNT(*) FROM public.leaderboard_contacts;
