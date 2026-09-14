@@ -157,12 +157,12 @@ function buildSpeedMap(song: GameSong): SpeedMap {
   const accelerationDensity = (time: number) => {
     const progress = song.duration > 0 ? Math.max(0, Math.min(1, time / song.duration)) : 0;
     // The small floor keeps the map strictly increasing; the exponent says how
-    // early the song starts pulling away. Below 1 the acceleration is already
-    // most of the way up by the first chorus, so the board tightens through the
-    // middle instead of saving everything for the last minute — with a single
-    // life, a run that never gets there would otherwise never get harder.
+    // early the song starts pulling away. Well below 1 the acceleration is up
+    // before the first chorus, so the board is already fast through the middle
+    // instead of saving everything for the last minute — with a single life,
+    // a run that never gets there would otherwise never get harder.
     return 0.035
-      + Math.pow(progress, 0.8) * sectionAccelerationAt(song, time, lastChorusIndex);
+      + Math.pow(progress, 0.65) * sectionAccelerationAt(song, time, lastChorusIndex);
   };
 
   for (let i = 1; i <= intervals; i += 1) {
