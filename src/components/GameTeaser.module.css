@@ -3,7 +3,7 @@
   overflow: hidden;
   padding: 5rem 1rem;
   background: #ffd800;
-  color: #050708;
+  color: #101010;
 }
 
 .inner {
@@ -60,10 +60,10 @@
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / .16);
   border-radius: 1.5rem;
-  background: #080a0b;
+  background: #151515;
   box-shadow:
-    1rem 1rem 0 rgb(5 7 8 / .16),
-    0 1.5rem 4rem rgb(5 7 8 / .24);
+    1rem 1rem 0 rgb(16 16 16 / .16),
+    0 1.5rem 4rem rgb(16 16 16 / .24);
   color: #f6f6f6;
 }
 
@@ -134,7 +134,7 @@
 
 .list .leader {
   min-height: 6rem;
-  background: linear-gradient(90deg, rgb(255 216 0 / .17), rgb(227 141 206 / .08) 72%, transparent);
+  background: linear-gradient(90deg, rgb(255 216 0 / .17), rgb(233 159 214 / .08) 72%, transparent);
 }
 
 .leader::before {
@@ -399,8 +399,8 @@
   gap: 1.5rem;
   margin-top: 1.75rem;
   padding: .9rem 1.5rem;
-  border: 2px solid #050708;
-  background: #050708;
+  border: 2px solid #101010;
+  background: #101010;
   color: #ffd800;
   font-family: var(--font-display);
   font-size: 1.15rem;
@@ -412,7 +412,7 @@
 
 .cta:hover {
   background: transparent;
-  color: #050708;
+  color: #101010;
 }
 
 @keyframes live-pulse {

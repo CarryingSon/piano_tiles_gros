@@ -193,7 +193,7 @@ export const gameSongs: GameSong[] = [
     band: "MRFY",
     title: "Prjatučki",
     file: "/media/game/mrfy-prjatucki.m4a",
-    baseColor: "#F4510B",
+    baseColor: "#E05110",
   }),
   createSong({
     id: "kokosy",
@@ -201,7 +201,7 @@ export const gameSongs: GameSong[] = [
     band: "KOKOSY",
     title: "Planeti se vrtijo",
     file: "/media/game/kokosy-planeti-se-vrtijo.m4a",
-    baseColor: "#E38DCE",
+    baseColor: "#E99FD6",
   }),
   createSong({
     id: "tabu",
@@ -209,7 +209,7 @@ export const gameSongs: GameSong[] = [
     band: "TABU",
     title: "Poljubljena",
     file: "/media/game/tabu-poljubljena.m4a",
-    baseColor: "#FCDB27",
+    baseColor: "#FFD800",
     /**
      * Tabu je najgostejši komad — 586 ploščic čez 242 s, skoraj dve in pol na
      * sekundo — in prav zato je bil ob isti hitrosti plošče najlažji za točke:
@@ -342,7 +342,7 @@ export const gameConfig = {
     orange: "#E05110",
     pink: "#E99FD6",
     white: "#F6F6F6",
-    night: "#050708",
+    night: "#101010",
   },
   songs: gameSongs,
   shareText: (score: number, title: string) =>

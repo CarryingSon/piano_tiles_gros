@@ -39,11 +39,11 @@ const KEY_LANES: Record<string, Lane> = { d: 0, f: 1, j: 2, k: 3 };
  * two grounds, and `Run.chorusMix` says how far between them the board is.
  */
 const LANE_IDLE = ["rgba(255,255,255,.02)", "rgba(255,255,255,.05)"] as const;
-const LANE_IDLE_INK = ["rgba(5,7,8,.04)", "rgba(5,7,8,.09)"] as const;
+const LANE_IDLE_INK = ["rgba(16,16,16,.04)", "rgba(16,16,16,.09)"] as const;
 const LANE_LINE = "rgba(246,246,246,.1)";
-const LANE_LINE_INK = "rgba(5,7,8,.16)";
+const LANE_LINE_INK = "rgba(16,16,16,.16)";
 /** The chorus tile itself: black, whatever is behind it. */
-const CHORUS_TILE = "#07090a";
+const CHORUS_TILE = "#101010";
 /** Matches the 1.1s backdrop transition in RhythmGame.module.css. */
 const SECTION_FADE_MS = 1100;
 const TAU = Math.PI * 2;
@@ -632,7 +632,7 @@ export default function RhythmGame() {
     flash: null,
     flashInk: null,
     palette: {
-      color: "#ffd800", pastel: "#ffd800", deep: "#0a0a0a",
+      color: "#ffd800", pastel: "#ffd800", deep: "#101010",
       glow: "rgba(255,216,0,.4)", tile: "#ffd800",
     },
   });
@@ -1009,7 +1009,7 @@ export default function RhythmGame() {
     const sprites: Record<string, Sprite> = {};
     for (const { color, ring, ink, blur } of [
       { color: CHORUS_TILE, ring: palette.color, ink: palette.pastel, blur: 26 },
-      { color: palette.tile, ring: "", ink: "#050708", blur: 16 },
+      { color: palette.tile, ring: "", ink: "#101010", blur: 16 },
     ]) {
       const pad = blur + 4;
       const sprite = document.createElement("canvas");
@@ -1053,8 +1053,8 @@ export default function RhythmGame() {
       // The same wash for the flooded board: the band's colour on its own
       // colour is nothing, so there the lane darkens instead of lighting up.
       flashInk = board.createLinearGradient(0, top, 0, bottom);
-      flashInk.addColorStop(0, "rgba(5,7,8,0)");
-      flashInk.addColorStop(1, "rgba(5,7,8,.22)");
+      flashInk.addColorStop(0, "rgba(16,16,16,0)");
+      flashInk.addColorStop(1, "rgba(16,16,16,.22)");
     }
     paintersRef.current = { sprites, flash, flashInk, palette };
   }, [placeHoldCounter, readPalette]);
@@ -1323,7 +1323,7 @@ export default function RhythmGame() {
     // The print a struck tile leaves behind, so a tap is visible even though the
     // tile itself is gone the instant it is hit: pastel on the black verse
     // board, ink on the flooded chorus one.
-    context.fillStyle = blendColor(pastel, "rgba(5,7,8,1)", mix);
+    context.fillStyle = blendColor(pastel, "rgba(16,16,16,1)", mix);
     for (let lane = 0; lane < 4; lane += 1) {
       const until = run.laneHitAt[lane];
       if (until <= now) continue;
@@ -1357,7 +1357,7 @@ export default function RhythmGame() {
       const chorusTile = run.chorusNote[i] === 1;
       const color = chorusTile ? CHORUS_TILE : verseColor;
       const ring = chorusTile ? chorusColor : "";
-      const ink = chorusTile ? pastel : "#050708";
+      const ink = chorusTile ? pastel : "#101010";
       const x = note.lane * laneWidth + 6;
       const y = top + (1 - lead / travel) * playHeight;
 
@@ -1495,7 +1495,7 @@ export default function RhythmGame() {
       // board beside it — so it carries its own contrast instead of picking a
       // side: a dark stroke laid down first and a pastel one on top of it.
       context.lineWidth = 6;
-      context.strokeStyle = "rgba(5,7,8,.5)";
+      context.strokeStyle = "rgba(16,16,16,.5)";
       context.beginPath();
       context.arc(gx, gy, breath, 0, TAU);
       context.stroke();
@@ -1898,7 +1898,7 @@ export default function RhythmGame() {
     const gradient = context.createRadialGradient(800, 340, 10, 800, 340, 800);
     gradient.addColorStop(0, "rgba(224,81,16,.42)");
     gradient.addColorStop(0.55, "rgba(233,159,214,.12)");
-    gradient.addColorStop(1, "rgba(5,7,8,0)");
+    gradient.addColorStop(1, "rgba(16,16,16,0)");
     context.fillStyle = gradient;
     context.fillRect(0, 0, card.width, card.height);
     context.strokeStyle = "rgba(255,216,0,.22)";

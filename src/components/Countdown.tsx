@@ -75,7 +75,7 @@ export default function Countdown() {
       /* Rumena kot pri igri: odštevanje je edini svetel pas na strani, zato
          datum in števke stojijo na njem kot na plakatu. Plastnice (`contours`)
          so risane v isti rumeni in bi bile tu nevidne. */
-      className="relative border-y border-night/15 bg-glow py-8 text-night sm:py-14"
+      className="relative border-y border-night/15 bg-atlas py-8 text-night sm:py-14"
     >
       <div className="relative z-10 mx-auto flex max-w-6xl flex-col items-center gap-8 px-4 text-center sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-6 sm:text-left">
         {/* Na telefonu ostane samo ura: nadnaslov, naslov in datum so tam le
@@ -92,12 +92,12 @@ export default function Countdown() {
             {started ? (
               <>
                 Atlas je{" "}
-                <span className="bg-night px-2 py-0.5 text-glow">tukaj.</span>
+                <span className="bg-night px-2 py-0.5 text-atlas">tukaj.</span>
               </>
             ) : (
               <>
                 Do Glasbenega{" "}
-                <span className="bg-night px-2 py-0.5 text-glow">Atlasa</span>
+                <span className="bg-night px-2 py-0.5 text-atlas">Atlasa</span>
               </>
             )}
           </h2>

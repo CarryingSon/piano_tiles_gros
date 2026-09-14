@@ -18,10 +18,10 @@
   pointer-events: none;
   background: linear-gradient(
     to bottom,
-    color-mix(in srgb, var(--wash, #ffffff) 34%, transparent) 0%,
-    color-mix(in srgb, var(--wash, #ffffff) 22%, transparent) 38%,
-    color-mix(in srgb, var(--wash, #ffffff) 12%, transparent) 68%,
-    color-mix(in srgb, var(--wash, #ffffff) 6%, transparent) 100%
+    color-mix(in srgb, var(--wash, #f6f6f6) 34%, transparent) 0%,
+    color-mix(in srgb, var(--wash, #f6f6f6) 22%, transparent) 38%,
+    color-mix(in srgb, var(--wash, #f6f6f6) 12%, transparent) 68%,
+    color-mix(in srgb, var(--wash, #f6f6f6) 6%, transparent) 100%
   );
 }
 

@@ -40,7 +40,7 @@ export default function DesktopGameGate() {
       width: 420,
       margin: 2,
       errorCorrectionLevel: "M",
-      color: { dark: "#050708", light: "#FFD800" },
+      color: { dark: "#101010", light: "#FFD800" },
     }).then((dataUrl) => {
       if (active) setQrCode(dataUrl);
     });

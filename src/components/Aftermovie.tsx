@@ -93,7 +93,7 @@ function AftermovieCard({
         >
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-atlas transition-transform group-hover:scale-110 sm:h-20 sm:w-20">
             <svg width="22" height="26" viewBox="0 0 28 32" aria-hidden className="ml-1">
-              <path d="M0 0l28 16L0 32z" fill="#050708" />
+              <path d="M0 0l28 16L0 32z" fill="#101010" />
             </svg>
           </span>
         </button>
