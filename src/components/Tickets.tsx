@@ -148,7 +148,7 @@ function TierCard({ tier }: { tier: TicketTier }) {
 
         {soldOut ? null : available ? (
           <a
-            href={tickets.eventUrl}
+            href={tickets.url}
             target="_blank"
             rel="noopener noreferrer"
             className={`rounded-xl px-5 py-2.5 font-display text-sm uppercase tracking-wide text-night transition-transform hover:-translate-y-0.5 sm:px-6 sm:py-3 sm:text-base ${accentButton[tier.accent]}`}
@@ -209,7 +209,7 @@ export default function Tickets() {
               Vse serije, kadarkoli. Karta pride po e-pošti.
             </p>
             <a
-              href={tickets.eventUrl}
+              href={tickets.url}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-auto w-fit rounded-xl bg-atlas px-5 py-2.5 font-display text-sm uppercase text-night transition-transform hover:-translate-y-0.5"

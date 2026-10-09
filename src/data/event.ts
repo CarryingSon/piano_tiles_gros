@@ -59,23 +59,17 @@ export const event = {
 } as const;
 
 export const tickets = {
-  /** Vsi CTA-ji za vstopnice vodijo SEM. */
-  url: "https://www.eventim.si/en/artist/glasbeni-atlas/",
-  /**
-   * Neposredna povezava na dogodek 2026 — en klik manj kot izvajalska stran.
-   * Uporablja jo sekcija Vstopnice.
-   */
-  eventUrl:
-    "https://www.eventim.si/en/event/glasbeni-atlas-sk-gros-parkirisce-ivancna-gorica-21882400/",
+  /** Vsi CTA-ji za vstopnice vodijo SEM — organizatorjeva Eventim povezava (affiliate KG6). */
+  url: "https://www.eventim.si/top-events/?affiliate=KG6",
   /**
    * Cene so organizatorjeve s plakata "Cene vstopnic". Eventim ob nakupu
-   * prišteje 1 € stroška vstopnice — od tod 21,00 € za Early Bird, ki ga
+   * prišteje 1 € stroška vstopnice — od tod 28,00 € za redno prodajo, ki jo
    * kaže njegova stran. Povsod izpisujemo ceno organizatorja, strošek pa
    * pove pripis v sekciji Vstopnice, da kupca pri blagajni nič ne preseneti.
    */
   onSale: true,
-  priceFromHuman: "od 20 €",
-  priceFrom: 20,
+  priceFromHuman: "od 27 €",
+  priceFrom: 27,
   currency: "EUR",
   provider: "Eventim SI",
   ctaLabel: "Kupi vstopnice",
@@ -126,17 +120,17 @@ export const ticketTiers: TicketTier[] = [
     name: "Early Bird",
     memberPriceHuman: "15 €",
     priceHuman: "20 €",
-    status: "onSale",
+    status: "soldOut",
     accent: "kokosy",
-    note: "Stojišče · na Eventimu 21 € z 1 € stroška vstopnice.",
+    note: "Early Bird vstopnice so razprodane.",
   },
   {
     name: "Redna prodaja",
     memberPriceHuman: "20 €",
     priceHuman: "27 €",
-    status: "locked",
+    status: "onSale",
     accent: "atlas",
-    note: "Odpremo, ko poide Early Bird.",
+    note: "Stojišče · na Eventimu 28 € z 1 € stroška vstopnice.",
   },
   {
     name: "Dan dogodka",
