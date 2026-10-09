@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Python (chart authoring tool)
 __pycache__/
+
+# Supabase CLI (povezava projekta)
+supabase/.temp/

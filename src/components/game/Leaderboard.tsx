@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import WinnersPodium from "@/components/WinnersPodium";
 import { gameConfig, type GameSong, type SongId } from "@/data/game";
 import styles from "./RhythmGame.module.css";
 
@@ -203,6 +204,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
 
   return (
     <section className={styles.leaderboard} aria-labelledby="leaderboard-title">
+      <WinnersPodium>
       <p className={styles.eyebrow}>Skupni rezultati</p>
       <h2 id="leaderboard-title">Lestvica ritma</h2>
       <div className={styles.boardPrize}>
@@ -229,7 +231,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
               <p className={styles.submitEyebrow}>Konec kroga</p>
               <h3 id="submit-title">Objavi svoj rezultat</h3>
               <p className={styles.submitLead}>
-                … in se poteguj za brezplačno vstopnico.
+                … in se primerjaj z najboljšimi.
               </p>
               <p className={styles.submitScore}>
                 <strong>{score.toLocaleString("sl-SI")}</strong>
@@ -307,7 +309,7 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                   <h4 id="confirm-title">Ste prepričani, da ne želite shraniti rezultata?</h4>
                   <p>
                     Krog se odigra enkrat: neshranjen rezultat ne gre na
-                    lestvico in ne šteje v seštevek za brezplačno karto.
+                    lestvico in ne šteje v skupni seštevek.
                   </p>
                   <div className={styles.confirmActions}>
                     <button type="button" onClick={() => setConfirmSkip(false)}>
@@ -394,19 +396,14 @@ export default function Leaderboard({ song, score, sessionId, breakdown }: Props
                 </span>
                 <span className={styles.boardScore}>
                   <strong>{entry.score.toLocaleString("sl-SI")}</strong>
-                  {overall && (
-                    <small>
-                      {winner
-                        ? gameConfig.competition.prizeLabel
-                        : `${Math.round(entry.rating / 100)} %`}
-                    </small>
-                  )}
+                  {overall && <small>{Math.round(entry.rating / 100)} %</small>}
                 </span>
               </li>
             );
           })}
         </ol>
       )}
+      </WinnersPodium>
     </section>
   );
 }

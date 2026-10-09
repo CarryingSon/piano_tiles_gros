@@ -1,6 +1,7 @@
 import { songCharts } from "@/data/charts";
 import { event, site, tickets } from "@/data/event";
 import { songSections, type SongSection } from "@/data/song-sections";
+import { winners } from "@/data/winners";
 
 export type { SectionType, SongSection } from "@/data/song-sections";
 
@@ -248,17 +249,18 @@ export const gameConfig = {
   competition: {
     enabled: true,
     winnerCount: 3,
-    /** Nagrada za prve tri po skupnem seštevku. */
-    prizeLabel: "Zastonj karta",
-    headline: "Prvi trije dobijo zastonj karto",
     /**
-     * Kaj sploh šteje: skupna lestvica sešteje najboljši krog igralca v vsakem
-     * od treh komadov (`get_public_leaderboard` brez `p_song_id`). Enkrat
-     * zapisano tu, da se besedilo v igri, na domači strani in na lestvici ne
-     * razide s tem, kar počne baza.
+     * Tekmovanje je zaključeno in zmagovalci razglašeni (`data/winners.ts`).
+     * Skupna lestvica še naprej sešteje najboljši krog igralca v vsakem od
+     * treh komadov (`get_public_leaderboard` brez `p_song_id`), kart pa ne
+     * deli več.
      */
-    basis: "Šteje seštevek vseh treh komadov.",
-    note: "Pri izenačenju odloča prej oddan rezultat. Velja po potrditvi rezultata in skladno s pravili organizatorja.",
+    headline: "Zmagovalci so znani",
+    basis: `Zastonj karte so dobili ${winners
+      .map((winner) => winner.name)
+      .join(", ")
+      .replace(/, ([^,]+)$/, " in $1")}.`,
+    note: "Igra in lestvica ostajata odprti, nagrade pa so podeljene.",
   },
   siteUrl: `${site.url}/igra`,
   /**

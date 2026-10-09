@@ -15,7 +15,7 @@ const RULES = [
   { title: "Počakaj jo nižje", text: "Nižje kot je ploščica ob dotiku, več točk. Zaporedni zadetki množijo rezultat." },
   { title: "Dolgo drži", text: "Podolgovato ploščico drži do konca in izpusti na črti." },
   { title: "Eno življenje", text: "Prva zgrešena ploščica ali tap v prazno stezo konča krog." },
-  { title: "Skupni seštevek", text: `Karte deli skupna lestvica. ${gameConfig.competition.basis}` },
+  { title: "Skupni seštevek", text: "Skupna lestvica sešteje najboljši krog v vsakem od treh komadov." },
 ];
 
 export default function DesktopGameGate() {

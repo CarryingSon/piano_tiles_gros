@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import type { CSSProperties } from "react";
 import { gameShots } from "@/data/event";
 import { ExternalIcon } from "@/components/Icons";
+import WinnersPodium from "@/components/WinnersPodium";
 import styles from "./GameTeaser.module.css";
 
 type LeaderEntry = {
@@ -30,7 +31,7 @@ type Summary = {
   songs: SongLeader[];
 };
 
-/** Prvi trije po skupnem seštevku dobijo brezplačno vstopnico. */
+/** Kolajne za prve tri na skupni lestvici. Karte so podeljene (`data/winners.ts`). */
 const medals = [
   { label: "Zlato", className: "gold" },
   { label: "Srebro", className: "silver" },
@@ -96,19 +97,19 @@ export default function GameTeaser() {
             Glatlas Game
           </h2>
           <p className={styles.subtitle}>
-            Zastonj karte za najboljše tri igralce
+            Zmagovalci so znani
           </p>
           <p className={styles.copy}>
-            Štiri steze, en komad in ena napaka do konca. Karte deli skupna
-            lestvica, na kateri šteje seštevek vseh treh komadov; po zavihkih
-            vidiš vsak komad zase.
+            Štiri steze, en komad in ena napaka do konca. Na skupni lestvici
+            šteje seštevek vseh treh komadov; po zavihkih vidiš vsak komad
+            zase. Zastonj karte so podeljene, igra pa ostaja odprta.
           </p>
           <Link href="/igra" className={styles.cta}>
-            Zaigraj in se uvrsti <ExternalIcon />
+            Zaigraj <ExternalIcon />
           </Link>
-          <p className={styles.note}>Zmagovalci bodo razglašeni 8. 10. 2026.</p>
         </div>
 
+        <WinnersPodium>
         <div className={styles.board} aria-busy={summary === null}>
           <div className={styles.boardHeader}>
             <div>
@@ -225,7 +226,7 @@ export default function GameTeaser() {
               ) : (
                 <>
                   <p className={styles.groupLabel}>
-                    Seštevek treh komadov · <span>zastonj karta</span>
+                    Seštevek treh komadov
                   </p>
                   {overall.length === 0 ? (
                     <p className={styles.empty} role="status">
@@ -241,7 +242,7 @@ export default function GameTeaser() {
                           <span className={styles.rank} aria-hidden />
                           <span className={styles.player}>
                             <strong>{entry.name}</strong>
-                            <small>{medals[index].label} · zastonj karta</small>
+                            <small>{medals[index].label}</small>
                           </span>
                           {/* Razvrsti delež možnih točk, ne same točke: komadi
                               nimajo enakega stropa. Zato stoji delež ob njih. */}
@@ -259,6 +260,7 @@ export default function GameTeaser() {
           )}
 
         </div>
+        </WinnersPodium>
       </div>
     </section>
   );
